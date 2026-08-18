@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTicket,
   getMyTicket,
+  callNextTicket,
   callTicket,
   completeTicket,
   skipTicket,
@@ -18,6 +19,11 @@ ticketRouter.post("/", authorize("customer"), createTicket);
 ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
 ticketRouter.patch("/:id/cancel", authorize("customer"), cancelTicket);
 
+ticketRouter.post(
+  "/call-next",
+  authorize("staff", "manager", "admin"),
+  callNextTicket,
+);
 ticketRouter.patch(
   "/:id/call",
   authorize("staff", "manager", "admin"),

@@ -19,12 +19,13 @@ const router = express.Router();
 router.post("/login", authLimiter, loginStaff);
 
 router.use(protect);
-router.use(authorize("admin"));
+router.use(authorize("admin", "manager"));
 
 router.post("/", createStaffValidator, validate, createStaff);
 router.get("/", getAllStaff);
 router.patch(
   "/:staffId/assign",
+  authorize("admin"),
   assignStaffValidator,
   validate,
   assignStaffToBranch,

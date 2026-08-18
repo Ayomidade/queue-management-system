@@ -106,6 +106,9 @@ export const assignStaffToCounter = async (req, res, next) => {
     await counter.save();
     await counter.populate("assignedStaff", "name email");
 
+    staffMember.counter = counter._id;
+    await staffMember.save();
+
     return sendSuccess(res, {
       statusCode: 200,
       message: "Staff assigned to counter successfully",
@@ -130,6 +133,10 @@ export const unassignStaffFromCounter = async (req, res, next) => {
         statusCode: 403,
         message: "You can only manage counters in your own branch",
       });
+    }
+
+    if (counter.assignedStaff) {
+      await Staff.findByIdAndUpdate(counter.assignedStaff, { counter: null });
     }
 
     counter.assignedStaff = null;

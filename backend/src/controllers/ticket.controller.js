@@ -3,6 +3,7 @@ import Queue from "../models/queue.model.js";
 import { sendEmail } from "../services/email.service.js";
 import User from "../models/user.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { emitToBranch, emitToUser } from "../socket.js";
 
 export const createTicket = async (req, res, next) => {
   try {
@@ -31,7 +32,12 @@ export const createTicket = async (req, res, next) => {
     await sendEmail({
       to: user.email,
       subject: "Your Queue Ticket",
-      html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p><p>Queue: <b>${queue.serviceName}</b></p><p>Branch: <b>${branchId}</b></p><p>Please wait for your turn.</p>`,
+      html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
+    });
+
+    emitToBranch(branchId, "queue:updated", {
+      queueId,
+      reason: "ticket-created",
     });
 
     return sendSuccess(res, {
@@ -44,14 +50,57 @@ export const createTicket = async (req, res, next) => {
   }
 };
 
+// How many waiting tickets sit ahead of this one, priority tickets count as ahead of any normal ticket
+const countTicketsAhead = async (queueId, ticketNumber, priority) => {
+  if (priority === "priority") {
+    return Ticket.countDocuments({
+      queue: queueId,
+      status: "waiting",
+      priority: "priority",
+      ticketNumber: { $lt: ticketNumber },
+    });
+  }
+
+  const priorityAhead = await Ticket.countDocuments({
+    queue: queueId,
+    status: "waiting",
+    priority: "priority",
+  });
+  const normalAhead = await Ticket.countDocuments({
+    queue: queueId,
+    status: "waiting",
+    priority: "normal",
+    ticketNumber: { $lt: ticketNumber },
+  });
+  return priorityAhead + normalAhead;
+};
+
+const getAverageHandlingMinutes = async (queueId) => {
+  const recent = await Ticket.find({
+    queue: queueId,
+    status: "completed",
+    calledAt: { $ne: null },
+    completedAt: { $ne: null },
+  })
+    .sort({ completedAt: -1 })
+    .limit(20)
+    .select("calledAt completedAt");
+
+  if (!recent.length) return null;
+
+  const totalMs = recent.reduce(
+    (sum, t) => sum + (t.completedAt - t.calledAt),
+    0,
+  );
+  return totalMs / recent.length / 60000;
+};
+
 export const getMyTicket = async (req, res, next) => {
   try {
     const ticket = await Ticket.findOne({
       user: req.user.id,
       status: { $in: ["waiting", "called"] },
-    })
-      .populate("queue", "serviceName")
-      .populate("branch", "name location");
+    });
 
     if (!ticket) {
       const error = new Error("No active ticket found");
@@ -59,17 +108,33 @@ export const getMyTicket = async (req, res, next) => {
       return next(error);
     }
 
+    let position = 0;
+    let estimatedWaitMinutes = null;
+
+    if (ticket.status === "waiting") {
+      position = await countTicketsAhead(
+        ticket.queue,
+        ticket.ticketNumber,
+        ticket.priority,
+      );
+      const avgMinutes = await getAverageHandlingMinutes(ticket.queue);
+      estimatedWaitMinutes =
+        avgMinutes !== null ? Math.round(position * avgMinutes) : null;
+    }
+
+    await ticket.populate("queue", "serviceName");
+    await ticket.populate("branch", "name location");
+
     return sendSuccess(res, {
       statusCode: 200,
       message: "Active ticket fetched successfully",
-      data: ticket,
+      data: { ...ticket.toObject(), position, estimatedWaitMinutes },
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Admin has network-wide access; staff/manager are scoped to their own branch
 const findTicketInBranchScope = async (id, req) => {
   const ticket = await Ticket.findById(id);
   if (!ticket) return { ticket: null, forbidden: false };
@@ -81,6 +146,90 @@ const findTicketInBranchScope = async (id, req) => {
   return { ticket, forbidden: false };
 };
 
+const notifyTicketChange = (ticket, event) => {
+  emitToBranch(String(ticket.branch), event, {
+    ticketId: ticket._id,
+    ticketNumber: ticket.ticketNumber,
+    queueId: ticket.queue,
+    status: ticket.status,
+  });
+  emitToUser(String(ticket.user), event, {
+    ticketId: ticket._id,
+    ticketNumber: ticket.ticketNumber,
+    status: ticket.status,
+  });
+};
+
+// Primary counter workflow: pull the next ticket for a queue.
+// Priority tickets are always served ahead of the regular line.
+export const callNextTicket = async (req, res, next) => {
+  try {
+    const { queueId } = req.body;
+
+    const queue = await Queue.findById(queueId);
+    if (!queue) {
+      const error = new Error("Queue not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    const isBranchScoped = req.role === "staff" || req.role === "manager";
+    if (isBranchScoped && String(queue.branch) !== String(req.user.branch)) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "This queue belongs to a different branch",
+      });
+    }
+
+    const update = {
+      status: "called",
+      calledAt: new Date(),
+      servedBy: req.user.id,
+    };
+    const options = { new: true, sort: { ticketNumber: 1 } };
+
+    let ticket = await Ticket.findOneAndUpdate(
+      { queue: queueId, status: "waiting", priority: "priority" },
+      update,
+      options,
+    );
+
+    if (!ticket) {
+      ticket = await Ticket.findOneAndUpdate(
+        { queue: queueId, status: "waiting", priority: "normal" },
+        update,
+        options,
+      );
+    }
+
+    if (!ticket) {
+      return sendError(res, {
+        statusCode: 404,
+        message: "No waiting tickets in this queue",
+      });
+    }
+
+    await ticket.populate("user", "email");
+
+    await sendEmail({
+      to: ticket.user.email,
+      subject: "Your Ticket is Being Served",
+      html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
+    });
+
+    notifyTicketChange(ticket, "ticket:called");
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Next ticket called successfully",
+      data: ticket,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Manual override: call one specific ticket by ID, out of the normal order
 export const callTicket = async (req, res, next) => {
   try {
     const { ticket, forbidden } = await findTicketInBranchScope(
@@ -111,6 +260,8 @@ export const callTicket = async (req, res, next) => {
       subject: "Your Ticket is Being Served",
       html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
     });
+
+    notifyTicketChange(ticket, "ticket:called");
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -143,8 +294,10 @@ export const completeTicket = async (req, res, next) => {
 
     ticket.status = "completed";
     ticket.completedAt = new Date();
-    if (!ticket.servedBy) ticket.servedBy = req.user.id; // covers a manager force-completing a stuck ticket
+    if (!ticket.servedBy) ticket.servedBy = req.user.id;
     await ticket.save();
+
+    notifyTicketChange(ticket, "ticket:completed");
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -178,6 +331,8 @@ export const skipTicket = async (req, res, next) => {
     ticket.status = "skipped";
     await ticket.save();
 
+    notifyTicketChange(ticket, "ticket:skipped");
+
     return sendSuccess(res, {
       statusCode: 200,
       message: "Ticket skipped",
@@ -204,6 +359,8 @@ export const cancelTicket = async (req, res, next) => {
     ticket.status = "cancelled";
     ticket.cancelledAt = new Date();
     await ticket.save();
+
+    notifyTicketChange(ticket, "ticket:cancelled");
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -245,6 +402,8 @@ export const recallTicket = async (req, res, next) => {
     ticket.calledAt = undefined;
     ticket.servedBy = null;
     await ticket.save();
+
+    notifyTicketChange(ticket, "ticket:recalled");
 
     return sendSuccess(res, {
       statusCode: 200,

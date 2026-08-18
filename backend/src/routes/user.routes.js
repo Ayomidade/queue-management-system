@@ -1,14 +1,11 @@
-import express from "express";
+import { Router } from "express";
+import { getMyProfile, adminOnlyPing } from "../controllers/user.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
-const router = express.Router();
+const router = Router();
 
-router.get("/profile", protect, (req, res) => {
-  res.json(req.user);
-});
-
-router.get("/admin-only", protect, authorize("admin"), (req, res) => {
-  res.json({ message: "Welcome Admin" });
-});
+router.get("/profile", protect, getMyProfile);
+router.get("/admin-only", protect, authorize("admin"), adminOnlyPing);
 
 export default router;
+  

@@ -10,6 +10,8 @@ import staff_router from "./routes/staff.routes.js";
 import queue_router from "./routes/queue.routes.js";
 import counter_router from "./routes/counter.routes.js";
 import ticketRouter from "./routes/ticket.routes.js";
+import analyticsRouter from "./routes/analytics.routes.js";
+import { sendSuccess } from "./utils/response.js";
 
 const app = express();
 
@@ -25,23 +27,24 @@ app.get("/", (req, res) => {
   });
 });
 
-app.use("/", routes);
+app.get("/health", (req, res) => {
+  sendSuccess(res, {
+    statusCode: 200,
+    message: "Service is healthy",
+    data: { ok: true },
+  });
+});
 app.use("/api/auth", auth_router);
 app.use("/api/branches/", branch_router);
-// app.use("/api/auth", authRoutes)
 app.use("/api/users", userRouter);
 app.use("/api/email", emailRouter);
-
-app.get("/api/email/test", (req, res) => {
-  res.send("Email route works");
-});
 app.use("/api/staff", staff_router);
 app.use("/api/queues", queue_router);
 app.use("/api/counters", counter_router);
-app.use("/api/tickets", ticketRouter)
+app.use("/api/tickets", ticketRouter);
+app.use("/api/analytics", analyticsRouter);
 
 // error handling middleware
-
 app.use(notFoundHandler);
 app.use(errorHandler);
 
