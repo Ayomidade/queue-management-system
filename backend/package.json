@@ -18,9 +18,9 @@
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ayofital/Smart-Queue-Management-System-Backend-API/issues"
+    "url": "https://github.com/ayomidade/Smart-Queue-Management-System-Backend-API/issues"
   },
-  "homepage": "https://github.com/ayofital/Smart-Queue-Management-System-Backend-API#readme",
+  "homepage": "https://github.com/ayomidade/Smart-Queue-Management-System-Backend-API#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
