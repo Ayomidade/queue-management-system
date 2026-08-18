@@ -8,11 +8,7 @@ export const createCounterValidator = [
     .isLength({ min: 1, max: 50 })
     .withMessage("Counter label must be between 1 and 50 characters"),
 
-  body("branch")
-    .notEmpty()
-    .withMessage("Branch ID is required")
-    .isMongoId()
-    .withMessage("Invalid branch ID"),
+  body("branch").optional().isMongoId().withMessage("Invalid branch ID"),
 ];
 
 export const assignStaffToCounterValidator = [

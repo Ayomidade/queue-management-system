@@ -2,7 +2,9 @@ import express from "express";
 import {
   createCounter,
   assignStaffToCounter,
+  unassignStaffFromCounter,
   closeCounter,
+  openCounter,
   getCounterById,
 } from "../controllers/counter.controller.js";
 import {
@@ -13,36 +15,40 @@ import { protect, authorize } from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.js";
 
 const counterRouter = express.Router();
+counterRouter.use(protect);
 
 counterRouter.post(
   "/",
-  protect,
-  authorize("admin"),
+  authorize("admin", "manager"),
   createCounterValidator,
   validate,
   createCounter,
 );
-
 counterRouter.get(
   "/:branchId",
-  protect,
-  authorize("admin", "staff"),
+  authorize("admin", "manager", "staff"),
   getCounterById,
 );
-
 counterRouter.patch(
   "/:counterId/assign-staff",
-  protect,
-  authorize("admin"),
+  authorize("admin", "manager"),
   assignStaffToCounterValidator,
   validate,
   assignStaffToCounter,
 );
-
+counterRouter.patch(
+  "/:counterId/unassign-staff",
+  authorize("admin", "manager"),
+  unassignStaffFromCounter,
+);
+counterRouter.patch(
+  "/:counterId/open",
+  authorize("admin", "manager"),
+  openCounter,
+);
 counterRouter.patch(
   "/:counterId/close",
-  protect,
-  authorize("staff"),
+  authorize("admin", "manager", "staff"),
   closeCounter,
 );
 
