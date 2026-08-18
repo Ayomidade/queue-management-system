@@ -1,91 +1,92 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-
-// REGISTER USER
+import { sendSuccess, sendError } from "../utils/response.js";
 
 export const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return sendError(res, {
+        statusCode: 400,
+        message: "User already exists",
+      });
     }
 
-    // Create user document
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role
-    });
+    const user = await User.create({ name, email, password, role: "customer" });
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "4d" } 
+      { expiresIn: "4d" },
     );
 
-    // Return user data without exposing password
-    res.status(201).json({
+    return sendSuccess(res, {
+      statusCode: 201,
       message: "User registered successfully",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        token,
       },
-      token,
     });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
-
-// LOGIN USER
 
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+      return sendError(res, {
+        statusCode: 400,
+        message: "All fields are required",
+      });
     }
 
-    // Find user and include password explicitly
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return sendError(res, {
+        statusCode: 400,
+        message: "Invalid credentials",
+      });
     }
 
-    // compare password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return sendError(res, {
+        statusCode: 400,
+        message: "Invalid credentials",
+      });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
-    // Return user data without exposing password
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        token,
       },
-      token,
     });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };

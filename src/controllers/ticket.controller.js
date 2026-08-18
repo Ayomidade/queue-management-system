@@ -1,61 +1,41 @@
 import Ticket from "../models/ticket.model.js";
 import Queue from "../models/queue.model.js";
-import { validationResult } from "express-validator";
 import { sendEmail } from "../services/email.service.js";
 import User from "../models/user.model.js";
+import { sendSuccess } from "../utils/response.js";
 
 export const createTicket = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { queueId, branchId } = req.body;
     const userId = req.user.id;
-
-    const user = await User.findOne({ _id: userId });
-    // console.log(user)
+    const user = await User.findById(userId);
 
     const queue = await Queue.findByIdAndUpdate(
       queueId,
       { $inc: { lastTicketNumber: 1 } },
       { new: true },
     );
-
     if (!queue) {
       const error = new Error("Queue not found");
       error.statusCode = 404;
       return next(error);
     }
 
-    const ticketNumber = queue.lastTicketNumber;
-
     const ticket = await Ticket.create({
       user: userId,
       queue: queueId,
       branch: branchId,
-      ticketNumber,
+      ticketNumber: queue.lastTicketNumber,
     });
 
-    console.log("SMTP Config:", {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      user: process.env.SMTP_USER ? "✓ Set" : "✗ Missing",
-      pass: process.env.SMTP_PASS ? "✓ Set" : "✗ Missing",
-      from: process.env.SMTP_FROM,
-    });
-
-    // Send Email When Ticket is Generated
     await sendEmail({
       to: user.email,
       subject: "Your Queue Ticket",
-      html: `<h2>Ticket Created</h2>
-          <p>Your queue ticket has been created successfully.</p>
-          <p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
+      html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
     });
 
-    res.status(201).json({
+    return sendSuccess(res, {
+      statusCode: 201,
       message: "Ticket created successfully",
       data: ticket,
     });
@@ -66,13 +46,11 @@ export const createTicket = async (req, res, next) => {
 
 export const getMyTicket = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-
     const ticket = await Ticket.findOne({
-      user: userId,
+      user: req.user.id,
       status: { $in: ["waiting", "called"] },
     })
-      .populate("queue", "name")
+      .populate("queue", "serviceName") // FIX: was "name", a field that doesn't exist on Queue
       .populate("branch", "name location");
 
     if (!ticket) {
@@ -81,7 +59,9 @@ export const getMyTicket = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Active ticket fetched successfully",
       data: ticket,
     });
   } catch (error) {
@@ -92,17 +72,11 @@ export const getMyTicket = async (req, res, next) => {
 export const callTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    const user = await User.findOne({ _id: userId });
-
     const ticket = await Ticket.findByIdAndUpdate(
       id,
-      {
-        status: "called",
-        calledAt: new Date(),
-      },
+      { status: "called", calledAt: new Date() },
       { new: true },
-    );
+    ).populate("user", "email");
 
     if (!ticket) {
       const error = new Error("Ticket not found");
@@ -110,16 +84,14 @@ export const callTicket = async (req, res, next) => {
       return next(error);
     }
 
-    // Send Email when ticket is being called
     await sendEmail({
-      to: user.email,
+      to: ticket.user.email,
       subject: "Your Ticket is Being Served",
-      html: `<h2>Your Ticket is Being Called</h2>
-          <p>Ticket NUmber:<b>${ticket.ticketNumber}</b></p>
-          <p>Please proceed to the counter.</p>`,
+      html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
     });
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Ticket called successfully",
       data: ticket,
     });
@@ -131,13 +103,9 @@ export const callTicket = async (req, res, next) => {
 export const completeTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const ticket = await Ticket.findByIdAndUpdate(
       id,
-      {
-        status: "completed",
-        completedAt: new Date(),
-      },
+      { status: "completed", completedAt: new Date() },
       { new: true },
     );
 
@@ -147,7 +115,8 @@ export const completeTicket = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Ticket completed successfully",
       data: ticket,
     });
@@ -159,12 +128,9 @@ export const completeTicket = async (req, res, next) => {
 export const skipTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const ticket = await Ticket.findByIdAndUpdate(
       id,
-      {
-        status: "skipped",
-      },
+      { status: "skipped" },
       { new: true },
     );
 
@@ -174,7 +140,8 @@ export const skipTicket = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Ticket skipped",
       data: ticket,
     });
@@ -186,13 +153,9 @@ export const skipTicket = async (req, res, next) => {
 export const cancelTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const ticket = await Ticket.findByIdAndUpdate(
       id,
-      {
-        status: "cancelled",
-        cancelledAt: new Date(),
-      },
+      { status: "cancelled", cancelledAt: new Date() },
       { new: true },
     );
 
@@ -202,7 +165,8 @@ export const cancelTicket = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Ticket cancelled successfully",
       data: ticket,
     });

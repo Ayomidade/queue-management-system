@@ -1,14 +1,14 @@
 import { body } from "express-validator";
 
 export const createStaffValidator = [
-    body("name")
+  body("name")
     .trim()
     .notEmpty()
     .withMessage("Staff name is required")
     .isLength({ min: 2, max: 100 })
     .withMessage("Name must be between 2 and 100 characters"),
 
-    body("email")
+  body("email")
     .trim()
     .notEmpty()
     .withMessage("Email is required")
@@ -16,21 +16,18 @@ export const createStaffValidator = [
     .withMessage("Please provide a valid email")
     .normalizeEmail(),
 
-    body("password")
+  body("password")
     .notEmpty()
     .withMessage("Password is required")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters"),
 
-    body("role")
+  body("role")
     .optional()
-    .isIn(["admin", "staff"])
-    .withMessage("Role must be either admin or staff"),
+    .isIn(["staff", "manager"])
+    .withMessage("Role must be either staff or manager"),
 
-    body("branch")
-    .optional()
-    .isMongoId()
-    .withMessage("Invalid branch ID"),
+  body("branch").optional().isMongoId().withMessage("Invalid branch ID"),
 ];
 
 export const assignStaffValidator = [

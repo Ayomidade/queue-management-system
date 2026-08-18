@@ -1,15 +1,11 @@
 import Staff from "../models/staff.model.js";
-import { validationResult } from "express-validator";
+import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/email.service.js";
+import { sendSuccess, sendError } from "../utils/response.js";
 
 export const createStaff = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: errors.array() });
-    }
-
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, branch } = req.body;
 
     const existingStaff = await Staff.findOne({ email });
     if (existingStaff) {
@@ -18,26 +14,79 @@ export const createStaff = async (req, res, next) => {
       return next(error);
     }
 
-    const staff = await Staff.create({ name, email, password, role });
+    const staff = await Staff.create({ name, email, password, role, branch });
 
-    // Send Email to newly created staff account
     await sendEmail({
       to: staff.email,
       subject: "Staff Account Created",
       html: `<h2>Welcome to the Queue System</h2>
       <p>Your staff account has been created.</p>
-      <p><b>Email:</b>${staff.email}</p>
-      <p><b>Role:</b>${staff.role}</p>`,
+      <p><b>Email:</b> ${staff.email}</p>
+      <p><b>Role:</b> ${staff.role}</p>`,
     });
 
-    res.status(201).json({
+    return sendSuccess(res, {
+      statusCode: 201,
       message: "Staff account created successfully",
       data: {
-        _id: staff._id,
+        id: staff._id,
         name: staff.name,
         email: staff.email,
         role: staff.role,
-        // branch: staff.branch,
+        branch: staff.branch,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const loginStaff = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Email and password are required",
+      });
+    }
+
+    const staff = await Staff.findOne({ email }).select("+password");
+    if (!staff || !staff.isActive) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Invalid credentials",
+      });
+    }
+
+    const isMatch = await staff.comparePassword(password);
+    if (!isMatch) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = jwt.sign(
+      { id: staff._id, role: staff.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" },
+    );
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Login successful",
+      data: {
+        staff: {
+          id: staff._id,
+          name: staff.name,
+          email: staff.email,
+          role: staff.role,
+          branch: staff.branch,
+          counter: staff.counter,
+        },
+        token,
       },
     });
   } catch (error) {
@@ -51,14 +100,11 @@ export const getAllStaff = async (req, res, next) => {
       "branch",
       "name location",
     );
-
-    if (!staffs || staffs.length === 0) {
-      const error = new Error("No staff found");
-      error.statusCode = 404;
-      return next(error);
-    }
-
-    res.status(200).json({ data: staffs });
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Staff fetched successfully",
+      data: staffs,
+    });
   } catch (error) {
     next(error);
   }
@@ -66,11 +112,6 @@ export const getAllStaff = async (req, res, next) => {
 
 export const assignStaffToBranch = async (req, res, next) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { branchId } = req.body;
     const { staffId } = req.params;
 
@@ -86,7 +127,8 @@ export const assignStaffToBranch = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({
+    return sendSuccess(res, {
+      statusCode: 200,
       message: "Staff assigned to branch successfully",
       data: staff,
     });
@@ -98,11 +140,10 @@ export const assignStaffToBranch = async (req, res, next) => {
 export const deactivateStaff = async (req, res, next) => {
   try {
     const { staffId } = req.params;
-
     const staff = await Staff.findByIdAndUpdate(
       staffId,
       { isActive: false },
-      { new: false },
+      { new: true },
     );
 
     if (!staff) {
@@ -111,7 +152,10 @@ export const deactivateStaff = async (req, res, next) => {
       return next(error);
     }
 
-    res.status(200).json({ message: "Staff account deactivated successfully" });
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Staff account deactivated successfully",
+    });
   } catch (error) {
     next(error);
   }
