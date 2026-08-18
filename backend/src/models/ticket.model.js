@@ -35,6 +35,18 @@ const ticketSchema = new mongoose.Schema(
       index: true,
     },
 
+    priority: {
+      type: String,
+      enum: ["normal", "priority"],
+      default: "normal",
+    },
+
+    servedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
+    },
+
     calledAt: Date,
     completedAt: Date,
     cancelledAt: Date,
@@ -45,6 +57,7 @@ const ticketSchema = new mongoose.Schema(
 ticketSchema.index({ queue: 1, ticketNumber: 1 }, { unique: true });
 
 ticketSchema.index(
+  { user: 1, queue: 1 },
   {
     unique: true,
     partialFilterExpression: { status: { $in: ["waiting", "called"] } },

@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import { Router } from "express";
 import {
   createTicket,
   getMyTicket,
@@ -6,28 +6,40 @@ import {
   completeTicket,
   skipTicket,
   cancelTicket,
+  recallTicket,
+  setTicketPriority,
 } from "../controllers/ticket.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
 const ticketRouter = Router();
 ticketRouter.use(protect);
 
-// User creates a ticket (joins queue)
 ticketRouter.post("/", authorize("customer"), createTicket);
-
-// User fetches their active ticket
 ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
-
-// Staff calls a ticket
-ticketRouter.patch("/:id/call", authorize("staff"), callTicket);
-
-// Staff completes a ticket
-ticketRouter.patch("/:id/complete", authorize("staff"), completeTicket);
-
-// Staff skips a ticket
-ticketRouter.patch("/:id/skip", authorize("staff"), skipTicket);
-
-// User cancels their ticket
 ticketRouter.patch("/:id/cancel", authorize("customer"), cancelTicket);
+
+ticketRouter.patch(
+  "/:id/call",
+  authorize("staff", "manager", "admin"),
+  callTicket,
+);
+ticketRouter.patch(
+  "/:id/complete",
+  authorize("staff", "manager", "admin"),
+  completeTicket,
+);
+ticketRouter.patch(
+  "/:id/skip",
+  authorize("staff", "manager", "admin"),
+  skipTicket,
+);
+
+// Manager/admin override actions
+ticketRouter.patch("/:id/recall", authorize("manager", "admin"), recallTicket);
+ticketRouter.patch(
+  "/:id/priority",
+  authorize("manager", "admin"),
+  setTicketPriority,
+);
 
 export default ticketRouter;
