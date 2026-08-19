@@ -1,0 +1,35 @@
+.strip {
+  background: var(--paper-raised);
+  padding: 3rem 0;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.value {
+  font-family: var(--font-mono);
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+.label {
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+}
+
+@media (min-width: 760px) {
+  .container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

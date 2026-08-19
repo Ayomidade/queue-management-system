@@ -1,0 +1,53 @@
+.section {
+  padding: 6rem 0;
+  text-align: center;
+}
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+  margin-bottom: 2rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.primaryBtn {
+  padding: 0.9rem 1.75rem;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+.primaryBtn:hover {
+  transform: translateY(-2px);
+}
+
+.ghostBtn {
+  padding: 0.9rem 1.75rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: inset 0 0 0 1px var(--paper-soft);
+}
+.ghostBtn:hover {
+  box-shadow: inset 0 0 0 1px var(--ink);
+}

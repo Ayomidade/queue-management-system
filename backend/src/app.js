@@ -1,5 +1,4 @@
 import express, { json, urlencoded } from "express";
-import routes from "./routes/index.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import notFoundHandler from "./middlewares/notFound.js";
 import auth_router from "./routes/auth.routes.js";

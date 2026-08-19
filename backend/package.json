@@ -23,13 +23,13 @@
   "homepage": "https://github.com/ayomidade/Smart-Queue-Management-System-Backend-API#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.2.1",
-    "express-validator": "^7.3.1",
+    "express-rate-limit": "^8.6.2",
+    "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.3",
-    "nodemailer": "^8.0.3",
+    "mongoose": "^9.9.3",
+    "nodemailer": "^8.0.11",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {

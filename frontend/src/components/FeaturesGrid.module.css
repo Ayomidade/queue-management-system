@@ -1,0 +1,55 @@
+.section {
+  padding: 5rem 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+  max-width: 22ch;
+  margin-bottom: 3rem;
+}
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+.card {
+  padding: 1.75rem;
+  border-radius: 12px;
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+}
+.card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.6rem;
+}
+.card p {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1080px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

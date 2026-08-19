@@ -1,0 +1,64 @@
+.section {
+  padding: 5rem 0;
+}
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+  max-width: 20ch;
+  margin-bottom: 3rem;
+}
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+.card {
+  background: var(--paper-raised);
+  border-radius: 12px;
+  padding: 1.75rem;
+}
+
+.ticketNumber {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--signal);
+  background: var(--ink);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+.card p {
+  color: var(--paper-soft);
+  font-size: 0.95rem;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1080px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
