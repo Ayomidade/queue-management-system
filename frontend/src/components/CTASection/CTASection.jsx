@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import styles from "./CTASection.module.css";
+import { Link } from "react-router-dom";
 
 const CTASection = () => (
   <section className={styles.section}>
@@ -10,7 +11,7 @@ const CTASection = () => (
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
       >
-        № 004 — Your turn
+        № 005 — Your turn
       </motion.p>
       <motion.h2
         className={styles.heading}
@@ -28,8 +29,12 @@ const CTASection = () => (
         viewport={{ once: true }}
         transition={{ delay: 0.2 }}
       >
-        <button className={styles.primaryBtn}>Request a demo</button>
-        <button className={styles.ghostBtn}>Talk to sales</button>
+        <Link to="/contact" className={styles.primaryBtn}>
+          Request a demo
+        </Link>
+        <Link to="/contact" className={styles.ghostBtn}>
+          Talk to sales
+        </Link>
       </motion.div>
     </div>
   </section>

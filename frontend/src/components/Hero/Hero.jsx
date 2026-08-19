@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import KineticHeadline from "./KineticHeadline";
 import SplitFlapBoard from "./SplitFlapBoard";
 import styles from "./Hero.module.css";
+import { Link } from "react-router-dom";
 
 const TICKETS = ["A 042", "B 017", "A 043", "C 005", "A 044"];
 
@@ -49,8 +50,12 @@ const Hero = () => (
           animate="visible"
           variants={fadeUp}
         >
-          <button className={styles.primaryBtn}>Request a demo</button>
-          <button className={styles.ghostBtn}>See it in action</button>
+          <Link to="/contact" className={styles.primaryBtn}>
+            Request a demo
+          </Link>
+          <a href="#how-it-works" className={styles.ghostBtn}>
+            See it in action
+          </a>
         </motion.div>
       </div>
 

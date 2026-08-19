@@ -50,6 +50,9 @@
   font-size: 0.9rem;
   font-weight: 600;
   transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta:hover {

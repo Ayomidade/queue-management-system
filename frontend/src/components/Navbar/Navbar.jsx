@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import styles from "./Navbar.module.css";
+import { Link } from "react-router-dom";
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
 
@@ -10,19 +11,24 @@ const Navbar = () => {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
-        <a href="#top" className={styles.logo}>
+        <Link to="/" className={styles.logo}>
           <span className={styles.mark}>№</span>Cue
-        </a>
+        </Link>
 
         <nav className={styles.nav}>
           {NAV_LINKS.map((link) => (
-            <a key={link} href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}>
+            <Link
+              key={link}
+              to={`/#${link.toLowerCase().replace(/\s+/g, "-")}`}
+            >
               {link}
-            </a>
+            </Link>
           ))}
         </nav>
 
-        <button className={styles.cta}>Request a demo</button>
+        <Link to="/contact" className={styles.cta}>
+          Request a demo
+        </Link>
 
         <button
           className={styles.menuToggle}
@@ -45,15 +51,23 @@ const Navbar = () => {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link}
-                href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}
+                to={`/#${link.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={() => setOpen(false)}
               >
                 {link}
-              </a>
+              </Link>
             ))}
-            <button className={styles.cta}>Request a demo</button>
+
+            {/* FIXED: Turned into a working Router Link that also closes the menu */}
+            <Link
+              to="/contact"
+              className={styles.cta}
+              onClick={() => setOpen(false)}
+            >
+              Request a demo
+            </Link>
           </motion.nav>
         )}
       </AnimatePresence>

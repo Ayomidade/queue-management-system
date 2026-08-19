@@ -1,0 +1,58 @@
+.page {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+}
+
+.container {
+  max-width: 560px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.board {
+  display: flex;
+  justify-content: center;
+}
+
+.ticketWrap {
+  width: min(320px, 80vw);
+}
+
+.heading {
+  font-size: var(--step-3);
+}
+
+.subhead {
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  max-width: 42ch;
+}
+
+.homeBtn {
+  margin-top: 0.5rem;
+  padding: 0.9rem 1.75rem;
+  background: var(--verdigris);
+  color: var(--ink);
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -64,6 +64,9 @@
   font-weight: 700;
   font-size: 0.95rem;
   transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .primaryBtn:hover {
@@ -78,6 +81,9 @@
   color: var(--paper);
   box-shadow: inset 0 0 0 1px var(--ink-line);
   transition: box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ghostBtn:hover {
