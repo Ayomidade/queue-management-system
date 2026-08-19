@@ -1,0 +1,28 @@
+.marquee {
+  background: var(--verdigris);
+  color: var(--ink);
+  overflow: hidden;
+  padding: 0.85rem 0;
+}
+
+.track {
+  display: flex;
+  width: max-content;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-right: 1.5rem;
+  white-space: nowrap;
+}
+
+.dot {
+  font-size: 0.5rem;
+  opacity: 0.6;
+  margin-left: 1.5rem;
+}
