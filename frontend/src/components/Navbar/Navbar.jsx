@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import styles from "./Navbar.module.css";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../features/auth/AuthContext";
+import styles from "./Navbar.module.css";
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { auth, logout } = useAuth();
+  const accountHref = auth?.accountType === "staff" ? "/staff" : "/account";
+  const firstName = auth?.name?.split(" ")[0];
 
   return (
     <header className={styles.header}>
@@ -17,18 +21,33 @@ const Navbar = () => {
 
         <nav className={styles.nav}>
           {NAV_LINKS.map((link) => (
-            <Link
-              key={link}
-              to={`/#${link.toLowerCase().replace(/\s+/g, "-")}`}
-            >
+            <a key={link} href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}>
               {link}
-            </Link>
+            </a>
           ))}
         </nav>
 
-        <Link to="/contact" className={styles.cta}>
-          Request a demo
-        </Link>
+        <div className={styles.authGroup}>
+          {auth ? (
+            <>
+              <Link to={accountHref} className={styles.accountLink}>
+                {firstName}
+              </Link>
+              <button className={styles.cta} onClick={logout}>
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className={styles.loginLink}>
+                Sign in
+              </Link>
+              <Link to="/contact" className={styles.cta}>
+                Request a demo
+              </Link>
+            </>
+          )}
+        </div>
 
         <button
           className={styles.menuToggle}
@@ -51,23 +70,43 @@ const Navbar = () => {
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
             {NAV_LINKS.map((link) => (
-              <Link
+              <a
                 key={link}
-                to={`/#${link.toLowerCase().replace(/\s+/g, "-")}`}
+                href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={() => setOpen(false)}
               >
                 {link}
-              </Link>
+              </a>
             ))}
-
-            {/* FIXED: Turned into a working Router Link that also closes the menu */}
-            <Link
-              to="/contact"
-              className={styles.cta}
-              onClick={() => setOpen(false)}
-            >
-              Request a demo
-            </Link>
+            {auth ? (
+              <>
+                <Link to={accountHref} onClick={() => setOpen(false)}>
+                  {firstName}
+                </Link>
+                <button
+                  className={styles.cta}
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setOpen(false)}>
+                  Sign in
+                </Link>
+                <Link
+                  to="/contact"
+                  className={styles.cta}
+                  onClick={() => setOpen(false)}
+                >
+                  Request a demo
+                </Link>
+              </>
+            )}
           </motion.nav>
         )}
       </AnimatePresence>

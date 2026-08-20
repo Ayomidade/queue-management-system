@@ -1,0 +1,41 @@
+.page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  background: var(--paper);
+  padding: 4rem 1.5rem;
+}
+.container {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.checking {
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+  margin-bottom: 1rem;
+}
+.heading {
+  font-size: var(--step-3);
+  margin-bottom: 1rem;
+}
+.subhead {
+  color: var(--paper-soft);
+  font-size: var(--step-0);
+  margin-bottom: 2rem;
+}
+.logoutBtn {
+  padding: 0.8rem 1.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 100px;
+  font-weight: 600;
+}

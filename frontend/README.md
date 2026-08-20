@@ -51,6 +51,24 @@ Each section of the page owns its own folder: component, styles, and any sub-com
 
 ```
 src/
+  lib/
+      apiClient.js
+    features/
+      auth/
+        AuthContext.jsx
+        authApi.js
+        ProtectedRoute.jsx
+  pages/
+    Login/
+      Login.jsx
+      Login.module.css
+    Register/
+      Register.jsx
+    CustomerHome/
+      CustomerHome.jsx
+      CustomerHome.module.css
+    StaffHome/
+      StaffHome.jsx
   components/
     Navbar/
     Hero/

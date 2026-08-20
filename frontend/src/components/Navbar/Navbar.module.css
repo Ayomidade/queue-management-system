@@ -24,10 +24,9 @@
   font-weight: 700;
   font-size: 1.25rem;
 }
-
 .mark {
   font-family: var(--font-mono);
-  color: var(--signal);
+  color: var(--verdigris);
 }
 
 .nav {
@@ -36,13 +35,27 @@
   font-size: 0.95rem;
   color: var(--paper-soft);
 }
-
 .nav a:hover {
   color: var(--paper-ink);
 }
 
-.cta {
+.authGroup {
   display: none;
+  align-items: center;
+  gap: 1.25rem;
+}
+.loginLink,
+.accountLink {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--paper-ink);
+}
+.loginLink:hover,
+.accountLink:hover {
+  color: var(--verdigris);
+}
+
+.cta {
   padding: 0.65rem 1.25rem;
   background: var(--ink);
   color: var(--paper);
@@ -54,7 +67,6 @@
   align-items: center;
   justify-content: center;
 }
-
 .cta:hover {
   transform: translateY(-1px);
 }
@@ -65,7 +77,6 @@
   gap: 5px;
   padding: 0.5rem;
 }
-
 .bar,
 .barOpen1,
 .barOpen2 {
@@ -74,11 +85,9 @@
   background: var(--paper-ink);
   transition: transform 0.25s ease;
 }
-
 .barOpen1 {
   transform: translateY(3.5px) rotate(45deg);
 }
-
 .barOpen2 {
   transform: translateY(-3.5px) rotate(-45deg);
 }
@@ -91,19 +100,15 @@
   gap: 1rem;
   background: var(--paper);
 }
-
 .mobileNav .cta {
-  display: inline-flex;
   align-self: flex-start;
 }
 
 @media (min-width: 860px) {
-
   .nav,
-  .cta {
+  .authGroup {
     display: flex;
   }
-
   .menuToggle {
     display: none;
   }

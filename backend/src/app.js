@@ -11,8 +11,15 @@ import counter_router from "./routes/counter.routes.js";
 import ticketRouter from "./routes/ticket.routes.js";
 import analyticsRouter from "./routes/analytics.routes.js";
 import { sendSuccess } from "./utils/response.js";
+import cors from "cors";
 
 const app = express();
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 // Body parser middleware
 app.use(express.json());
