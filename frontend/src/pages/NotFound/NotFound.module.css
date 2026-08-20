@@ -1,22 +1,90 @@
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   background: var(--ink);
   color: var(--paper);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4rem 1.5rem;
+  padding: 2rem 1.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
+/* ─── Film grain overlay ─── */
+.grain {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.5s steps(1) infinite;
+}
+
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-5%, -10%);
+  }
+  20% {
+    transform: translate(-15%, 5%);
+  }
+  30% {
+    transform: translate(7%, -15%);
+  }
+  40% {
+    transform: translate(-5%, 15%);
+  }
+  50% {
+    transform: translate(-15%, 10%);
+  }
+  60% {
+    transform: translate(15%, 0);
+  }
+  70% {
+    transform: translate(0, 10%);
+  }
+  80% {
+    transform: translate(3%, 15%);
+  }
+  90% {
+    transform: translate(-10%, 10%);
+  }
+}
+
+/* ─── Vignette ─── */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(16, 31, 23, 0.7) 100%
+  );
+}
+
+/* ─── Container ─── */
 .container {
+  position: relative;
+  z-index: 2;
   max-width: 560px;
+  width: 100%;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.2rem;
 }
 
+/* ─── Eyebrow ─── */
 .eyebrow {
   font-family: var(--font-mono);
   color: var(--brass);
@@ -25,34 +93,221 @@
   text-transform: uppercase;
 }
 
+/* ─── Board ─── */
 .board {
   display: flex;
   justify-content: center;
 }
 
-.ticketWrap {
-  width: min(320px, 80vw);
+/* ─── Chromatic aberration 404 ─── */
+.chromaticWrap {
+  position: relative;
+  margin: -0.5rem 0;
 }
 
+.chromatic {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  user-select: none;
+}
+
+.chromaticLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cyLayer {
+  color: rgba(0, 216, 255, 0.25);
+  animation: chromaticShift 4s ease-in-out infinite;
+}
+
+.mgLayer {
+  color: rgba(193, 67, 43, 0.2);
+  animation: chromaticShift 4s ease-in-out infinite reverse;
+}
+
+.mainLayer {
+  color: var(--paper);
+  position: relative;
+  text-shadow:
+    0 0 40px rgba(79, 163, 123, 0.3),
+    0 0 80px rgba(79, 163, 123, 0.1);
+}
+
+@keyframes chromaticShift {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(2px, -1px);
+  }
+  50% {
+    transform: translate(-1px, 2px);
+  }
+  75% {
+    transform: translate(1px, 1px);
+  }
+}
+
+/* ─── Ticket ─── */
+.ticketWrap {
+  width: min(280px, 70vw);
+  filter: drop-shadow(0 8px 32px rgba(79, 163, 123, 0.08));
+}
+
+/* ─── Heading ─── */
 .heading {
   font-size: var(--step-3);
+  letter-spacing: -0.02em;
 }
 
+/* ─── Subhead ─── */
 .subhead {
   color: var(--ink-soft);
   font-size: var(--step-0);
   max-width: 42ch;
+  line-height: 1.6;
+}
+
+/* ─── Button ─── */
+.btnWrap {
+  margin-top: 0.5rem;
 }
 
 .homeBtn {
-  margin-top: 0.5rem;
-  padding: 0.9rem 1.75rem;
+  padding: 1.2rem 3rem;
   background: var(--verdigris);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.3s ease;
+}
+
+.btnInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.homeBtn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+}
+
+.homeBtn:hover {
+  box-shadow:
+    0 0 24px rgba(79, 163, 123, 0.35),
+    0 0 64px rgba(79, 163, 123, 0.15);
+}
+
+.btnText {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.btnArrow {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  font-size: 1.2em;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.homeBtn:hover .btnArrow {
+  transform: translateX(4px);
+}
+
+/* ─── Bottom decorative line ─── */
+.bottomLine {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--verdigris),
+    transparent
+  );
+  margin-top: 0.5rem;
+}
+
+/* ─── Floating glitch characters ─── */
+.glitchChars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.floatingChar {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: clamp(5rem, 15vw, 14rem);
+  font-weight: 900;
+  color: var(--paper);
+  user-select: none;
+  line-height: 1;
+  will-change: transform, opacity;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .grain {
+    animation: none;
+    opacity: 0.02;
+  }
+
+  .cyLayer,
+  .mgLayer {
+    animation: none;
+    transform: translate(2px, -1px);
+  }
+
+  .floatingChar {
+    animation: none;
+    display: none;
+  }
+
+  .homeBtn:hover .btnArrow {
+    transform: none;
+  }
+}
+
+/* ─── Small screens ─── */
+@media (max-height: 640px) {
+  .container {
+    gap: 0.8rem;
+  }
+
+  .ticketWrap {
+    width: min(200px, 55vw);
+  }
+
+  .heading {
+    font-size: var(--step-2);
+  }
 }

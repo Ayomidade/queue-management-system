@@ -12,8 +12,8 @@ const MagneticButton = ({ children, ...props }) => {
   const handleMove = (e) => {
     if (prefersReducedMotion()) return;
     const rect = ref.current.getBoundingClientRect();
-    x.set((e.clientX - rect.left - rect.width / 2) * 0.35);
-    y.set((e.clientY - rect.top - rect.height / 2) * 0.35);
+    x.set((e.clientX - rect.left - rect.width / 2) * 0.4);
+    y.set((e.clientY - rect.top - rect.height / 2) * 0.4);
   };
 
   const handleLeave = () => {
