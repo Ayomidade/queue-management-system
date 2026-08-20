@@ -10,6 +10,7 @@ import queue_router from "./routes/queue.routes.js";
 import counter_router from "./routes/counter.routes.js";
 import ticketRouter from "./routes/ticket.routes.js";
 import analyticsRouter from "./routes/analytics.routes.js";
+import boardRouter from "./routes/board.routes.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 
@@ -49,6 +50,7 @@ app.use("/api/queues", queue_router);
 app.use("/api/counters", counter_router);
 app.use("/api/tickets", ticketRouter);
 app.use("/api/analytics", analyticsRouter);
+app.use("/api/board", boardRouter);
 
 // error handling middleware
 app.use(notFoundHandler);

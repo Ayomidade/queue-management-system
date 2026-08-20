@@ -9,6 +9,7 @@ import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import CustomerHome from "./pages/CustomerHome/CustomerHome";
 import StaffHome from "./pages/StaffHome/StaffHome";
+import Board from "./pages/Board/Board";
 import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/board/:branchId" element={<Board />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
