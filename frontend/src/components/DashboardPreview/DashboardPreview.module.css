@@ -1,0 +1,171 @@
+.section {
+  padding: 5rem 0;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+  max-width: 20ch;
+  margin-bottom: 0.75rem;
+}
+
+.subhead {
+  color: var(--paper-soft);
+  max-width: 50ch;
+  margin-bottom: 2.5rem;
+  font-size: var(--step-0);
+}
+
+.panel {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  margin-bottom: 1.5rem;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--signal);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tile {
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tileValue {
+  font-family: var(--font-mono);
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--verdigris);
+}
+
+.tileLabel {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.columns {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+.columns h4 {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 1rem;
+  font-weight: 400;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ink-line);
+  font-size: 0.9rem;
+}
+
+.rowValue {
+  font-family: var(--font-mono);
+  color: var(--brass);
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 5rem 1fr 2rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.barLabel {
+  color: var(--paper);
+}
+
+.barTrack {
+  height: 6px;
+  background: var(--ink-raised);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--verdigris);
+  border-radius: 4px;
+}
+
+.barValue {
+  font-family: var(--font-mono);
+  text-align: right;
+  color: var(--ink-soft);
+}
+
+@media (min-width: 720px) {
+  .tiles {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .columns {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

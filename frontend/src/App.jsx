@@ -1,23 +1,35 @@
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import StatsStrip from "./components/StatsStrip";
-import HowItWorks from "./components/HowItWorks";
-import FeaturesGrid from "./components/FeaturesGrid";
-import CTASection from "./components/CTASection";
-import Footer from "./components/Footer";
-import "./styles/global.css";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar/Navbar";
+import Footer from "./components/Footer/Footer";
+import Landing from "./pages/Landing/Landing";
+import Contact from "./pages/Contact/Contact";
+import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
   return (
-    <div id="top">
-      <Navbar />
-      <Hero />
-      <StatsStrip />
-      <HowItWorks />
-      <FeaturesGrid />
-      <CTASection />
-      <Footer />
-    </div>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <>
+            <Navbar />
+            <Landing />
+            <Footer />
+          </>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <>
+            <Navbar />
+            <Contact />
+            <Footer />
+          </>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 

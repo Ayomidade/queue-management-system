@@ -1,0 +1,110 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--paper);
+  border-bottom: 1px solid var(--paper-raised);
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.mark {
+  font-family: var(--font-mono);
+  color: var(--signal);
+}
+
+.nav {
+  display: none;
+  gap: 2rem;
+  font-size: 0.95rem;
+  color: var(--paper-soft);
+}
+
+.nav a:hover {
+  color: var(--paper-ink);
+}
+
+.cta {
+  display: none;
+  padding: 0.65rem 1.25rem;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+}
+
+.menuToggle {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.5rem;
+}
+
+.bar,
+.barOpen1,
+.barOpen2 {
+  width: 22px;
+  height: 2px;
+  background: var(--paper-ink);
+  transition: transform 0.25s ease;
+}
+
+.barOpen1 {
+  transform: translateY(3.5px) rotate(45deg);
+}
+
+.barOpen2 {
+  transform: translateY(-3.5px) rotate(-45deg);
+}
+
+.mobileNav {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1.5rem 1.5rem;
+  gap: 1rem;
+  background: var(--paper);
+}
+
+.mobileNav .cta {
+  display: inline-flex;
+  align-self: flex-start;
+}
+
+@media (min-width: 860px) {
+
+  .nav,
+  .cta {
+    display: flex;
+  }
+
+  .menuToggle {
+    display: none;
+  }
+}
