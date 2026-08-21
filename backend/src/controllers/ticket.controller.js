@@ -4,6 +4,7 @@ import { sendEmail } from "../services/email.service.js";
 import User from "../models/user.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { emitToBranch, emitToUser } from "../socket.js";
+import mongoose from "mongoose";
 
 export const createTicket = async (req, res, next) => {
   try {
@@ -473,6 +474,41 @@ export const getMyStats = async (req, res, next) => {
       statusCode: 200,
       message: "Stats fetched successfully",
       data: { ticketsServedToday },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBranchTickets = async (req, res, next) => {
+  try {
+    const { branchId } = req.params;
+    const { status } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(branchId)) {
+      return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
+    }
+
+    if (req.role === "manager" && String(req.user.branch) !== branchId) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "You can only view tickets for your own branch",
+      });
+    }
+
+    const filter = { branch: branchId };
+    if (status) filter.status = status;
+
+    const tickets = await Ticket.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate("queue", "serviceName")
+      .populate("user", "email");
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Branch tickets fetched successfully",
+      data: tickets,
     });
   } catch (error) {
     next(error);

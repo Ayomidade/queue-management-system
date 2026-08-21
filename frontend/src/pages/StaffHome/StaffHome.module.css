@@ -5,7 +5,7 @@
 }
 
 .container {
-  max-width: 640px;
+  max-width: 780px;
   margin: 0 auto;
 }
 
@@ -187,7 +187,9 @@
   border-radius: 100px;
   font-weight: 700;
   font-size: 0.9rem;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .completeBtn {
@@ -244,7 +246,9 @@
   border-radius: 100px;
   font-weight: 700;
   font-size: 0.95rem;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .callBtn:hover {

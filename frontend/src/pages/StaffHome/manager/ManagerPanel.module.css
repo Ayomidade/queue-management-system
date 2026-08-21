@@ -1,0 +1,243 @@
+.panel {
+  margin-top: 2rem;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--paper-raised);
+  border-radius: 100px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+.tab,
+.tabActive {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.tab {
+  color: var(--paper-soft);
+}
+.tabActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.tabContent {
+  background: var(--paper-raised);
+  border-radius: 16px;
+  padding: 1.75rem;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+.tile {
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.tileValue {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+.tileLabel {
+  font-size: 0.75rem;
+  color: var(--paper-soft);
+}
+
+.subHeading {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-soft);
+  margin: 1.5rem 0 0.75rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--paper);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.rowSub {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+}
+.rowValue {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status {
+  color: var(--paper-soft);
+  font-size: 0.9rem;
+}
+.statusError {
+  color: var(--signal);
+  font-size: 0.85rem;
+  background: rgba(193, 67, 43, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.linkBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--verdigris);
+}
+.linkBtn:hover {
+  text-decoration: underline;
+}
+
+.badgeOpen,
+.badgeClosed {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+}
+.badgeOpen {
+  background: var(--verdigris);
+  color: var(--ink);
+}
+.badgeClosed {
+  background: var(--paper);
+  color: var(--paper-soft);
+}
+
+.priorityBadge {
+  background: var(--signal);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.inlineForm input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  flex: 1;
+  min-width: 160px;
+}
+.inlineForm input:focus {
+  outline: 2px solid var(--verdigris);
+  outline-offset: 1px;
+}
+
+.inlineSelect {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+}
+
+.submitBtn {
+  padding: 0.7rem 1.25rem;
+  background: var(--verdigris);
+  color: var(--ink);
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.submitBtn:hover {
+  transform: translateY(-2px);
+}
+.submitBtn:disabled {
+  opacity: 0.6;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.subTabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--paper);
+}
+.subTab,
+.subTabActive {
+  padding: 0.6rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+}
+.subTab {
+  color: var(--paper-soft);
+}
+.subTabActive {
+  color: var(--ink);
+  border-bottom-color: var(--verdigris);
+}
+
+.branchPicker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+}
+.branchPicker select {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+}

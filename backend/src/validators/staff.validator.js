@@ -31,11 +31,9 @@ export const createStaffValidator = [
 ];
 
 export const assignStaffValidator = [
-    body("branchId")
+  body("branchId")
     .notEmpty()
     .withMessage("Branch ID is required")
     .isMongoId()
     .withMessage("Invalid branch ID"),
 ];
-
-
