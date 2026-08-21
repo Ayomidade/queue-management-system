@@ -455,3 +455,26 @@ export const setTicketPriority = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getMyStats = async (req, res, next) => {
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const ticketsServedToday = await Ticket.countDocuments({
+      servedBy: req.user.id,
+      status: "completed",
+      completedAt: { $gte: start, $lte: end },
+    });
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Stats fetched successfully",
+      data: { ticketsServedToday },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

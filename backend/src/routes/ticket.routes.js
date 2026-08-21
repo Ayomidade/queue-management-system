@@ -9,6 +9,7 @@ import {
   cancelTicket,
   recallTicket,
   setTicketPriority,
+  getMyStats,
 } from "../controllers/ticket.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
@@ -17,7 +18,14 @@ ticketRouter.use(protect);
 
 ticketRouter.post("/", authorize("customer"), createTicket);
 ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
+ticketRouter.get(
+  "/my-stats",
+  authorize("staff", "manager", "admin"),
+  getMyStats,
+);
 ticketRouter.patch("/:id/cancel", authorize("customer"), cancelTicket);
+
+// ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
 
 ticketRouter.post(
   "/call-next",
