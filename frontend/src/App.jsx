@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./features/auth/AuthContext";
+import { ThemeProvider } from "./features/theme/ThemeContext";
 import ProtectedRoute from "./features/auth/ProtectedRoute";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
@@ -11,10 +12,15 @@ import CustomerHome from "./pages/CustomerHome/CustomerHome";
 import StaffHome from "./pages/StaffHome/StaffHome";
 import Board from "./pages/Board/Board";
 import Branch from "./pages/Branch/Branch";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
+import Settings from "./pages/Settings/Settings";
 import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <Routes>
         <Route
@@ -81,6 +87,48 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute allowedRoles={["customer", "staff", "manager", "admin"]}>
+              <>
+                <Navbar />
+                <Settings />
+                <Footer />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <Navbar />
+              <ForgotPassword />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <>
+              <Navbar />
+              <ResetPassword />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <>
+              <Navbar />
+              <VerifyEmail />
+              <Footer />
+            </>
+          }
+        />
         <Route path="/board/:branchId" element={<Board />} />
         <Route
           path="/branch/:branchId"
@@ -95,6 +143,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

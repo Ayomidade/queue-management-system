@@ -42,6 +42,11 @@ const staffSchema = new mongoose.Schema(
       default: null,
     },
 
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     isActive: {
       type: Boolean,
       default: true,

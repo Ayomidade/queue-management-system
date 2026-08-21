@@ -24,11 +24,11 @@ export const createStaff = async (req, res, next) => {
 
     const staff = await Staff.create({ name, email, password, role, branch });
 
-    // await sendEmail({
-    //   to: staff.email,
-    //   subject: "Staff Account Created",
-    //   html: `<h2>Welcome to the Queue System</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p><b>Branch:</b> ${staff.branch}</p><p>Please log in and change your password.</p>`,
-    // });
+    await sendEmail({
+      to: staff.email,
+      subject: "Your Cue Staff Account is Ready",
+      html: `<h2>Welcome to Cue</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p>Please log in and change your password.</p>`,
+    }).catch(() => {});
 
     return sendSuccess(res, {
       statusCode: 201,
@@ -90,6 +90,7 @@ export const loginStaff = async (req, res, next) => {
           role: staff.role,
           branch: staff.branch,
           counter: staff.counter,
+          isEmailVerified: staff.isEmailVerified,
         },
         token,
       },

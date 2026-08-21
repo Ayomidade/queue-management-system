@@ -1,30 +1,36 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-dotenv.config();
+import { Resend } from "resend";
+import { config } from "dotenv";
 
-// Create transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+config();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Function to send email
+const FROM = process.env.RESEND_FROM || "Cue <onboarding@resend.dev>";
+
+/**
+ * Send an email via Resend.
+ * @param {Object} opts
+ * @param {string} opts.to      - recipient email
+ * @param {string} opts.subject - email subject
+ * @param {string} opts.html    - HTML body
+ */
 export const sendEmail = async ({ to, subject, html }) => {
   try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM,
-      to,
+    const { data, error } = await resend.emails.send({
+      from: FROM,
+      to: [to],
       subject,
       html,
     });
-    console.log("Email sent:", info.messageId);
+
+    if (error) {
+      console.error("Resend error:", error.message);
+      throw new Error(error.message);
+    }
+
+    console.log("Email sent:", data?.id);
+    return data;
   } catch (error) {
-    console.error("Email failed:", error);
+    console.error("Email failed:", error.message);
     throw error;
   }
 };

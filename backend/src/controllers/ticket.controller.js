@@ -30,11 +30,11 @@ export const createTicket = async (req, res, next) => {
       ticketNumber: queue.lastTicketNumber,
     });
 
-    // await sendEmail({
-    //   to: user.email,
-    //   subject: "Your Queue Ticket",
-    //   html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
-    // });
+    sendEmail({
+      to: user.email,
+      subject: `Your Ticket #${ticket.ticketNumber} is Confirmed`,
+      html: `<h2>Ticket Confirmed</h2><p>Your queue ticket has been created.</p><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>We'll notify you when it's your turn.</p>`,
+    }).catch(() => {});
 
     emitToBranch(branchId, "queue:updated", {
       queueId,
@@ -212,11 +212,11 @@ export const callNextTicket = async (req, res, next) => {
 
     await ticket.populate("user", "email");
 
-    // await sendEmail({
-    //   to: ticket.user.email,
-    //   subject: "Your Ticket is Being Served",
-    //   html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
-    // });
+    sendEmail({
+      to: ticket.user.email,
+      subject: `Ticket #${ticket.ticketNumber} — Please Proceed`,
+      html: `<h2>Your Ticket is Being Called</h2><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>Please proceed to the counter now.</p>`,
+    }).catch(() => {});
 
     notifyTicketChange(ticket, "ticket:called");
 
@@ -256,11 +256,11 @@ export const callTicket = async (req, res, next) => {
     await ticket.save();
     await ticket.populate("user", "email");
 
-    // await sendEmail({
-    //   to: ticket.user.email,
-    //   subject: "Your Ticket is Being Served",
-    //   html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
-    // });
+    sendEmail({
+      to: ticket.user.email,
+      subject: `Ticket #${ticket.ticketNumber} — Please Proceed`,
+      html: `<h2>Your Ticket is Being Called</h2><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>Please proceed to the counter now.</p>`,
+    }).catch(() => {});
 
     notifyTicketChange(ticket, "ticket:called");
 

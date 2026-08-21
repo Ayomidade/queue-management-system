@@ -1,0 +1,26 @@
+.bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--verdigris);
+  opacity: 0.15;
+  filter: blur(60px);
+  will-change: transform, opacity;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--paper-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-soft) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.04;
+}

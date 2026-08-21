@@ -1,5 +1,12 @@
 import { Router } from "express";
-import { loginUser, registerUser } from "../controllers/auth.controller.js";
+import {
+  loginUser,
+  registerUser,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword,
+} from "../controllers/auth.controller.js";
 import { validateRegistration } from "../validators/auth.validator.js";
 import validate from "../middlewares/validate.js";
 import { authLimiter } from "../middlewares/rateLimiter.js";
@@ -14,4 +21,9 @@ auth_router.post(
   registerUser,
 );
 auth_router.post("/login", authLimiter, loginUser);
+auth_router.post("/verify-email", verifyEmail);
+auth_router.post("/resend-verification", resendVerification);
+auth_router.post("/forgot-password", authLimiter, forgotPassword);
+auth_router.post("/reset-password", resetPassword);
+
 export default auth_router;

@@ -12,6 +12,28 @@
   --ink-soft: #8fa89b;
   --paper-ink: #171510;
   --paper-soft: #6e6650;
+  --surface: var(--paper);
+  --surface-raised: var(--paper-raised);
+  --text-primary: var(--paper-ink);
+  --text-muted: var(--paper-soft);
+}
+
+[data-theme="dark"] {
+  --ink: #e8e0d0;
+  --ink-raised: #d4c9b5;
+  --ink-line: #bfb39e;
+  --paper: #1a1a1f;
+  --paper-raised: #242429;
+  --verdigris: #5bb88a;
+  --brass: #d4b030;
+  --signal: #e05a3f;
+  --ink-soft: #a09888;
+  --paper-ink: #f0ead8;
+  --paper-soft: #9a9285;
+  --surface: var(--paper);
+  --surface-raised: var(--paper-raised);
+  --text-primary: var(--paper-ink);
+  --text-muted: var(--paper-soft);
 
   --font-display: "Fraunces", serif;
   --font-mono: "IBM Plex Mono", monospace;

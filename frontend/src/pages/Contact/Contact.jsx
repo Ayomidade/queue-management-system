@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SplitFlapBoard from "../../components/Hero/SplitFlapBoard";
+import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import styles from "./Contact.module.css";
 
 const NEXT_STEPS = [
@@ -44,6 +45,7 @@ const Contact = () => {
 
   return (
     <section className={styles.page}>
+      <MotionBackground />
       <div className={styles.container}>
         <div className={styles.intro}>
           <motion.p

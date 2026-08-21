@@ -1,12 +1,2 @@
-// import nodemailer from "nodemailer";
-
-// const transporter = nodemailer.createTransport({
-//   host: process.env.SMTP_HOST,
-//   port: process.env.SMTP_PORT,
-//   auth: {
-//     user: process.env.SMTP_USER,
-//     pass: process.env.SMTP_PASS,
-//   },
-// });
-
-// export default transporter;
+// Email is now handled by Resend via ../services/email.service.js
+// See RESEND_API_KEY and RESEND_FROM in .env

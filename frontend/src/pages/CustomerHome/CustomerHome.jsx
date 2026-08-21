@@ -1,8 +1,21 @@
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useMyTicket } from "../../features/tickets/useMyTicket";
 import CreateTicketFlow from "./CreateTicketFlow";
 import ActiveTicketView from "./ActiveTicketView";
+import ChangePassword from "../../components/ChangePassword/ChangePassword";
+import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import styles from "./CustomerHome.module.css";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] },
+  }),
+};
 
 const CustomerHome = () => {
   const { auth, logout } = useAuth();
@@ -10,23 +23,53 @@ const CustomerHome = () => {
 
   return (
     <section className={styles.page}>
+      <MotionBackground />
       <div className={styles.container}>
-        <div className={styles.headerRow}>
+        <motion.div
+          className={styles.headerRow}
+          initial="hidden"
+          animate="visible"
+        >
           <div>
-            <p className={styles.eyebrow}>№ 009 — Your account</p>
-            <h1 className={styles.heading}>
+            <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
+              № 009 — Your account
+            </motion.p>
+            <motion.h1 className={styles.heading} custom={1} variants={fadeUp}>
               Welcome back, {auth.name.split(" ")[0]}.
-            </h1>
+            </motion.h1>
           </div>
-          <button className={styles.logoutBtn} onClick={logout}>
-            Sign out
-          </button>
-        </div>
+          <motion.div
+            className={styles.headerActions}
+            custom={2}
+            variants={fadeUp}
+          >
+            <Link to="/settings" className={styles.settingsLink}>
+              Settings
+            </Link>
+            <button className={styles.logoutBtn} onClick={logout}>
+              Sign out
+            </button>
+          </motion.div>
+        </motion.div>
 
         {loading && (
-          <p className={styles.status}>Checking for an active ticket…</p>
+          <motion.p
+            className={styles.status}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            Checking for an active ticket…
+          </motion.p>
         )}
-        {error && <p className={styles.statusError}>{error}</p>}
+        {error && (
+          <motion.p
+            className={styles.statusError}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {error}
+          </motion.p>
+        )}
 
         {!loading &&
           !error &&
@@ -35,6 +78,14 @@ const CustomerHome = () => {
           ) : (
             <CreateTicketFlow onCreated={refetch} />
           ))}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <ChangePassword />
+        </motion.div>
       </div>
     </section>
   );

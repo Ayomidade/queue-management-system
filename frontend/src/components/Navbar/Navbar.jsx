@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useTheme } from "../../features/theme/ThemeContext";
 import styles from "./Navbar.module.css";
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
@@ -9,6 +10,7 @@ const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const { auth, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const accountHref = auth?.accountType === "staff" ? "/staff" : "/account";
   const firstName = auth?.name?.split(" ")[0];
 
@@ -26,6 +28,14 @@ const Navbar = () => {
             </a>
           ))}
         </nav>
+
+        <button
+          className={styles.themeToggle}
+          onClick={toggleTheme}
+          aria-label="Toggle dark mode"
+        >
+          {theme === "dark" ? "☀" : "☾"}
+        </button>
 
         <div className={styles.authGroup}>
           {auth ? (

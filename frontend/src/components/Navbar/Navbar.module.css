@@ -71,6 +71,17 @@
   transform: translateY(-1px);
 }
 
+.themeToggle {
+  font-size: 1.1rem;
+  padding: 0.4rem;
+  border-radius: 8px;
+  color: var(--paper-soft);
+  transition: color 0.2s ease;
+}
+.themeToggle:hover {
+  color: var(--verdigris);
+}
+
 .menuToggle {
   display: flex;
   flex-direction: column;

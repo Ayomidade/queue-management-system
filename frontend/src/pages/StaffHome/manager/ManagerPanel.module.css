@@ -241,3 +241,60 @@
   border: 1px solid var(--paper-soft);
   background: var(--paper);
 }
+
+/* ── Mobile responsive ──────────────────────── */
+@media (max-width: 640px) {
+  .tabContent {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
+
+  .tileGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .tile {
+    padding: 0.9rem;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .rowActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .inlineForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inlineForm input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .inlineSelect {
+    width: 100%;
+  }
+
+  .submitBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .branchPicker {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .branchPicker select {
+    width: 100%;
+  }
+}

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
 import { ApiError } from "../../lib/apiClient";
+import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import styles from "./Login.module.css";
 
 const fadeUp = {
@@ -49,6 +50,7 @@ const Login = () => {
 
   return (
     <section className={styles.page}>
+      <MotionBackground />
       <div className={styles.container}>
         <motion.div initial="hidden" animate="visible">
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
@@ -122,6 +124,12 @@ const Login = () => {
                 placeholder="••••••••"
               />
             </label>
+
+            <div style={{ textAlign: "right", marginTop: "-0.5rem" }}>
+              <Link to="/forgot-password" style={{ fontSize: "0.8rem", color: "var(--verdigris)", textDecoration: "none" }}>
+                Forgot password?
+              </Link>
+            </div>
 
             {error && <p className={styles.error}>{error}</p>}
 
