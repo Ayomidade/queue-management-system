@@ -2,6 +2,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { useMyCounter } from "../../features/staff/useMyCounter";
 import { useMyStats } from "../../features/staff/useMyStats";
 import CounterConsole from "./CounterConsole";
+import TicketHistory from "./TicketHistory";
 import ManagerPanel from "./manager/ManagerPanel";
 import AdminPanel from "./admin/AdminPanel";
 import styles from "./StaffHome.module.css";
@@ -39,6 +40,8 @@ const StaffHome = () => {
         </div>
 
         <CounterConsole counterState={counterState} onServed={refetchStats} />
+
+        {auth.role !== "admin" && <TicketHistory />}
 
         {auth.role === "manager" && <ManagerPanel />}
         {auth.role === "admin" && <AdminPanel />}

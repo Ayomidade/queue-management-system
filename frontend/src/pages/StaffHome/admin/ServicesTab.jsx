@@ -43,7 +43,7 @@ const ServicesTab = ({ branches }) => {
         err instanceof ApiError
           ? err.errors?.join(", ") || err.message
           : "Couldn't create service.",
-      );I
+      );
     } finally {
       setSubmitting(false);
     }

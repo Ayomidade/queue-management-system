@@ -24,11 +24,11 @@ export const createStaff = async (req, res, next) => {
 
     const staff = await Staff.create({ name, email, password, role, branch });
 
-    await sendEmail({
-      to: staff.email,
-      subject: "Staff Account Created",
-      html: `<h2>Welcome to the Queue System</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p><b>Branch:</b> ${staff.branch}</p><p>Please log in and change your password.</p>`,
-    });
+    // await sendEmail({
+    //   to: staff.email,
+    //   subject: "Staff Account Created",
+    //   html: `<h2>Welcome to the Queue System</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p><b>Branch:</b> ${staff.branch}</p><p>Please log in and change your password.</p>`,
+    // });
 
     return sendSuccess(res, {
       statusCode: 201,

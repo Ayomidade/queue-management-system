@@ -10,6 +10,7 @@ import Register from "./pages/Register/Register";
 import CustomerHome from "./pages/CustomerHome/CustomerHome";
 import StaffHome from "./pages/StaffHome/StaffHome";
 import Board from "./pages/Board/Board";
+import Branch from "./pages/Branch/Branch";
 import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
@@ -81,6 +82,16 @@ function App() {
           }
         />
         <Route path="/board/:branchId" element={<Board />} />
+        <Route
+          path="/branch/:branchId"
+          element={
+            <>
+              <Navbar />
+              <Branch />
+              <Footer />
+            </>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>

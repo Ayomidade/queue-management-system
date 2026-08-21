@@ -30,11 +30,11 @@ export const createTicket = async (req, res, next) => {
       ticketNumber: queue.lastTicketNumber,
     });
 
-    await sendEmail({
-      to: user.email,
-      subject: "Your Queue Ticket",
-      html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
-    });
+    // await sendEmail({
+    //   to: user.email,
+    //   subject: "Your Queue Ticket",
+    //   html: `<h2>Ticket Created</h2><p>Your queue ticket has been created successfully.</p><p>Your ticket number is <b>${ticket.ticketNumber}</b></p>`,
+    // });
 
     emitToBranch(branchId, "queue:updated", {
       queueId,
@@ -212,11 +212,11 @@ export const callNextTicket = async (req, res, next) => {
 
     await ticket.populate("user", "email");
 
-    await sendEmail({
-      to: ticket.user.email,
-      subject: "Your Ticket is Being Served",
-      html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
-    });
+    // await sendEmail({
+    //   to: ticket.user.email,
+    //   subject: "Your Ticket is Being Served",
+    //   html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
+    // });
 
     notifyTicketChange(ticket, "ticket:called");
 
@@ -256,11 +256,11 @@ export const callTicket = async (req, res, next) => {
     await ticket.save();
     await ticket.populate("user", "email");
 
-    await sendEmail({
-      to: ticket.user.email,
-      subject: "Your Ticket is Being Served",
-      html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
-    });
+    // await sendEmail({
+    //   to: ticket.user.email,
+    //   subject: "Your Ticket is Being Served",
+    //   html: `<h2>Your Ticket is Being Called</h2><p>Ticket Number: <b>${ticket.ticketNumber}</b></p><p>Please proceed to the counter.</p>`,
+    // });
 
     notifyTicketChange(ticket, "ticket:called");
 
@@ -474,6 +474,27 @@ export const getMyStats = async (req, res, next) => {
       statusCode: 200,
       message: "Stats fetched successfully",
       data: { ticketsServedToday },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMyRecentTickets = async (req, res, next) => {
+  try {
+    const tickets = await Ticket.find({
+      servedBy: req.user.id,
+      status: { $in: ["completed", "skipped"] },
+    })
+      .sort({ updatedAt: -1 })
+      .limit(20)
+      .populate("queue", "serviceName")
+      .populate("user", "email name");
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Recent tickets fetched successfully",
+      data: tickets,
     });
   } catch (error) {
     next(error);

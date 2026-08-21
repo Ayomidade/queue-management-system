@@ -12,11 +12,11 @@ export const sendWelcomeEmail = async (req, res, next) => {
       });
     }
 
-    await sendEmail({
-      to: email,
-      subject: "Welcome to the Smart Queue System!",
-      html: `<p>Hello <strong>${name}</strong>, welcome to the Smart Queue System!</p>`,
-    });
+    // await sendEmail({
+    //   to: email,
+    //   subject: "Welcome to the Smart Queue System!",
+    //   html: `<p>Hello <strong>${name}</strong>, welcome to the Smart Queue System!</p>`,
+    // });
 
     return sendSuccess(res, {
       statusCode: 200,

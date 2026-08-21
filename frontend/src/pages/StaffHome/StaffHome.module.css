@@ -260,3 +260,90 @@
   transform: none;
   cursor: not-allowed;
 }
+
+/* ── Ticket History ─────────────────────────── */
+.historySection {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--paper);
+}
+
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-soft);
+  margin-bottom: 1rem;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--paper);
+  flex-wrap: wrap;
+}
+
+.historyLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ticketNum {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.historyMeta {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+}
+
+.historyRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badgeCompleted,
+.badgeSkipped {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+}
+
+.badgeCompleted {
+  background: var(--verdigris);
+  color: var(--ink);
+}
+
+.badgeSkipped {
+  background: var(--ink);
+  color: var(--paper-soft);
+}
+
+.recallBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--verdigris);
+  transition: text-decoration 0.15s ease;
+}
+
+.recallBtn:hover {
+  text-decoration: underline;
+}

@@ -10,6 +10,8 @@ import {
   recallTicket,
   setTicketPriority,
   getMyStats,
+  getMyRecentTickets,
+  getBranchTickets,
 } from "../controllers/ticket.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
@@ -48,8 +50,25 @@ ticketRouter.patch(
   skipTicket,
 );
 
-// Manager/admin override actions
-ticketRouter.patch("/:id/recall", authorize("manager", "admin"), recallTicket);
+// Manager/admin branch tickets
+ticketRouter.get(
+  "/branch/:branchId",
+  authorize("manager", "admin"),
+  getBranchTickets,
+);
+
+// Staff/manager/admin recall a skipped ticket
+ticketRouter.patch(
+  "/:id/recall",
+  authorize("staff", "manager", "admin"),
+  recallTicket,
+);
+
+ticketRouter.get(
+  "/my-history",
+  authorize("staff", "manager", "admin"),
+  getMyRecentTickets,
+);
 ticketRouter.patch(
   "/:id/priority",
   authorize("manager", "admin"),
