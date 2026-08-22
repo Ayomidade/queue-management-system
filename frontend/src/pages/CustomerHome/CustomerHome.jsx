@@ -84,7 +84,7 @@ const CustomerHome = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <ChangePassword />
+          {/* <ChangePassword /> */}
         </motion.div>
       </div>
     </section>

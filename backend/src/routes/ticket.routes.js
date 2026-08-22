@@ -27,8 +27,6 @@ ticketRouter.get(
 );
 ticketRouter.patch("/:id/cancel", authorize("customer"), cancelTicket);
 
-// ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
-
 ticketRouter.post(
   "/call-next",
   authorize("staff", "manager", "admin"),

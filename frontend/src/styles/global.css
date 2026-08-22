@@ -16,6 +16,18 @@
   --surface-raised: var(--paper-raised);
   --text-primary: var(--paper-ink);
   --text-muted: var(--paper-soft);
+
+  --font-display: "Fraunces", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --font-body: "IBM Plex Sans", sans-serif;
+
+  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.6rem);
+  --step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
+  --step-3: clamp(2.1rem, 1.7rem + 2vw, 3.4rem);
+  --step-4: clamp(2.6rem, 2rem + 3vw, 4.6rem);
+
+  --container: 1180px;
 }
 
 [data-theme="dark"] {
@@ -34,18 +46,6 @@
   --surface-raised: var(--paper-raised);
   --text-primary: var(--paper-ink);
   --text-muted: var(--paper-soft);
-
-  --font-display: "Fraunces", serif;
-  --font-mono: "IBM Plex Mono", monospace;
-  --font-body: "IBM Plex Sans", sans-serif;
-
-  --step-0: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
-  --step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.6rem);
-  --step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
-  --step-3: clamp(2.1rem, 1.7rem + 2vw, 3.4rem);
-  --step-4: clamp(2.6rem, 2rem + 3vw, 4.6rem);
-
-  --container: 1180px;
 }
 
 * {

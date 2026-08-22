@@ -5,9 +5,9 @@ import {
   useState,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
 import { loginCustomer, loginStaff, registerCustomer } from "./authApi";
 import { registerUnauthorizedHandler } from "../../lib/apiClient";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "cue_auth";
@@ -23,21 +23,11 @@ const readStoredAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(readStoredAuth);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (auth) localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
     else localStorage.removeItem(STORAGE_KEY);
   }, [auth]);
-
-  // A 401 from anywhere in the app means the stored token is no longer good.
-  // Clear it and send the user back to sign in, with a reason they'll understand.
-  useEffect(() => {
-    registerUnauthorizedHandler(() => {
-      setAuth(null);
-      navigate("/login", { replace: true, state: { sessionExpired: true } });
-    });
-  }, [navigate]);
 
   const login = useCallback(async ({ email, password, accountType }) => {
     const response =
@@ -68,8 +58,24 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ auth, login, register, logout }}>
       {children}
+      <AuthInterceptor setAuth={setAuth} />
     </AuthContext.Provider>
   );
+};
+
+const AuthInterceptor = ({ setAuth }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    registerUnauthorizedHandler(() => {
+      setAuth(null);
+      navigate("/login", { replace: true, state: { sessionExpired: true } });
+    });
+
+    return () => registerUnauthorizedHandler(null);
+  }, [navigate, setAuth]);
+
+  return null;
 };
 
 export const useAuth = () => {

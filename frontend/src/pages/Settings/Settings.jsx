@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { apiClient } from "../../lib/apiClient";
 import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
 import EmailVerificationBadge from "../../components/EmailVerificationBadge/EmailVerificationBadge";
@@ -5,10 +7,24 @@ import ChangePassword from "../../components/ChangePassword/ChangePassword";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import styles from "./Settings.module.css";
 
-const ROLE_LABEL = { customer: "Customer", staff: "Staff", manager: "Manager", admin: "Admin" };
+const ROLE_LABEL = {
+  customer: "Customer",
+  staff: "Staff",
+  manager: "Manager",
+  admin: "Admin",
+};
 
 const Settings = () => {
   const { auth } = useAuth();
+  const [branchName, setBranchName] = useState(null);
+
+  useEffect(() => {
+    if (!auth.branch) return;
+    apiClient
+      .get(`/branches/public/${auth.branch}`)
+      .then((res) => setBranchName(res.data.branch.name))
+      .catch(() => {});
+  }, [auth.branch]);
 
   return (
     <section className={styles.page}>
@@ -39,12 +55,16 @@ const Settings = () => {
             </div>
             <div className={styles.profileRow}>
               <span className={styles.profileLabel}>Role</span>
-              <span className={styles.profileValue}>{ROLE_LABEL[auth.role] || auth.role}</span>
+              <span className={styles.profileValue}>
+                {ROLE_LABEL[auth.role] || auth.role}
+              </span>
             </div>
             {auth.branch && (
               <div className={styles.profileRow}>
                 <span className={styles.profileLabel}>Branch</span>
-                <span className={styles.profileValue}>{auth.branch}</span>
+                <span className={styles.profileValue}>
+                  {branchName || auth.branch}
+                </span>
               </div>
             )}
           </div>

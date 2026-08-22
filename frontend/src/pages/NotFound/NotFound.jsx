@@ -70,32 +70,7 @@ const NotFound = () => {
         animate="visible"
       >
         {/* Floating glitch characters in background */}
-        <div className={styles.glitchChars} aria-hidden="true">
-          {/* {["E", "R", "R", "O", "R"].map((char, i) => (
-            <motion.span
-              key={i}
-              className={styles.floatingChar}
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: [0, 0.06, 0.03, 0.08, 0],
-                y: [0, -20, -40],
-                x: [0, (i % 2 === 0 ? 1 : -1) * 8, 0],
-              }}
-              transition={{
-                duration: 4 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.7,
-                ease: "easeOut",
-              }}
-              style={{
-                left: `${15 + i * 15}%`,
-                top: `${30 + (i % 3) * 10}%`,
-              }}
-            >
-              {char}
-            </motion.span>
-          ))} */}
-        </div>
+        <div className={styles.glitchChars} aria-hidden="true" />
 
         <motion.p className={styles.eyebrow} variants={clipUp}>
           № VOID — Wrong window

@@ -22,8 +22,8 @@ auth_router.post(
 );
 auth_router.post("/login", authLimiter, loginUser);
 auth_router.post("/verify-email", verifyEmail);
-auth_router.post("/resend-verification", resendVerification);
+auth_router.post("/resend-verification", authLimiter, resendVerification);
 auth_router.post("/forgot-password", authLimiter, forgotPassword);
-auth_router.post("/reset-password", resetPassword);
+auth_router.post("/reset-password", authLimiter, resetPassword);
 
 export default auth_router;
