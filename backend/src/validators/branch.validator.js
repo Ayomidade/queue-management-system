@@ -6,23 +6,30 @@ export const createBranchValidator = [
     .notEmpty()
     .withMessage("Branch name is required")
     .isLength({ min: 2, max: 100 })
-    .withMessage("Branch name must be betweeen 2 and 100 characters"),
+    .withMessage("Branch name must be between 2 and 100 characters"),
 
     body("location")
     .trim()
     .notEmpty()
     .withMessage("Branch location is required"),
 
+    body("address")
+    .optional()
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage("Address must be under 200 characters"),
+
+    body("phone")
+    .optional()
+    .trim()
+    .isLength({ min: 7, max: 20 })
+    .withMessage("Please provide a valid phone number"),
+
     body("email")
     .optional()
     .isEmail()
     .withMessage("Please provide a valid email")
     .normalizeEmail(),
-
-    body("phone")
-    .optional()
-    .isMobilePhone()
-    .withMessage("Please provide a valid phone number"),
 ];
 
 export const updateBranchValidator = [

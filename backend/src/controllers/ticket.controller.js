@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { emitToBranch, emitToUser } from "../socket.js";
 import mongoose from "mongoose";
+import Branch from "../models/branch.model.js";
 
 export const createTicket = async (req, res, next) => {
   try {
@@ -447,10 +448,80 @@ export const setTicketPriority = async (req, res, next) => {
     ticket.priority = priority;
     await ticket.save();
 
+    notifyTicketChange(ticket, "ticket:priority-updated");
+
     return sendSuccess(res, {
       statusCode: 200,
       message: "Ticket priority updated",
       data: ticket,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// MANAGER: close the day — mark all active tickets as completed, reset queue counters
+export const closeDay = async (req, res, next) => {
+  try {
+    const branchId = req.user.branch;
+    const now = new Date();
+
+    // Mark all waiting and called tickets as completed
+    const result = await Ticket.updateMany(
+      { branch: branchId, status: { $in: ["waiting", "called"] } },
+      { status: "completed", completedAt: now },
+    );
+
+    // Reset all queue ticket counters for this branch
+    await Queue.updateMany(
+      { branch: branchId },
+      { lastTicketNumber: 0 },
+    );
+
+    // Update branch day status
+    await Branch.findByIdAndUpdate(branchId, {
+      dayOpen: false,
+      lastClosedAt: now,
+    });
+
+    emitToBranch(String(branchId), "day:closed", {
+      closedBy: req.user.id,
+      timestamp: now,
+    });
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Day closed successfully",
+      data: {
+        ticketsCompleted: result.modifiedCount,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// MANAGER: open the day — signal that the branch is ready for new tickets
+export const openDay = async (req, res, next) => {
+  try {
+    const branchId = req.user.branch;
+    const now = new Date();
+
+    // Update branch day status
+    await Branch.findByIdAndUpdate(branchId, {
+      dayOpen: true,
+      lastOpenedAt: now,
+    });
+
+    emitToBranch(String(branchId), "day:opened", {
+      openedBy: req.user.id,
+      timestamp: now,
+    });
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Day opened successfully",
+      data: { branchId },
     });
   } catch (error) {
     next(error);

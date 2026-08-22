@@ -1,3 +1,4 @@
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Footer.module.css";
 
 const Footer = () => (
@@ -5,7 +6,8 @@ const Footer = () => (
     <div className={styles.container}>
       <div>
         <div className={styles.brand}>
-          <span className={styles.mark}>№</span> Cue
+          <img src={logoUrl} alt="" className={styles.brandIcon} />
+          Cue
         </div>
         <p className={styles.tagline}>
           Queue management for banks that would rather their lobby stayed empty.

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useTheme } from "../../features/theme/ThemeContext";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Navbar.module.css";
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
@@ -18,7 +19,8 @@ const Navbar = () => {
     <header className={styles.header}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
-          <span className={styles.mark}>№</span>Cue
+          <img src={logoUrl} alt="Cue" className={styles.logoIcon} />
+          <span>Cue</span>
         </Link>
 
         <nav className={styles.nav}>
@@ -27,6 +29,9 @@ const Navbar = () => {
               {link}
             </a>
           ))}
+          <Link to="/boards" className={styles.boardsLink}>
+            Live Boards
+          </Link>
         </nav>
 
         <button
@@ -88,6 +93,9 @@ const Navbar = () => {
                 {link}
               </a>
             ))}
+            <Link to="/boards" onClick={() => setOpen(false)}>
+              Live Boards
+            </Link>
             {auth ? (
               <>
                 <Link to={accountHref} onClick={() => setOpen(false)}>

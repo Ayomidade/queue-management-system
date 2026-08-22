@@ -7,7 +7,7 @@ const NowServingCard = ({
   counterLabel,
   priority,
 }) => {
-  const chars = ticketNumber.padEnd(5, " ").slice(0, 5).toUpperCase().split("");
+  const chars = String(ticketNumber ?? "").padEnd(5, " ").slice(0, 5).toUpperCase().split("");
 
   return (
     <div

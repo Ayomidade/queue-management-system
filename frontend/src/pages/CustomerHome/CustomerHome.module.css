@@ -17,6 +17,23 @@
   margin-bottom: 2.5rem;
 }
 
+.logoHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.logoHeader img {
+  width: 40px;
+  height: 40px;
+}
+.logoHeader span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--paper-ink);
+}
+
 .eyebrow {
   font-family: var(--font-mono);
   color: var(--brass);
@@ -241,4 +258,22 @@
 
 .cancelBtn:hover {
   box-shadow: inset 0 0 0 1px var(--signal);
+}
+
+.boardLink {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--paper-soft);
+  text-decoration: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.boardLink:hover {
+  box-shadow: inset 0 0 0 2px var(--ink);
 }

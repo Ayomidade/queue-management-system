@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SplitFlapBoard from "../../components/Hero/SplitFlapBoard";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Contact.module.css";
 
 const NEXT_STEPS = [
@@ -48,6 +49,10 @@ const Contact = () => {
       <MotionBackground />
       <div className={styles.container}>
         <div className={styles.intro}>
+          <div className={styles.logoHeader}>
+            <img src={logoUrl} alt="" />
+            <span>Cue</span>
+          </div>
           <motion.p
             className={styles.eyebrow}
             custom={0}

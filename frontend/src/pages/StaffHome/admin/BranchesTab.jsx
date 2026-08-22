@@ -5,9 +5,17 @@ import { createBranch, deleteBranch } from "../../../features/admin/adminApi";
 import { ApiError } from "../../../lib/apiClient";
 import styles from "../manager/ManagerPanel.module.css";
 
+const INITIAL_FORM = {
+  name: "",
+  location: "",
+  address: "",
+  phone: "",
+  email: "",
+};
+
 const BranchesTab = ({ branches, onChanged }) => {
   const { auth } = useAuth();
-  const [form, setForm] = useState({ name: "", location: "" });
+  const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -20,7 +28,7 @@ const BranchesTab = ({ branches, onChanged }) => {
     setSubmitting(true);
     try {
       await createBranch(form, auth.token);
-      setForm({ name: "", location: "" });
+      setForm(INITIAL_FORM);
       onChanged();
     } catch (err) {
       setError(
@@ -50,8 +58,13 @@ const BranchesTab = ({ branches, onChanged }) => {
       {branches.map((b) => (
         <div key={b._id} className={styles.row}>
           <div>
-            <div>{b.name}</div>
-            <div className={styles.rowSub}>{b.location}</div>
+            <div style={{ fontWeight: 600 }}>{b.name}</div>
+            <div className={styles.rowSub}>
+              📍 {b.location}
+              {b.address && <> · {b.address}</>}
+              {b.phone && <> · 📞 {b.phone}</>}
+              {b.email && <> · ✉ {b.email}</>}
+            </div>
           </div>
           <button
             className={styles.linkBtn}
@@ -63,19 +76,54 @@ const BranchesTab = ({ branches, onChanged }) => {
       ))}
 
       <div className={styles.subHeading}>Add branch</div>
-      <form onSubmit={handleCreate} className={styles.inlineForm}>
-        <input
-          required
-          placeholder="Branch name"
-          value={form.name}
-          onChange={handleChange("name")}
-        />
-        <input
-          required
-          placeholder="Location"
-          value={form.location}
-          onChange={handleChange("location")}
-        />
+      <form onSubmit={handleCreate} className={styles.branchForm}>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Branch name *</span>
+            <input
+              required
+              placeholder="e.g. Ikeja Main Branch"
+              value={form.name}
+              onChange={handleChange("name")}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Area / City *</span>
+            <input
+              required
+              placeholder="e.g. Ikeja, Lagos"
+              value={form.location}
+              onChange={handleChange("location")}
+            />
+          </label>
+        </div>
+        <label className={styles.formField}>
+          <span className={styles.formLabel}>Full address</span>
+          <input
+            placeholder="e.g. 15 Oba Akran Avenue, Ikeja, Lagos"
+            value={form.address}
+            onChange={handleChange("address")}
+          />
+        </label>
+        <div className={styles.formRow}>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Phone number</span>
+            <input
+              placeholder="e.g. +234 801 234 5678"
+              value={form.phone}
+              onChange={handleChange("phone")}
+            />
+          </label>
+          <label className={styles.formField}>
+            <span className={styles.formLabel}>Branch email</span>
+            <input
+              type="email"
+              placeholder="e.g. ikeja@yourbank.com"
+              value={form.email}
+              onChange={handleChange("email")}
+            />
+          </label>
+        </div>
         {error && <p className={styles.statusError}>{error}</p>}
         <button
           type="submit"

@@ -5,6 +5,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import EmailVerificationBadge from "../../components/EmailVerificationBadge/EmailVerificationBadge";
 import ChangePassword from "../../components/ChangePassword/ChangePassword";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Settings.module.css";
 
 const ROLE_LABEL = {
@@ -30,6 +31,10 @@ const Settings = () => {
     <section className={styles.page}>
       <MotionBackground />
       <div className={styles.container}>
+        <div className={styles.logoHeader}>
+          <img src={logoUrl} alt="" />
+          <span>Cue</span>
+        </div>
         <div className={styles.headerRow}>
           <div>
             <p className={styles.eyebrow}>№ 015 — Settings</p>

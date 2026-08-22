@@ -37,6 +37,23 @@
   text-decoration: underline;
 }
 
+.logoHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.logoHeader img {
+  width: 40px;
+  height: 40px;
+}
+.logoHeader span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--paper-ink);
+}
+
 .eyebrow {
   font-family: var(--font-mono);
   color: var(--brass);

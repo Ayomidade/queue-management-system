@@ -8,6 +8,7 @@ import TicketHistory from "./TicketHistory";
 import ManagerPanel from "./manager/ManagerPanel";
 import AdminPanel from "./admin/AdminPanel";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./StaffHome.module.css";
 
 const ROLE_LABEL = { staff: "Staff", manager: "Manager", admin: "Admin" };
@@ -31,6 +32,10 @@ const StaffHome = () => {
     <section className={styles.page}>
       <MotionBackground />
       <div className={styles.container}>
+        <div className={styles.logoHeader}>
+          <img src={logoUrl} alt="" />
+          <span>Cue</span>
+        </div>
         <motion.div
           className={styles.headerRow}
           initial="hidden"
@@ -49,6 +54,16 @@ const StaffHome = () => {
             custom={2}
             variants={fadeUp}
           >
+            {auth.branch && (
+              <Link
+                to={`/board/${auth.branch}`}
+                className={styles.boardLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Live Board
+              </Link>
+            )}
             <Link to="/settings" className={styles.settingsLink}>
               Settings
             </Link>

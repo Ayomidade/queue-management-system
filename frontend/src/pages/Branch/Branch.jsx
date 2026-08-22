@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { apiClient } from "../../lib/apiClient";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Branch.module.css";
 
 const fadeUp = {
@@ -63,6 +64,10 @@ const Branch = () => {
     <section className={styles.page}>
       <div className={styles.container}>
         <motion.div initial="hidden" animate="visible">
+          <div className={styles.logoHeader}>
+            <img src={logoUrl} alt="" />
+            <span>Cue</span>
+          </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 008 — Branch
           </motion.p>

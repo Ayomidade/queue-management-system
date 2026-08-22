@@ -1,0 +1,242 @@
+.page {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 3rem 1.5rem;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 3rem;
+}
+
+.logoHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.logoHeader img {
+  width: 40px;
+  height: 40px;
+}
+.logoHeader span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--paper);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brass);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+  margin-bottom: 0.5rem;
+}
+
+.subhead {
+  color: var(--ink-soft);
+  font-size: var(--step-1);
+  max-width: 50ch;
+}
+
+.liveDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--verdigris);
+  margin-right: 0.5rem;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.branchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.branchCard {
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.branchCard:hover {
+  border-color: var(--verdigris);
+  box-shadow: 0 0 0 1px var(--verdigris);
+}
+
+.branchCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.branchName {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.branchLocation {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 0.25rem;
+}
+
+.branchStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.stat {
+  text-align: center;
+  padding: 0.75rem 0;
+  background: var(--ink);
+  border-radius: 10px;
+}
+
+.statValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--verdigris);
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.queueList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.queueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+}
+
+.queueName {
+  color: var(--paper-soft);
+}
+
+.queueWaiting {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--brass);
+}
+
+.boardLink {
+  display: block;
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--verdigris);
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.boardLink:hover {
+  transform: translateY(-2px);
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.filterLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.filterSelect {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--ink-line);
+  background: var(--ink-raised);
+  color: var(--paper);
+}
+.filterSelect:focus {
+  outline: 2px solid var(--verdigris);
+  outline-offset: 1px;
+}
+.clearFilter {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--verdigris);
+  transition: text-decoration 0.15s ease;
+}
+.clearFilter:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 1.1rem;
+  margin-top: 4rem;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 2rem 1rem;
+  }
+  .branchGrid {
+    grid-template-columns: 1fr;
+  }
+  .branchStats {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}

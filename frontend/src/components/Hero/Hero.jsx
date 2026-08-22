@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import KineticHeadline from "./KineticHeadline";
 import SplitFlapBoard from "./SplitFlapBoard";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./Hero.module.css";
 import { Link } from "react-router-dom";
 
@@ -19,6 +20,16 @@ const Hero = () => (
   <section className={styles.hero}>
     <div className={styles.container}>
       <div>
+        <motion.div
+          className={styles.logoHeader}
+          custom={0}
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <img src={logoUrl} alt="" className={styles.logoIcon} />
+          <span className={styles.logoText}>Cue</span>
+        </motion.div>
         <motion.p
           className={styles.eyebrow}
           custom={0}
@@ -53,9 +64,9 @@ const Hero = () => (
           <Link to="/contact" className={styles.primaryBtn}>
             Request a demo
           </Link>
-          <a href="#how-it-works" className={styles.ghostBtn}>
-            See it in action
-          </a>
+          <Link to="/boards" className={styles.ghostBtn}>
+            View Live Boards
+          </Link>
         </motion.div>
       </div>
 

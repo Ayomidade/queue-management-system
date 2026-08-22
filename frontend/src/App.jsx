@@ -16,6 +16,8 @@ import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import Settings from "./pages/Settings/Settings";
+import AdminLogin from "./pages/AdminLogin/AdminLogin";
+import Boards from "./pages/Boards/Boards";
 import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
@@ -49,6 +51,16 @@ function App() {
             <>
               <Navbar />
               <Login />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/admin-login"
+          element={
+            <>
+              <Navbar />
+              <AdminLogin />
               <Footer />
             </>
           }
@@ -129,6 +141,7 @@ function App() {
             </>
           }
         />
+        <Route path="/boards" element={<Boards />} />
         <Route path="/board/:branchId" element={<Board />} />
         <Route
           path="/branch/:branchId"

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
 import { ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "../Login/Login.module.css";
 
 const fadeUp = {
@@ -50,6 +51,10 @@ const Register = () => {
       <MotionBackground />
       <div className={styles.container}>
         <motion.div initial="hidden" animate="visible">
+          <div className={styles.logoHeader}>
+            <img src={logoUrl} alt="" />
+            <span>Cue</span>
+          </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 008 — Join
           </motion.p>

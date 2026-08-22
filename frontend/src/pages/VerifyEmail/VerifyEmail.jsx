@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiClient, ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "../Login/Login.module.css";
 
 const VerifyEmail = () => {
@@ -37,6 +38,10 @@ const VerifyEmail = () => {
     <section className={styles.page}>
       <MotionBackground />
       <div className={styles.container}>
+        <div className={styles.logoHeader} style={{ justifyContent: "center" }}>
+          <img src={logoUrl} alt="" />
+          <span>Cue</span>
+        </div>
         <motion.div
           className={styles.card}
           initial={{ opacity: 0, y: 30 }}

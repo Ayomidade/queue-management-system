@@ -18,12 +18,13 @@
   font-size: 1.15rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
-.mark {
-  font-family: var(--font-mono);
-  color: var(--signal);
+.brandIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .tagline {

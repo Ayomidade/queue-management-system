@@ -37,3 +37,8 @@ export const recallTicket = (ticketId, token) =>
   apiClient.patch(`/tickets/${ticketId}/recall`, {}, { token });
 export const setTicketPriority = (ticketId, priority, token) =>
   apiClient.patch(`/tickets/${ticketId}/priority`, { priority }, { token });
+
+export const closeDay = (token) =>
+  apiClient.post("/tickets/close-day", {}, { token });
+export const openDay = (token) =>
+  apiClient.post("/tickets/open-day", {}, { token });

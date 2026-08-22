@@ -1,6 +1,13 @@
 .panel {
   margin-top: 2rem;
 }
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
 .eyebrow {
   font-family: var(--font-mono);
   color: var(--brass);
@@ -8,6 +15,140 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 1rem;
+}
+.boardLink {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--verdigris);
+  text-decoration: none;
+}
+.boardLink:hover {
+  text-decoration: underline;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.dayMenuWrap {
+  position: relative;
+}
+.dayMenuBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: inset 0 0 0 1px var(--paper-soft);
+  transition: box-shadow 0.2s ease;
+}
+.dayMenuBtn:hover {
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.dayMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--paper);
+  border: 1px solid var(--paper-soft);
+  border-radius: 12px;
+  padding: 0.5rem;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+.dayMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  color: var(--ink);
+  transition: background 0.15s ease;
+}
+.dayMenuItem:hover {
+  background: var(--paper-raised);
+}
+.dayMenuItemDanger {
+  color: var(--signal);
+}
+.dayMenuItemDanger:hover {
+  background: rgba(193, 67, 43, 0.08);
+}
+.dayMenuIcon {
+  font-size: 0.9rem;
+}
+
+.dayConfirm {
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.dayConfirmText {
+  font-size: 0.9rem;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.dayConfirmActions {
+  display: flex;
+  gap: 0.75rem;
+}
+.dayConfirmBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--ink);
+  color: var(--paper);
+}
+.dayConfirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.dayCancelBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+}
+
+.dayToast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.dayToastSuccess {
+  background: rgba(145, 170, 130, 0.12);
+  color: var(--ink);
+  border: 1px solid rgba(145, 170, 130, 0.3);
+}
+.dayToastError {
+  background: rgba(193, 67, 43, 0.1);
+  color: var(--signal);
+  border: 1px solid rgba(193, 67, 43, 0.3);
+}
+.dayToastClose {
+  font-size: 1.1rem;
+  color: var(--paper-soft);
+  flex-shrink: 0;
 }
 
 .tabs {
@@ -175,6 +316,54 @@
   outline-offset: 1px;
 }
 
+.branchForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.formLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--paper-soft);
+}
+.formField input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+}
+.formField input:focus {
+  outline: 2px solid var(--verdigris);
+  outline-offset: 1px;
+}
+
+.searchInput {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  margin-bottom: 1rem;
+}
+.searchInput:focus {
+  outline: 2px solid var(--verdigris);
+  outline-offset: 1px;
+}
+
 .inlineSelect {
   font-family: var(--font-body);
   font-size: 0.85rem;
@@ -240,6 +429,92 @@
   border-radius: 8px;
   border: 1px solid var(--paper-soft);
   background: var(--paper);
+}
+
+/* ── Progress bar ────────────────────────────── */
+.progressSection {
+  margin-bottom: 1.75rem;
+}
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.progressValue {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--verdigris);
+}
+.progressTrack {
+  height: 8px;
+  background: var(--paper);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: var(--verdigris);
+  border-radius: 4px;
+}
+
+/* ── Queue bar visualization ──────────────────── */
+.queueBar {
+  margin-bottom: 0.75rem;
+}
+.queueBarInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+.queueBarName {
+  font-size: 0.9rem;
+}
+.queueBarCount {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.queueBarTrack {
+  height: 6px;
+  background: var(--paper);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.queueBarFill {
+  height: 100%;
+  background: var(--verdigris);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ── Counter status grid ──────────────────────── */
+.counterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+.counterStat {
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+.counterStatValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+.counterStatLabel {
+  font-size: 0.7rem;
+  color: var(--paper-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ── Mobile responsive ──────────────────────── */

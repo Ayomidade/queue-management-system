@@ -12,6 +12,8 @@ import {
   getMyStats,
   getMyRecentTickets,
   getBranchTickets,
+  closeDay,
+  openDay,
 } from "../controllers/ticket.controller.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 
@@ -71,6 +73,17 @@ ticketRouter.patch(
   "/:id/priority",
   authorize("manager", "admin"),
   setTicketPriority,
+);
+
+ticketRouter.post(
+  "/close-day",
+  authorize("manager"),
+  closeDay,
+);
+ticketRouter.post(
+  "/open-day",
+  authorize("manager"),
+  openDay,
 );
 
 export default ticketRouter;

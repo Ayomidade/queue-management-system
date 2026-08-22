@@ -4,8 +4,8 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { useMyTicket } from "../../features/tickets/useMyTicket";
 import CreateTicketFlow from "./CreateTicketFlow";
 import ActiveTicketView from "./ActiveTicketView";
-import ChangePassword from "../../components/ChangePassword/ChangePassword";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import logoUrl from "../../assets/logo.svg";
 import styles from "./CustomerHome.module.css";
 
 const fadeUp = {
@@ -25,6 +25,10 @@ const CustomerHome = () => {
     <section className={styles.page}>
       <MotionBackground />
       <div className={styles.container}>
+        <div className={styles.logoHeader}>
+          <img src={logoUrl} alt="" />
+          <span>Cue</span>
+        </div>
         <motion.div
           className={styles.headerRow}
           initial="hidden"
@@ -78,6 +82,23 @@ const CustomerHome = () => {
           ) : (
             <CreateTicketFlow onCreated={refetch} />
           ))}
+
+        {ticket?.branch && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <Link
+              to={`/board/${ticket.branch._id || ticket.branch}`}
+              className={styles.boardLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Live Queue →
+            </Link>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -19,14 +19,17 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.25rem;
+  text-decoration: none;
+  color: inherit;
 }
-.mark {
-  font-family: var(--font-mono);
-  color: var(--verdigris);
+.logoIcon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .nav {
@@ -34,9 +37,14 @@
   gap: 2rem;
   font-size: 0.95rem;
   color: var(--paper-soft);
+  align-items: center;
 }
 .nav a:hover {
   color: var(--paper-ink);
+}
+.boardsLink {
+  color: var(--verdigris) !important;
+  font-weight: 600;
 }
 
 .authGroup {

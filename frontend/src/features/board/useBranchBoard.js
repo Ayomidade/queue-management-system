@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
 
 const BOARD_EVENTS = [
@@ -13,18 +14,24 @@ const BOARD_EVENTS = [
   "ticket:no-show",
   "ticket:cancelled",
   "ticket:recalled",
+  "day:opened",
+  "day:closed",
 ];
 
 export const useBranchBoard = (branchId) => {
   const [board, setBoard] = useState(null);
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [dayStatus, setDayStatus] = useState(null); // "open" | "closed" | null
   const refetchTimer = useRef(null);
 
   const fetchBoard = useCallback(async () => {
     try {
       const response = await apiClient.get(`/board/${branchId}`);
       setBoard(response.data);
+      if (response.data.branch) {
+        setDayStatus(response.data.branch.dayOpen ? "open" : "closed");
+      }
       setError(null);
     } catch (err) {
       setError(err.message || "Couldn't load this branch's board.");
@@ -43,6 +50,10 @@ export const useBranchBoard = (branchId) => {
     });
     socket.on("disconnect", () => setConnected(false));
 
+    // Track day status from socket events
+    socket.on("day:opened", () => setDayStatus("open"));
+    socket.on("day:closed", () => setDayStatus("closed"));
+
     const scheduleRefetch = () => {
       clearTimeout(refetchTimer.current);
       refetchTimer.current = setTimeout(fetchBoard, 400);
@@ -55,5 +66,5 @@ export const useBranchBoard = (branchId) => {
     };
   }, [branchId, fetchBoard]);
 
-  return { board, error, connected };
+  return { board, error, connected, dayStatus };
 };

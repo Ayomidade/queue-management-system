@@ -60,31 +60,26 @@
   justify-self: center;
 }
 
-.toggle {
-  display: flex;
-  background: var(--ink-raised);
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brass);
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  padding: 0.4rem 0.75rem;
   border-radius: 100px;
-  padding: 4px;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.5rem;
 }
-.toggleBtn,
-.toggleActive {
-  flex: 1;
-  padding: 0.6rem 0.9rem;
-  border-radius: 100px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-align: center;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-.toggleBtn {
-  color: var(--ink-soft);
-}
-.toggleActive {
-  background: var(--verdigris);
-  color: var(--ink);
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
 }
 
 .form {
@@ -125,7 +120,7 @@
 .submitBtn {
   margin-top: 0.25rem;
   padding: 0.9rem 1.5rem;
-  background: var(--verdigris);
+  background: var(--brass);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -152,16 +147,6 @@
 .switchLine a {
   color: var(--verdigris);
   font-weight: 600;
-}
-
-.notice {
-  font-size: 0.85rem;
-  color: var(--paper);
-  background: rgba(201, 162, 39, 0.15);
-  border: 1px solid rgba(201, 162, 39, 0.35);
-  padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  margin-bottom: 1.25rem;
 }
 
 @media (min-width: 900px) {

@@ -9,32 +9,40 @@ A sequenced plan for everything left to build, and why it's ordered this way. Up
 | Backend: auth, roles, branches, queues, counters, tickets                 | ✅ Done        |
 | Backend: real-time (Socket.io), no-show handling                          | ✅ Done        |
 | Backend: branch analytics, daily report, staff performance                | ✅ Done        |
-| Backend: public board endpoint                                            | ✅ Done        |
+| Backend: public board endpoint (single branch)                            | ✅ Done        |
+| Backend: public all-boards endpoint                                       | ✅ Done        |
 | Backend: public branch info endpoint                                      | ✅ Done        |
 | Backend: staff ticket history + recall                                    | ✅ Done        |
 | Backend: email notifications (Resend)                                     | ✅ Done        |
 | Backend: email verification flow                                          | ✅ Done        |
 | Backend: forgot/reset password flow                                       | ✅ Done        |
 | Backend: password change endpoint                                         | ✅ Done        |
+| Backend: admin login (auth/login for User model roles)                    | ✅ Done        |
+| Backend: day open/close endpoints (manager)                               | ✅ Done        |
+| Backend: branch address/phone/email fields                                | ✅ Done        |
 | Seed script (admin, manager, staff, customer)                             | ✅ Done        |
 | Frontend: landing page, contact page, 404                                 | ✅ Done        |
 | Frontend: auth (login/register), 401 handling                             | ✅ Done        |
-| Frontend: public Now Serving board                                        | ✅ Done        |
+| Frontend: admin login page (/admin-login)                                 | ✅ Done        |
+| Frontend: public Now Serving board (per-branch, GSAP animations)          | ✅ Done        |
+| Frontend: public boards hub (/boards) with location filter                | ✅ Done        |
 | Frontend: public branch info page                                         | ✅ Done        |
-| Frontend: customer ticket tracker                                         | ✅ Done        |
-| Frontend: staff counter dashboard                                         | ✅ Done        |
-| Frontend: manager dashboard                                               | ✅ Done        |
-| Frontend: admin dashboard                                                 | ✅ Done        |
+| Frontend: customer ticket tracker + "View Live Queue" button              | ✅ Done        |
+| Frontend: staff counter dashboard + "Live Board" button                   | ✅ Done        |
+| Frontend: manager dashboard (enhanced overview, day control)              | ✅ Done        |
+| Frontend: admin dashboard (network overview, live boards tab, staff search)| ✅ Done       |
 | Frontend: staff ticket history with recall                                | ✅ Done        |
 | Frontend: forgot password page                                            | ✅ Done        |
 | Frontend: reset password page                                             | ✅ Done        |
 | Frontend: email verification page                                         | ✅ Done        |
 | Frontend: change password component                                       | ✅ Done        |
 | Frontend: email verification status badge                                 | ✅ Done        |
-| Frontend: settings page (/settings)                                       | ✅ Done        |
+| Frontend: settings page (/settings) with branch details                  | ✅ Done        |
 | Frontend: dark mode toggle (ThemeContext)                                 | ✅ Done        |
 | Frontend: mobile responsive pass                                          | ✅ Done        |
 | Frontend: motion backgrounds + page animations                            | ✅ Done        |
+| Frontend: Q-arrow logo on all pages + favicon                            | ✅ Done        |
+| Frontend: branch creation form (name, location, address, phone, email)    | ✅ Done        |
 | AI agent                                                                  | ❌ Not started |
 | Stand-out features (QR kiosk, SMS/WhatsApp, appointments, nearest-branch) | ❌ Not started |
 | Production hardening (tests, CI, docs, security)                          | ❌ Not started |
@@ -64,6 +72,7 @@ Replaces the `/account` stub. The other half of the loop the board and staff das
 - [x] Live ticket view: status, position, `estimatedWaitMinutes`, updating over the same socket events the board already listens for
 - [x] Cancel ticket (`PATCH /api/tickets/:id/cancel`)
 - [x] "No active ticket" state with a clear call to pull one
+- [x] "View Live Queue" button linking to branch board
 
 **Depends on:** auth (done), the socket event set (done).
 
@@ -86,6 +95,7 @@ Replaces `/staff` for `role: staff`. What actually makes the board's data mean s
 - [x] Open / close their own assigned counter (`PATCH /api/counters/:counterId/close`, `/open`)
 - [x] Simple "my day" tally, tickets served today
 - [x] Ticket history with recall for skipped tickets
+- [x] "Live Board" header button linking to branch board
 
 **Depends on:** Phase 1, so there are real waiting tickets to call during testing.
 
@@ -109,16 +119,21 @@ Extends the same `/staff` shell for `role: manager`.
 - [x] Counter management, create/assign/unassign/open/close any counter in-branch (`/api/counters`)
 - [x] Ticket overrides: recall a skipped ticket, flag priority (`/api/tickets/:id/recall`, `/priority`)
 - [x] Branch analytics dashboard, daily report, staff performance, real data this time (`/api/analytics/branch/:branchId`, `.../staff-performance`)
+- [x] Enhanced overview with progress bars, queue bar charts, counter status grid
+- [x] "View Branch Board →" link in panel header
+- [x] Day Control menu — Open day / Close day with confirmation dialog
+- [x] Day status tracked on Branch model (`dayOpen`, `lastOpenedAt`, `lastClosedAt`)
 - [ ] Revisit the counter/queue decision above if it's earned a schema change by now
 
 **Depends on:** Phase 2's dashboard shell.
 
 ### Implementation details
-- `ManagerPanel.jsx` — tabbed interface: Overview, Staff, Counters, Tickets
-- `OverviewTab.jsx` — tiles for waiting/called/completed today, average wait, queue lengths, counter status
+- `ManagerPanel.jsx` — tabbed interface: Overview, Staff, Counters, Tickets + Day Control dropdown
+- `OverviewTab.jsx` — animated tiles, completion rate progress bar, queue bar charts, counter grid
 - `StaffTab.jsx` — list staff with served-today count, create new staff, deactivate (managers excluded)
 - `CountersTab.jsx` — create counters, assign/unassign staff, open/close toggle, status badges
 - `TicketsTab.jsx` — sub-tabs for Waiting/Skipped, mark priority, recall skipped tickets
+- `closeDay()` / `openDay()` — `POST /tickets/close-day` and `/open-day` (manager only)
 - CSS: `ManagerPanel.module.css` — shared styles reused by admin panel
 
 ---
@@ -128,19 +143,22 @@ Extends the same `/staff` shell for `role: manager`.
 Same shell, `role: admin`, network-wide instead of branch-scoped.
 
 **Ships:**
-- [x] Branch management (create, list, delete)
+- [x] Branch management (create with name, location, address, phone, email)
 - [x] Queue management across branches
 - [x] Network-wide staff management, including cross-branch reassignment (`PATCH /api/staff/:staffId/assign`)
 - [x] Cross-branch view of the analytics already built for managers, same components, a branch picker on top
+- [x] "Network" tab — branch overview with links to board and public page
+- [x] "Live Boards" tab — list all branches with "Open board →" links
+- [x] Staff search by name, email, role, or branch
 
 **Depends on:** Phase 3's dashboard shell and components.
 
 ### Implementation details
-- `AdminPanel.jsx` — tabbed interface: Branches, Services, Staff, Counters, Overview
-- `BranchesTab.jsx` — create/delete branches with name + location
+- `AdminPanel.jsx` — 7-tab interface: Network, Branches, Services, Staff, Counters, Live Boards, Analytics
+- `NetworkOverview.jsx` — summary tiles (total branches, active, locations) + branch list with board/public links
+- `BranchesTab.jsx` — enhanced form with name, location, address, phone, email fields
 - `ServicesTab.jsx` — create/delete queues, pick branch per service
-- `AdminStaffTab.jsx` — create staff with role picker (staff/manager), branch assignment, reassign dropdown, deactivate
-- Reuses `CountersTab` and `OverviewTab` from manager with a branch picker on top
+- `AdminStaffTab.jsx` — search bar, create staff with role picker, reassign dropdown, deactivate
 - `adminApi.js` — dedicated API layer for admin-only endpoints
 
 ---
@@ -176,11 +194,17 @@ Built between Phase 4 and Phase 5 as foundational infrastructure.
 - [x] Validates current password, min 8 chars, different from current
 - [x] Reusable `<ChangePassword />` component on customer + staff dashboards
 
+**Admin login:**
+- [x] `/admin-login` route — dedicated page that hits `POST /api/auth/login` (User model, where admin accounts live)
+- [x] "Sign in as Admin instead" link on staff login tab
+- [x] Root cause: admin is in User model, staff login hits Staff model
+
 ### New files
 - `backend/src/models/token.model.js` — verification + password reset tokens
 - `frontend/src/pages/ForgotPassword/ForgotPassword.jsx`
 - `frontend/src/pages/ResetPassword/ResetPassword.jsx`
 - `frontend/src/pages/VerifyEmail/VerifyEmail.jsx`
+- `frontend/src/pages/AdminLogin/AdminLogin.jsx`
 - `frontend/src/components/ChangePassword/ChangePassword.jsx`
 
 ### Env vars
@@ -198,6 +222,7 @@ Animation, theming, responsive, and settings consolidation.
 - [x] `/settings` route — consolidated profile, email verification, and password change
 - [x] Settings link in header on customer and staff dashboards
 - [x] Protected route requiring authentication
+- [x] Branch name resolved from public endpoint, shows full details
 
 **Email verification badge:**
 - [x] `<EmailVerificationBadge />` — green "verified" or red "not verified" with resend button
@@ -222,10 +247,16 @@ Animation, theming, responsive, and settings consolidation.
 - [x] `MotionBackground` component — 6 floating orbs with blur + subtle grid pattern
 - [x] Applied to: Login, Register, ForgotPassword, ResetPassword, VerifyEmail, Contact, Settings, CustomerHome, StaffHome
 - [x] `StaffHome.jsx` — staggered fadeUp entrance for header, stat card, console, history, panels
-- [x] `CustomerHome.jsx` — staggered fadeUp entrance for header, ticket view, change password
+- [x] `CustomerHome.jsx` — staggered fadeUp entrance for header, ticket view
 - [x] `Settings.jsx` — staggered motion.div for profile, verification, password sections
 - [x] `CounterConsole.jsx` — entrance animation wrapping the console
 - [x] All auth pages (Login, Register, ForgotPassword, ResetPassword) — existing fadeUp + new MotionBackground
+
+**Branding:**
+- [x] Q-arrow SVG logo (`queue_q_arrow_logo.svg`) — selected for simplicity and concept (Q = queue, arrow = moving forward)
+- [x] Logo on Navbar, Footer, all auth pages, Landing Hero, Contact, Branch, Settings, CustomerHome, StaffHome
+- [x] Favicon (`public/favicon.svg`) — Q-arrow icon
+- [x] Page title updated to "Cue — Smart Queue Management"
 
 ### New files
 - `frontend/src/features/theme/ThemeContext.jsx` — dark mode context
@@ -235,6 +266,54 @@ Animation, theming, responsive, and settings consolidation.
 - `frontend/src/components/EmailVerificationBadge/EmailVerificationBadge.module.css`
 - `frontend/src/pages/Settings/Settings.jsx`
 - `frontend/src/pages/Settings/Settings.module.css`
+- `frontend/src/assets/logo.svg` — cleaned Q-arrow logo
+
+---
+
+## Phase 4.8 — Live Board & Public Hub ✅
+
+The public-facing board and multi-branch hub.
+
+**Per-branch live board (`/board/:branchId`):**
+- [x] Now serving cards with ticket number (flap display), counter label, service name
+- [x] Total waiting banner with per-service breakdown
+- [x] Recently served list (newest first)
+- [x] GSAP continuous animations: scan line, banner glow, card float, recent drift, day indicator pulse
+- [x] Day status indicator — "BRANCH OPEN" (green) / "BRANCH CLOSED" (red) with timestamps
+- [x] Logo + "← All branches" back link
+- [x] Live clock, connection status dot
+
+**Public boards hub (`/boards`):**
+- [x] Backend: `GET /api/board` — returns all branches with queue lengths, counter status, called counts
+- [x] Branch cards showing name, location, waiting count, counter status, service breakdown
+- [x] Location filter dropdown (unique locations extracted from branches)
+- [x] "View live board →" link per branch
+- [x] Network summary stats (total branches, waiting, counters open)
+- [x] Socket.io real-time updates across all branches
+- [x] Staggered entrance animations
+
+**Day control (manager):**
+- [x] `POST /api/tickets/close-day` — marks all active tickets completed, resets queue counters, sets `dayOpen: false`
+- [x] `POST /api/tickets/open-day` — sets `dayOpen: true`, emits socket event
+- [x] Branch model: `dayOpen`, `lastOpenedAt`, `lastClosedAt` fields
+- [x] ManagerPanel: "☀ Day Control" dropdown with Open/Close options
+- [x] Confirmation dialog before day close
+- [x] Success/error toast notifications
+- [x] Board listens for `day:opened` / `day:closed` socket events
+
+**Navigation:**
+- [x] Navbar: "Live Boards" link (desktop + mobile)
+- [x] Landing Hero: "View Live Boards" button
+- [x] Branch page: "View Live Board" button
+- [x] StaffHome: "Live Board" header button
+- [x] ManagerPanel: "View Branch Board →" link
+- [x] AdminPanel: "Live Boards" tab with per-branch links
+
+### New files
+- `frontend/src/pages/Boards/Boards.jsx` — public boards hub
+- `frontend/src/pages/Boards/Boards.module.css`
+- `backend/src/controllers/board.controller.js` — `getAllBoards()` added
+- `backend/src/routes/board.routes.js` — `GET /` route added
 
 ---
 
@@ -293,6 +372,10 @@ These were built during Phases 1–4 as natural extensions:
 - **Staff ticket recall** — extended the recall endpoint from manager-only to staff, so any counter worker can recall a skipped ticket
 - **Staff ticket history** — `GET /tickets/my-history` + `TicketHistory` component showing recently completed/skipped tickets with inline recall
 - **Bug fixes** — stray character in ServicesTab, missing ticket branch route, branch route middleware restructuring for public access
+- **Admin login fix** — admin accounts live in User model, created dedicated `/admin-login` page hitting correct endpoint
+- **Branch model enrichment** — added `address`, `phone`, `email` fields with validation
+- **Staff search** — admin staff tab now supports search by name, email, role, or branch
+- **Location filter** — public boards page filters branches by location
 
 ---
 

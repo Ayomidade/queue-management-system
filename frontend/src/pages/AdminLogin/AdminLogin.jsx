@@ -5,7 +5,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
-import styles from "./Login.module.css";
+import styles from "./AdminLogin.module.css";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -16,8 +16,7 @@ const fadeUp = {
   }),
 };
 
-const Login = () => {
-  const [accountType, setAccountType] = useState("customer");
+const AdminLogin = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -35,9 +34,10 @@ const Login = () => {
     setSubmitting(true);
 
     try {
-      await login({ ...form, accountType });
-      const fallback = accountType === "staff" ? "/staff" : "/account";
-      navigate(location.state?.from || fallback, { replace: true });
+      // Admin lives in the User model, so accountType must be "customer"
+      // which routes to POST /api/auth/login (User model)
+      await login({ ...form, accountType: "customer" });
+      navigate(location.state?.from || "/staff", { replace: true });
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -59,14 +59,14 @@ const Login = () => {
             <span>Cue</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
-            № 007 — Sign in
+            № 008 — Admin access
           </motion.p>
           <motion.h1 className={styles.heading} custom={1} variants={fadeUp}>
-            Pick your window.
+            Network control.
           </motion.h1>
           <motion.p className={styles.subhead} custom={2} variants={fadeUp}>
-            Customers track tickets from here. Staff, managers, and admins run
-            their branch from the same door.
+            Sign in to manage every branch, queue, and staff member from one
+            place.
           </motion.p>
         </motion.div>
 
@@ -77,35 +77,14 @@ const Login = () => {
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
         >
           {location.state?.sessionExpired && (
-            <p className={styles.notice}>
+            <p className={styles.error} style={{ marginBottom: "1.25rem" }}>
               Your session expired. Sign in again to continue.
             </p>
           )}
-          <div className={styles.toggle} role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={accountType === "customer"}
-              className={
-                accountType === "customer"
-                  ? styles.toggleActive
-                  : styles.toggleBtn
-              }
-              onClick={() => setAccountType("customer")}
-            >
-              Customer
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={accountType === "staff"}
-              className={
-                accountType === "staff" ? styles.toggleActive : styles.toggleBtn
-              }
-              onClick={() => setAccountType("staff")}
-            >
-              Staff / Manager / Admin
-            </button>
+
+          <div className={styles.badge}>
+            <span className={styles.badgeDot} />
+            Admin only
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
@@ -116,7 +95,7 @@ const Login = () => {
                 type="email"
                 value={form.email}
                 onChange={handleChange("email")}
-                placeholder="you@example.com"
+                placeholder="admin@queue.com"
               />
             </label>
             <label className={styles.field}>
@@ -131,7 +110,14 @@ const Login = () => {
             </label>
 
             <div style={{ textAlign: "right", marginTop: "-0.5rem" }}>
-              <Link to="/forgot-password" style={{ fontSize: "0.8rem", color: "var(--verdigris)", textDecoration: "none" }}>
+              <Link
+                to="/forgot-password"
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--verdigris)",
+                  textDecoration: "none",
+                }}
+              >
                 Forgot password?
               </Link>
             </div>
@@ -143,24 +129,17 @@ const Login = () => {
               className={styles.submitBtn}
               disabled={submitting}
             >
-              {submitting ? "Checking…" : "Sign in"}
+              {submitting ? "Checking…" : "Sign in as Admin"}
             </button>
           </form>
 
-          {accountType === "customer" && (
-            <p className={styles.switchLine}>
-              New here? <Link to="/register">Create an account</Link>
-            </p>
-          )}
-          {accountType === "staff" && (
-            <p className={styles.switchLine}>
-              <Link to="/admin-login">Sign in as Admin instead</Link>
-            </p>
-          )}
+          <p className={styles.switchLine}>
+            Not an admin? <Link to="/login">Back to sign in</Link>
+          </p>
         </motion.div>
       </div>
     </section>
   );
 };
 
-export default Login;
+export default AdminLogin;

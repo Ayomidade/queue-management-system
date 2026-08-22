@@ -1,4 +1,5 @@
-<svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 380 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cue logo">
+  <title>Cue — Queue management</title>
   <rect x="30" y="30" width="320" height="320" rx="56" fill="#12294d"/>
   <circle cx="190" cy="175" r="80" fill="none" stroke="#f2a541" stroke-width="24"/>
   <path d="M225 225 L270 270 L270 240 M270 270 L240 270" fill="none" stroke="#f2a541" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
