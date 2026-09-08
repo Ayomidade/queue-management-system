@@ -1,5 +1,6 @@
 import Queue from "../models/queue.model.js";
 import { sendSuccess } from "../utils/response.js";
+import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
 export const createQueue = async (req, res, next) => {
   try {
@@ -17,14 +18,24 @@ export const createQueue = async (req, res, next) => {
 
 export const getBranchQueues = async (req, res, next) => {
   try {
-    const queues = await Queue.find({ isActive: true }).populate(
-      "branch",
-      "name location",
-    );
+    const filter = { isActive: true };
+
+    // Admin sees all queues; manager/staff see only their branch
+    if (req.role === "manager" || req.role === "staff") {
+      filter.branch = req.user.branch;
+    } else if (req.query.branchId) {
+      filter.branch = req.query.branchId;
+    }
+
+    const { page, limit, skip } = parsePagination(req.query);
+    const [total, queues] = await Promise.all([
+      Queue.countDocuments(filter),
+      Queue.find(filter).populate("branch", "name location").skip(skip).limit(limit),
+    ]);
     return sendSuccess(res, {
       statusCode: 200,
       message: "Queues fetched successfully",
-      data: queues,
+      ...paginatedResponse(queues, total, page, limit),
     });
   } catch (error) {
     next(error);

@@ -2,6 +2,7 @@ import Staff from "../models/staff.model.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/email.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
 export const createStaff = async (req, res, next) => {
   try {
@@ -102,16 +103,20 @@ export const loginStaff = async (req, res, next) => {
 
 export const getAllStaff = async (req, res, next) => {
   try {
+    const { page, limit, skip } = parsePagination(req.query);
     const filter = { isActive: true };
     if (req.role === "manager") {
       filter.branch = req.user.branch;
     }
 
-    const staffs = await Staff.find(filter).populate("branch", "name location");
+    const [total, staffs] = await Promise.all([
+      Staff.countDocuments(filter),
+      Staff.find(filter).populate("branch", "name location").skip(skip).limit(limit),
+    ]);
     return sendSuccess(res, {
       statusCode: 200,
       message: "Staff fetched successfully",
-      data: staffs,
+      ...paginatedResponse(staffs, total, page, limit),
     });
   } catch (error) {
     next(error);

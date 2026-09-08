@@ -83,7 +83,8 @@ export const verifyEmail = async (req, res, next) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
+    const Model = doc.userModel === "Staff" ? Staff : User;
+    const user = await Model.findByIdAndUpdate(
       doc.user,
       { isEmailVerified: true },
       { new: true },

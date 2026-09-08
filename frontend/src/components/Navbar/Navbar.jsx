@@ -29,6 +29,9 @@ const Navbar = () => {
               {link}
             </a>
           ))}
+          <Link to="/find-nearby" className={styles.boardsLink}>
+            Find Nearby
+          </Link>
           <Link to="/boards" className={styles.boardsLink}>
             Live Boards
           </Link>
@@ -93,6 +96,9 @@ const Navbar = () => {
                 {link}
               </a>
             ))}
+            <Link to="/find-nearby" onClick={() => setOpen(false)}>
+              Find Nearby
+            </Link>
             <Link to="/boards" onClick={() => setOpen(false)}>
               Live Boards
             </Link>

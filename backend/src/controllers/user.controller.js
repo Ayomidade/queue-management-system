@@ -14,17 +14,6 @@ export const getMyProfile = async (req, res, next) => {
   }
 };
 
-export const adminOnlyPing = async (req, res, next) => {
-  try {
-    return sendSuccess(res, {
-      statusCode: 200,
-      message: "Welcome Admin",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;

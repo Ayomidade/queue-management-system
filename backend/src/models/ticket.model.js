@@ -5,8 +5,16 @@ const ticketSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false,
       index: true,
+      default: null,
+    },
+
+    kioskId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
     },
 
     queue: {
@@ -39,6 +47,28 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       enum: ["normal", "priority"],
       default: "normal",
+    },
+
+    isAppointment: {
+      type: Boolean,
+      default: false,
+    },
+
+    scheduledFor: {
+      type: Date,
+      default: null,
+    },
+
+    guestName: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    guestPhone: {
+      type: String,
+      trim: true,
+      default: null,
     },
 
     servedBy: {

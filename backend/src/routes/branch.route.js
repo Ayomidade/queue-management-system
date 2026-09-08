@@ -5,14 +5,17 @@ import {
   getSingleBranch,
   deleteBranch,
   getPublicBranch,
+  getNearestBranches,
 } from "../controllers/branch.controller.js";
 import { createBranchValidator } from "../validators/branch.validator.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.js";
+import { publicReadLimiter } from "../middlewares/rateLimiter.js";
 
 const branchRouter = Router();
 
-branchRouter.get("/public/:branchId", getPublicBranch);
+branchRouter.get("/public/:branchId", publicReadLimiter, getPublicBranch);
+branchRouter.get("/nearest", publicReadLimiter, getNearestBranches);
 
 branchRouter.use(protect);
 

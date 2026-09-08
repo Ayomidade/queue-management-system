@@ -18,6 +18,9 @@ import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import Settings from "./pages/Settings/Settings";
 import AdminLogin from "./pages/AdminLogin/AdminLogin";
 import Boards from "./pages/Boards/Boards";
+import Kiosk from "./pages/Kiosk/Kiosk";
+import Appointment from "./pages/Appointment/Appointment";
+import NearestBranch from "./pages/NearestBranch/NearestBranch";
 import NotFound from "./pages/NotFound/NotFound";
 
 function App() {
@@ -143,6 +146,9 @@ function App() {
         />
         <Route path="/boards" element={<Boards />} />
         <Route path="/board/:branchId" element={<Board />} />
+        <Route path="/kiosk/:branchId" element={<Kiosk />} />
+        <Route path="/appointment/:branchId" element={<Appointment />} />
+        <Route path="/find-nearby" element={<NearestBranch />} />
         <Route
           path="/branch/:branchId"
           element={

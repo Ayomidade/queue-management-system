@@ -1,0 +1,285 @@
+.page {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.card {
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--verdigris);
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 0.35rem;
+}
+
+.input,
+.select {
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.select {
+  cursor: pointer;
+}
+
+.slotsSection {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.slotBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.slotBtn:hover:not(.slotDisabled) {
+  border-color: var(--verdigris);
+}
+
+.slotActive {
+  border-color: var(--verdigris);
+  background: rgba(79, 163, 123, 0.15);
+}
+
+.slotDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.slotTime {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.slotAvail {
+  font-size: 0.65rem;
+  color: var(--ink-soft);
+}
+
+.bookBtn {
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--verdigris);
+  color: var(--paper);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 0.5rem;
+}
+
+.bookBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trackSection {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ink-line);
+}
+
+.trackLabel {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.trackRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.trackRow .input {
+  flex: 1;
+}
+
+.trackBtn {
+  padding: 0.6rem 1rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.trackBtn:hover {
+  border-color: var(--verdigris);
+}
+
+.backLink {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--paper);
+}
+
+.ticketNumber {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-weight: 700;
+  color: var(--verdigris);
+  line-height: 1;
+  margin: 1rem 0 0.75rem;
+}
+
+.detail {
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+  color: var(--paper);
+}
+
+.bookingId {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin: 0.75rem 0 0.25rem;
+}
+
+.note {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+  font-style: italic;
+}
+
+.status {
+  text-transform: capitalize;
+  color: var(--verdigris);
+  font-weight: 600;
+}
+
+.bookedActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.boardLink {
+  color: var(--verdigris);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.boardLink:hover {
+  opacity: 0.8;
+}
+
+.backToList {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.backToList:hover {
+  border-color: var(--verdigris);
+}
+
+.loading {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+
+.empty {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.error {
+  color: var(--signal);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .slotGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trackRow {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,1226 @@
+openapi: 3.0.3
+info:
+  title: Cue — Smart Queue Management API
+  description: |
+    REST API for the Cue queue management system. Supports customer ticket
+    creation, staff counter operations, manager/admin dashboards, public
+    board displays, kiosk check-in, and appointment booking.
+
+    **Authentication:** Most endpoints require a Bearer token in the
+    `Authorization` header. Public endpoints (board, branch info, kiosk,
+    appointments, nearest branch) require no auth.
+
+    **Rate limits:** Auth routes: 10 req / 15 min. Public writes (kiosk,
+    appointments): 20 req / 5 min. Public reads: 60 req / 1 min.
+  version: 1.0.0
+  contact:
+    name: Cue Team
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Registration, login, email verification, password reset
+  - name: Staff
+    description: Staff account management (admin/manager)
+  - name: Branches
+    description: Branch CRUD, public info, nearest-branch lookup
+  - name: Users
+    description: Profile and password change for authenticated users
+  - name: Queues
+    description: Service queue management
+  - name: Counters
+    description: Counter assignment and open/close
+  - name: Tickets
+    description: Ticket lifecycle — create, call, complete, skip, recall
+  - name: Analytics
+    description: Branch analytics, daily reports, staff performance
+  - name: Board
+    description: Public live board data
+  - name: Kiosk
+    description: Anonymous kiosk check-in
+  - name: Appointments
+    description: Appointment booking and slot lookup
+
+paths:
+  # ─── Health ───────────────────────────────────────────
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+
+  # ─── Auth ─────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new customer account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Ada Lovelace
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "201":
+          description: User created, verification email sent
+        "400":
+          description: Validation error or user already exists
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login as a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful, returns JWT + user
+        "400":
+          description: Invalid credentials
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email address with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        "200":
+          description: Email verified
+        "400":
+          description: Invalid or expired token
+
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Success (always, prevents enumeration)
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset link
+      description: Works for both User and Staff accounts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Success (always, prevents enumeration)
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password reset successfully
+        "400":
+          description: Invalid/expired token or validation error
+
+  # ─── Staff ────────────────────────────────────────────
+  /staff/login:
+    post:
+      tags: [Staff]
+      summary: Login as staff/manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+        "400":
+          description: Invalid credentials
+
+  /staff:
+    post:
+      tags: [Staff]
+      summary: Create a staff account
+      security:
+        - bearerAuth: []
+      description: Admin can set any role/branch. Manager can only create plain staff in their own branch.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [staff, manager]
+                  default: staff
+                branch:
+                  type: string
+                  description: Branch ObjectId (required for admin, auto-set for manager)
+      responses:
+        "201":
+          description: Staff created
+        "400":
+          description: Validation error or email exists
+    get:
+      tags: [Staff]
+      summary: List staff members
+      security:
+        - bearerAuth: []
+      description: Admin sees all active staff. Manager sees only their branch.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated staff list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PaginatedResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Staff"
+
+  /staff/{staffId}/assign:
+    patch:
+      tags: [Staff]
+      summary: Reassign staff to a different branch
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - $ref: "#/components/parameters/StaffIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [branchId]
+              properties:
+                branchId:
+                  type: string
+      responses:
+        "200":
+          description: Staff reassigned
+        "403":
+          description: Not authorized
+
+  /staff/{staffId}:
+    delete:
+      tags: [Staff]
+      summary: Deactivate a staff account
+      security:
+        - bearerAuth: []
+      description: Admin or manager (manager can only deactivate staff in their own branch).
+      parameters:
+        - $ref: "#/components/parameters/StaffIdParam"
+      responses:
+        "200":
+          description: Staff deactivated
+        "403":
+          description: Not authorized
+
+  # ─── Branches ─────────────────────────────────────────
+  /branches/public/{branchId}:
+    get:
+      tags: [Branches]
+      summary: Get public branch info (queues, counters, wait counts)
+      description: No auth required. Used by the public branch info page, kiosk, and appointment UIs.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+      responses:
+        "200":
+          description: Branch info with queues and counter summary
+        "404":
+          description: Branch not found
+
+  /branches/nearest:
+    get:
+      tags: [Branches]
+      summary: Find branches nearest to a location
+      description: No auth required. Returns branches sorted by haversine distance with live wait counts.
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+          example: 6.5244
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+          example: 3.3792
+      responses:
+        "200":
+          description: Branches sorted by distance
+        "400":
+          description: Missing or invalid lat/lng
+
+  /branches:
+    post:
+      tags: [Branches]
+      summary: Create a branch
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, location]
+              properties:
+                name:
+                  type: string
+                location:
+                  type: string
+                address:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                coordinates:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+      responses:
+        "201":
+          description: Branch created
+    get:
+      tags: [Branches]
+      summary: List all active branches
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated branch list
+
+  /branches/{id}:
+    get:
+      tags: [Branches]
+      summary: Get a single branch
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Branch details
+        "404":
+          description: Branch not found
+    delete:
+      tags: [Branches]
+      summary: Delete a branch
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Branch deleted
+        "404":
+          description: Branch not found
+
+  # ─── Users ────────────────────────────────────────────
+  /users/profile:
+    get:
+      tags: [Users]
+      summary: Get current user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile data
+
+  /users/change-password:
+    patch:
+      tags: [Users]
+      summary: Change password (logged in)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Password changed
+        "400":
+          description: Validation error
+
+  # ─── Queues ───────────────────────────────────────────
+  /queues:
+    post:
+      tags: [Queues]
+      summary: Create a service queue
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serviceName, branch]
+              properties:
+                serviceName:
+                  type: string
+                branch:
+                  type: string
+                  description: Branch ObjectId
+      responses:
+        "201":
+          description: Queue created
+    get:
+      tags: [Queues]
+      summary: List queues
+      security:
+        - bearerAuth: []
+      description: Admin sees all. Manager/staff see only their branch.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: branchId
+          in: query
+          schema:
+            type: string
+          description: Filter by branch (admin only)
+      responses:
+        "200":
+          description: Paginated queue list
+
+  /queues/{id}:
+    put:
+      tags: [Queues]
+      summary: Update a queue
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serviceName:
+                  type: string
+      responses:
+        "200":
+          description: Queue updated
+    delete:
+      tags: [Queues]
+      summary: Delete a queue
+      security:
+        - bearerAuth: []
+      description: Admin only.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Queue deleted
+
+  # ─── Counters ─────────────────────────────────────────
+  /counters:
+    post:
+      tags: [Counters]
+      summary: Create a counter
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label:
+                  type: string
+                branch:
+                  type: string
+                  description: Required for admin; auto-set for manager
+      responses:
+        "201":
+          description: Counter created
+
+  /counters/{branchId}:
+    get:
+      tags: [Counters]
+      summary: List counters for a branch
+      security:
+        - bearerAuth: []
+      description: Admin, manager, or staff (own branch).
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Counter list
+
+  /counters/{counterId}/assign-staff:
+    patch:
+      tags: [Counters]
+      summary: Assign a staff member to a counter
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - name: counterId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staffId]
+              properties:
+                staffId:
+                  type: string
+      responses:
+        "200":
+          description: Staff assigned
+
+  /counters/{counterId}/unassign-staff:
+    patch:
+      tags: [Counters]
+      summary: Unassign staff from a counter
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - name: counterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Staff unassigned
+
+  /counters/{counterId}/open:
+    patch:
+      tags: [Counters]
+      summary: Open a counter
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - name: counterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Counter opened
+
+  /counters/{counterId}/close:
+    patch:
+      tags: [Counters]
+      summary: Close a counter
+      security:
+        - bearerAuth: []
+      description: Admin, manager, or staff (own counter only).
+      parameters:
+        - name: counterId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Counter closed
+
+  # ─── Tickets ──────────────────────────────────────────
+  /tickets:
+    post:
+      tags: [Tickets]
+      summary: Create a ticket (join queue)
+      security:
+        - bearerAuth: []
+      description: Customer only. One active ticket per queue per customer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queueId, branchId]
+              properties:
+                queueId:
+                  type: string
+                branchId:
+                  type: string
+      responses:
+        "201":
+          description: Ticket created
+        "400":
+          description: Validation error or already have active ticket in this queue
+
+  /tickets/my-ticket:
+    get:
+      tags: [Tickets]
+      summary: Get current active ticket
+      security:
+        - bearerAuth: []
+      description: Customer only. Returns position ahead and estimated wait.
+      responses:
+        "200":
+          description: Active ticket with position info
+        "404":
+          description: No active ticket
+
+  /tickets/my-stats:
+    get:
+      tags: [Tickets]
+      summary: Get today's ticket count for current staff
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin.
+      responses:
+        "200":
+          description: Stats object
+
+  /tickets/{id}/cancel:
+    patch:
+      tags: [Tickets]
+      summary: Cancel a waiting ticket
+      security:
+        - bearerAuth: []
+      description: Customer only. Must own the ticket and it must be waiting.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      responses:
+        "200":
+          description: Ticket cancelled
+        "404":
+          description: Ticket not found
+
+  /tickets/call-next:
+    post:
+      tags: [Tickets]
+      summary: Call the next ticket in a queue
+      security:
+        - bearerAuth: []
+      description: |
+        Staff, manager, or admin. Priority tickets are always served first.
+        Sends a "proceed to counter" email if the ticket has a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queueId]
+              properties:
+                queueId:
+                  type: string
+      responses:
+        "200":
+          description: Next ticket called
+        "404":
+          description: No waiting tickets
+
+  /tickets/{id}/call:
+    patch:
+      tags: [Tickets]
+      summary: Call a specific ticket out of order
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      responses:
+        "200":
+          description: Ticket called
+        "404":
+          description: Ticket not found
+
+  /tickets/{id}/complete:
+    patch:
+      tags: [Tickets]
+      summary: Mark a called ticket as completed
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      responses:
+        "200":
+          description: Ticket completed
+        "404":
+          description: Ticket not found
+
+  /tickets/{id}/skip:
+    patch:
+      tags: [Tickets]
+      summary: Skip a called ticket (no-show)
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      responses:
+        "200":
+          description: Ticket skipped
+        "404":
+          description: Ticket not found
+
+  /tickets/{id}/recall:
+    patch:
+      tags: [Tickets]
+      summary: Recall a skipped ticket back into the queue
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin. Only works on skipped tickets.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      responses:
+        "200":
+          description: Ticket recalled
+        "400":
+          description: Ticket is not in skipped status
+
+  /tickets/{id}/priority:
+    patch:
+      tags: [Tickets]
+      summary: Set ticket priority
+      security:
+        - bearerAuth: []
+      description: Manager or admin only.
+      parameters:
+        - $ref: "#/components/parameters/TicketIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [priority]
+              properties:
+                priority:
+                  type: string
+                  enum: [normal, priority]
+      responses:
+        "200":
+          description: Priority updated
+
+  /tickets/branch/{branchId}:
+    get:
+      tags: [Tickets]
+      summary: List tickets for a branch
+      security:
+        - bearerAuth: []
+      description: Manager (own branch) or admin.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [waiting, called, skipped, cancelled, completed]
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated ticket list
+
+  /tickets/my-history:
+    get:
+      tags: [Tickets]
+      summary: Get recent completed/skipped tickets for current staff
+      security:
+        - bearerAuth: []
+      description: Staff, manager, or admin.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated ticket history
+
+  /tickets/close-day:
+    post:
+      tags: [Tickets]
+      summary: Close the day for a branch
+      security:
+        - bearerAuth: []
+      description: |
+        Manager only. Marks all waiting/called tickets as completed,
+        resets queue counters to zero, sets branch dayOpen to false.
+      responses:
+        "200":
+          description: Day closed, returns ticketsCompleted count
+
+  /tickets/open-day:
+    post:
+      tags: [Tickets]
+      summary: Open the day for a branch
+      security:
+        - bearerAuth: []
+      description: Manager only. Sets branch dayOpen to true.
+      responses:
+        "200":
+          description: Day opened
+
+  # ─── Analytics ────────────────────────────────────────
+  /analytics/branch/{branchId}:
+    get:
+      tags: [Analytics]
+      summary: Get live branch analytics
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+      responses:
+        "200":
+          description: Queue lengths, today's counts, avg wait, counter status
+
+  /analytics/branch/{branchId}/daily-report:
+    get:
+      tags: [Analytics]
+      summary: Get end-of-day report
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Defaults to today (YYYY-MM-DD)
+      responses:
+        "200":
+          description: Daily summary with staff performance
+
+  /analytics/branch/{branchId}/staff-performance:
+    get:
+      tags: [Analytics]
+      summary: Get staff performance for a branch
+      security:
+        - bearerAuth: []
+      description: Admin or manager.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Staff performance ranked by tickets served
+
+  # ─── Board ────────────────────────────────────────────
+  /board:
+    get:
+      tags: [Board]
+      summary: Get all branch boards (public hub)
+      description: No auth required.
+      responses:
+        "200":
+          description: All active branches with queue lengths and counter status
+
+  /board/{branchId}:
+    get:
+      tags: [Board]
+      summary: Get a single branch's live board
+      description: No auth required.
+      parameters:
+        - $ref: "#/components/parameters/BranchIdParam"
+      responses:
+        "200":
+          description: Now serving, recently served, queue lengths, day status
+        "404":
+          description: Branch not found
+
+  # ─── Kiosk ────────────────────────────────────────────
+  /kiosk/tickets:
+    post:
+      tags: [Kiosk]
+      summary: Create an anonymous kiosk ticket
+      description: No auth required. Returns a kioskId for tracking.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queueId, branchId]
+              properties:
+                queueId:
+                  type: string
+                branchId:
+                  type: string
+                guestName:
+                  type: string
+                guestPhone:
+                  type: string
+      responses:
+        "201":
+          description: Kiosk ticket created with kioskId
+        "400":
+          description: Validation error
+
+  /kiosk/tickets/{kioskId}:
+    get:
+      tags: [Kiosk]
+      summary: Track a kiosk ticket
+      description: No auth required.
+      parameters:
+        - name: kioskId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z0-9]{9}$"
+      responses:
+        "200":
+          description: Ticket status, position, and details
+        "404":
+          description: Ticket not found
+
+  /kiosk/tickets/{kioskId}/cancel:
+    patch:
+      tags: [Kiosk]
+      summary: Cancel a kiosk ticket
+      description: No auth required. Only waiting tickets can be cancelled.
+      parameters:
+        - name: kioskId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z0-9]{9}$"
+      responses:
+        "200":
+          description: Ticket cancelled
+        "400":
+          description: Ticket is not in waiting status
+
+  # ─── Appointments ─────────────────────────────────────
+  /appointments/slots:
+    get:
+      tags: [Appointments]
+      summary: Get available time slots for a branch/service/date
+      description: No auth required. Respects branch operating hours and max-appointments-per-slot.
+      parameters:
+        - name: branchId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: serviceId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Queue ObjectId
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2026-08-25"
+      responses:
+        "200":
+          description: Available slots with remaining capacity
+        "400":
+          description: Missing parameters
+
+  /appointments:
+    post:
+      tags: [Appointments]
+      summary: Book an appointment
+      description: No auth required. Creates a ticket with scheduledFor.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queueId, branchId, scheduledFor]
+              properties:
+                queueId:
+                  type: string
+                branchId:
+                  type: string
+                scheduledFor:
+                  type: string
+                  format: date-time
+                guestName:
+                  type: string
+                guestPhone:
+                  type: string
+      responses:
+        "201":
+          description: Appointment booked with kioskId for tracking
+        "409":
+          description: Slot fully booked
+
+  /appointments/{kioskId}:
+    get:
+      tags: [Appointments]
+      summary: Look up an appointment by booking ID
+      description: No auth required.
+      parameters:
+        - name: kioskId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[A-Z0-9]{9}$"
+          description: Booking ID (starts with A)
+      responses:
+        "200":
+          description: Appointment details
+        "404":
+          description: Appointment not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Page number
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 25
+        minimum: 1
+        maximum: 100
+      description: Items per page
+    BranchIdParam:
+      name: branchId
+      in: path
+      required: true
+      schema:
+        type: string
+    TicketIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    StaffIdParam:
+      name: staffId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    PaginatedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+        data:
+          type: array
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+
+    Staff:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [staff, manager]
+        branch:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            location:
+              type: string
+        isActive:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string

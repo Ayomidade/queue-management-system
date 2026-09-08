@@ -6,6 +6,7 @@ import { sendSuccess, sendError } from "../utils/response.js";
 import { emitToBranch, emitToUser } from "../socket.js";
 import mongoose from "mongoose";
 import Branch from "../models/branch.model.js";
+import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
 export const createTicket = async (req, res, next) => {
   try {
@@ -553,19 +554,25 @@ export const getMyStats = async (req, res, next) => {
 
 export const getMyRecentTickets = async (req, res, next) => {
   try {
-    const tickets = await Ticket.find({
+    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
+    const filter = {
       servedBy: req.user.id,
       status: { $in: ["completed", "skipped"] },
-    })
-      .sort({ updatedAt: -1 })
-      .limit(20)
-      .populate("queue", "serviceName")
-      .populate("user", "email name");
+    };
+    const [total, tickets] = await Promise.all([
+      Ticket.countDocuments(filter),
+      Ticket.find(filter)
+        .sort({ updatedAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("queue", "serviceName")
+        .populate("user", "email name"),
+    ]);
 
     return sendSuccess(res, {
       statusCode: 200,
       message: "Recent tickets fetched successfully",
-      data: tickets,
+      ...paginatedResponse(tickets, total, page, limit),
     });
   } catch (error) {
     next(error);
@@ -591,16 +598,21 @@ export const getBranchTickets = async (req, res, next) => {
     const filter = { branch: branchId };
     if (status) filter.status = status;
 
-    const tickets = await Ticket.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .populate("queue", "serviceName")
-      .populate("user", "email");
+    const { page, limit, skip } = parsePagination(req.query);
+    const [total, tickets] = await Promise.all([
+      Ticket.countDocuments(filter),
+      Ticket.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("queue", "serviceName")
+        .populate("user", "email"),
+    ]);
 
     return sendSuccess(res, {
       statusCode: 200,
       message: "Branch tickets fetched successfully",
-      data: tickets,
+      ...paginatedResponse(tickets, total, page, limit),
     });
   } catch (error) {
     next(error);

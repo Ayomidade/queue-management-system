@@ -3,6 +3,7 @@ import Queue from "../models/queue.model.js";
 import Counter from "../models/counter.model.js";
 import Ticket from "../models/ticket.model.js";
 import { sendSuccess } from "../utils/response.js";
+import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
 export const createBranch = async (req, res, next) => {
   try {
@@ -20,13 +21,16 @@ export const createBranch = async (req, res, next) => {
 
 export const getAllBranches = async (req, res, next) => {
   try {
-    const branches = await Branch.find({ isActive: true }).sort({
-      createdAt: -1,
-    });
+    const { page, limit, skip } = parsePagination(req.query);
+    const filter = { isActive: true };
+    const [total, branches] = await Promise.all([
+      Branch.countDocuments(filter),
+      Branch.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    ]);
     return sendSuccess(res, {
       statusCode: 200,
       message: "Branches fetched successfully",
-      data: branches,
+      ...paginatedResponse(branches, total, page, limit),
     });
   } catch (error) {
     next(error);
@@ -119,6 +123,103 @@ export const getPublicBranch = async (req, res, next) => {
           open: counters.filter((c) => c.isOpen).length,
         },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+export const getNearestBranches = async (req, res, next) => {
+  try {
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      const error = new Error("lat and lng query parameters are required");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+
+    if (isNaN(userLat) || isNaN(userLng)) {
+      const error = new Error("Invalid lat/lng values");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const branches = await Branch.find({
+      isActive: true,
+      "coordinates.lat": { $ne: null },
+      "coordinates.lng": { $ne: null },
+    });
+
+    const branchIds = branches.map((b) => b._id);
+
+    const [waitingCounts, counterCounts] = await Promise.all([
+      Ticket.aggregate([
+        { $match: { branch: { $in: branchIds }, status: "waiting" } },
+        { $group: { _id: "$branch", waiting: { $sum: 1 } } },
+      ]),
+      Counter.aggregate([
+        { $match: { branch: { $in: branchIds } } },
+        {
+          $group: {
+            _id: "$branch",
+            total: { $sum: 1 },
+            open: { $sum: { $cond: ["$isOpen", 1, 0] } },
+          },
+        },
+      ]),
+    ]);
+
+    const waitingMap = waitingCounts.reduce(
+      (map, w) => ({ ...map, [String(w._id)]: w.waiting }),
+      {},
+    );
+    const counterMap = counterCounts.reduce(
+      (map, c) => ({ ...map, [String(c._id)]: c }),
+      {},
+    );
+
+    const enriched = branches.map((b) => {
+      const dist = haversineKm(
+        userLat,
+        userLng,
+        b.coordinates.lat,
+        b.coordinates.lng,
+      );
+      const id = String(b._id);
+      const counters = counterMap[id] || { total: 0, open: 0 };
+      return {
+        id: b._id,
+        name: b.name,
+        location: b.location,
+        address: b.address,
+        distanceKm: Math.round(dist * 10) / 10,
+        waiting: waitingMap[id] || 0,
+        counters: { total: counters.total, open: counters.open },
+      };
+    });
+
+    enriched.sort((a, b) => a.distanceKm - b.distanceKm);
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Nearest branches fetched",
+      data: enriched,
     });
   } catch (error) {
     next(error);

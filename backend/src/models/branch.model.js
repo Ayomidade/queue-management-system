@@ -34,6 +34,25 @@ const branchSchema = new mongoose.Schema(
       default: "",
     },
 
+    coordinates: {
+      lat: { type: Number, default: null },
+      lng: { type: Number, default: null },
+    },
+
+    operatingHours: {
+      type: Map,
+      of: new mongoose.Schema({
+        open: { type: String, default: "09:00" },
+        close: { type: String, default: "17:00" },
+      }, { _id: false }),
+      default: {},
+    },
+
+    maxAppointmentsPerSlot: {
+      type: Number,
+      default: 5,
+    },
+
     isActive: {
       type: Boolean,
       default: true,

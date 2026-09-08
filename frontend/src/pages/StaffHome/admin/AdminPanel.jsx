@@ -8,6 +8,7 @@ import AdminStaffTab from "./AdminStaffTab";
 import OverviewTab from "../manager/OverviewTab";
 import CountersTab from "../manager/CountersTab";
 import styles from "../manager/ManagerPanel.module.css";
+import { motion } from "framer-motion";
 
 const TABS = [
   { id: "network", label: "Network" },

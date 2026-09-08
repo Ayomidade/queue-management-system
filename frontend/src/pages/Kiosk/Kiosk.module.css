@@ -1,0 +1,232 @@
+.kiosk {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.card {
+  background: var(--ink-raised);
+  border: 1px solid var(--ink-line);
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--verdigris);
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.queueList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.queueBtn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 10px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.queueBtn:hover {
+  border-color: var(--verdigris);
+}
+
+.queueBtnActive {
+  border-color: var(--verdigris);
+  background: rgba(79, 163, 123, 0.1);
+}
+
+.queueName {
+  font-weight: 600;
+}
+
+.queueWait {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.guestFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.input {
+  padding: 0.6rem 0.8rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+.input::placeholder {
+  color: var(--ink-soft);
+}
+
+.takeBtn {
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--verdigris);
+  color: var(--paper);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.takeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.backLink {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--paper);
+}
+
+.ticketNumber {
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 700;
+  color: var(--verdigris);
+  line-height: 1;
+  margin: 1rem 0 0.5rem;
+}
+
+.ticketQueue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.ticketKioskId {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.ticketPosition {
+  color: var(--paper-soft);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.called {
+  color: var(--brass);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.ticketActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.refreshBtn {
+  padding: 0.5rem 1rem;
+  background: var(--ink);
+  border: 1px solid var(--ink-line);
+  border-radius: 8px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.refreshBtn:hover {
+  border-color: var(--verdigris);
+}
+
+.cancelBtn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--signal);
+  border-radius: 8px;
+  color: var(--signal);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cancelBtn:hover {
+  background: rgba(193, 67, 43, 0.15);
+}
+
+.boardLink {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--verdigris);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.boardLink:hover {
+  opacity: 0.8;
+}
+
+.error {
+  color: var(--signal);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+}

@@ -145,6 +145,12 @@ const Branch = () => {
           <Link to="/login" className={styles.joinBtn}>
             Join a Queue →
           </Link>
+          <Link to={`/kiosk/${branchId}`} className={styles.boardBtn}>
+            Kiosk Check-in
+          </Link>
+          <Link to={`/appointment/${branchId}`} className={styles.boardBtn}>
+            Book Appointment
+          </Link>
           <Link to={`/board/${branchId}`} className={styles.boardBtn}>
             View Live Board
           </Link>
