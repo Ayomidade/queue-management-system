@@ -1,9 +1,26 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Branch.module.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
+
+const REFRESH_EVENTS = [
+  "queue:updated",
+  "ticket:called",
+  "ticket:completed",
+  "ticket:skipped",
+  "ticket:no-show",
+  "ticket:cancelled",
+  "ticket:recalled",
+  "day:opened",
+  "day:closed",
+];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -19,6 +36,7 @@ const Branch = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const refetchTimer = useRef(null);
 
   const fetchBranch = useCallback(async () => {
     try {
@@ -34,9 +52,23 @@ const Branch = () => {
 
   useEffect(() => {
     fetchBranch();
-    const interval = setInterval(fetchBranch, 15000);
-    return () => clearInterval(interval);
-  }, [fetchBranch]);
+
+    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    socket.on("connect", () => {
+      socket.emit("branch:join", branchId);
+    });
+
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer.current);
+      refetchTimer.current = setTimeout(fetchBranch, 400);
+    };
+    REFRESH_EVENTS.forEach((event) => socket.on(event, scheduleRefetch));
+
+    return () => {
+      clearTimeout(refetchTimer.current);
+      socket.disconnect();
+    };
+  }, [branchId, fetchBranch]);
 
   if (loading) {
     return (

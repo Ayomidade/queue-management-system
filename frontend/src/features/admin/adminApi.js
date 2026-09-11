@@ -3,6 +3,8 @@ import { apiClient } from "../../lib/apiClient";
 export const fetchBranches = (token) => apiClient.get("/branches", { token });
 export const createBranch = (data, token) =>
   apiClient.post("/branches", data, { token });
+export const updateBranch = (id, data, token) =>
+  apiClient.put(`/branches/${id}`, data, { token });
 export const deleteBranch = (id, token) =>
   apiClient.delete(`/branches/${id}`, { token });
 

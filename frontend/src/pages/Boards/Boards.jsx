@@ -37,6 +37,7 @@ const Boards = () => {
   const [connected, setConnected] = useState(false);
   const [locationFilter, setLocationFilter] = useState("");
   const refetchTimer = useRef(null);
+  const socketRef = useRef(null);
 
   const locations = [
     ...new Set(boards.map((b) => b.branch.location).filter(Boolean)),
@@ -62,10 +63,10 @@ const Boards = () => {
     fetchBoards();
 
     const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    socketRef.current = socket;
+
     socket.on("connect", () => {
       setConnected(true);
-      // Join all branch rooms so we get updates
-      boards.forEach((b) => socket.emit("branch:join", b.branch.id));
     });
     socket.on("disconnect", () => setConnected(false));
 
@@ -78,18 +79,15 @@ const Boards = () => {
     return () => {
       clearTimeout(refetchTimer.current);
       socket.disconnect();
+      socketRef.current = null;
     };
   }, [fetchBoards]);
 
-  // Re-join rooms when boards change
   useEffect(() => {
-    if (!boards.length) return;
-    const socket = io(SOCKET_URL, { transports: ["websocket"] });
-    socket.on("connect", () => {
-      boards.forEach((b) => socket.emit("branch:join", b.branch.id));
-    });
-    return () => socket.disconnect();
-  }, [boards]);
+    const socket = socketRef.current;
+    if (!socket || !connected || !boards.length) return;
+    boards.forEach((b) => socket.emit("branch:join", b.branch.id));
+  }, [boards, connected]);
 
   if (loading) {
     return (
@@ -112,7 +110,6 @@ const Boards = () => {
   }
 
   const totalWaiting = boards.reduce((sum, b) => sum + b.totalWaiting, 0);
-  const totalCalled = boards.reduce((sum, b) => sum + b.called, 0);
   const totalCounters = boards.reduce((sum, b) => sum + b.counters.open, 0);
 
   return (

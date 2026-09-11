@@ -284,6 +284,14 @@ export const loginUser = async (req, res, next) => {
       });
     }
 
+    if (!user.isEmailVerified) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "Please verify your email before logging in",
+        errors: ["email_not_verified"],
+      });
+    }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,

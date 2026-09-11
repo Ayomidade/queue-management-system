@@ -1,32 +1,52 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { ThemeProvider } from "./features/theme/ThemeContext";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 import ProtectedRoute from "./features/auth/ProtectedRoute";
 import Navbar from "./components/Navbar/Navbar";
 import Footer from "./components/Footer/Footer";
-import Landing from "./pages/Landing/Landing";
-import Contact from "./pages/Contact/Contact";
-import Login from "./pages/Login/Login";
-import Register from "./pages/Register/Register";
-import CustomerHome from "./pages/CustomerHome/CustomerHome";
-import StaffHome from "./pages/StaffHome/StaffHome";
-import Board from "./pages/Board/Board";
-import Branch from "./pages/Branch/Branch";
-import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
-import Settings from "./pages/Settings/Settings";
-import AdminLogin from "./pages/AdminLogin/AdminLogin";
-import Boards from "./pages/Boards/Boards";
-import Kiosk from "./pages/Kiosk/Kiosk";
-import Appointment from "./pages/Appointment/Appointment";
-import NearestBranch from "./pages/NearestBranch/NearestBranch";
-import NotFound from "./pages/NotFound/NotFound";
+
+const Landing = lazy(() => import("./pages/Landing/Landing"));
+const Contact = lazy(() => import("./pages/Contact/Contact"));
+const Login = lazy(() => import("./pages/Login/Login"));
+const Register = lazy(() => import("./pages/Register/Register"));
+const CustomerHome = lazy(() => import("./pages/CustomerHome/CustomerHome"));
+const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
+const Board = lazy(() => import("./pages/Board/Board"));
+const Branch = lazy(() => import("./pages/Branch/Branch"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail/VerifyEmail"));
+const Settings = lazy(() => import("./pages/Settings/Settings"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin/AdminLogin"));
+const Boards = lazy(() => import("./pages/Boards/Boards"));
+const Kiosk = lazy(() => import("./pages/Kiosk/Kiosk"));
+const Appointment = lazy(() => import("./pages/Appointment/Appointment"));
+const NearestBranch = lazy(() => import("./pages/NearestBranch/NearestBranch"));
+const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
+
+const PageSpinner = () => (
+  <div
+    style={{
+      minHeight: "60vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "var(--font-body, system-ui, sans-serif)",
+      color: "var(--text-muted, #666)",
+    }}
+  >
+    Loading…
+  </div>
+);
 
 function App() {
   return (
     <ThemeProvider>
     <AuthProvider>
+      <ErrorBoundary>
+      <Suspense fallback={<PageSpinner />}>
       <Routes>
         <Route
           path="/"
@@ -161,6 +181,8 @@ function App() {
         />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
+      </ErrorBoundary>
     </AuthProvider>
     </ThemeProvider>
   );

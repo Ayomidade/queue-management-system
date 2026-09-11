@@ -1,5 +1,10 @@
 import { apiClient } from "../../lib/apiClient";
 
+export const fetchBranchDetails = (branchId, token) =>
+  apiClient.get(`/branches/${branchId}`, { token });
+export const updateBranchDetails = (branchId, data, token) =>
+  apiClient.put(`/branches/${branchId}`, data, { token });
+
 export const fetchBranchAnalytics = (branchId, token) =>
   apiClient.get(`/analytics/branch/${branchId}`, { token });
 export const fetchStaffPerformance = (branchId, token) =>

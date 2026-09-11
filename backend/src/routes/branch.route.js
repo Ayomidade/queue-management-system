@@ -1,13 +1,17 @@
 import { Router } from "express";
 import {
   createBranch,
+  updateBranch,
   getAllBranches,
   getSingleBranch,
   deleteBranch,
   getPublicBranch,
   getNearestBranches,
 } from "../controllers/branch.controller.js";
-import { createBranchValidator } from "../validators/branch.validator.js";
+import {
+  createBranchValidator,
+  updateBranchValidator,
+} from "../validators/branch.validator.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.js";
 import { publicReadLimiter } from "../middlewares/rateLimiter.js";
@@ -25,6 +29,13 @@ branchRouter.post(
   createBranchValidator,
   validate,
   createBranch,
+);
+branchRouter.put(
+  "/:id",
+  authorize("admin", "manager"),
+  updateBranchValidator,
+  validate,
+  updateBranch,
 );
 branchRouter.get("/", authorize("admin"), getAllBranches);
 branchRouter.get("/:id", authorize("admin"), getSingleBranch);

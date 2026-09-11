@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
-import { ApiError } from "../../lib/apiClient";
+import { apiClient, ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Login.module.css";
@@ -20,6 +20,8 @@ const Login = () => {
   const [accountType, setAccountType] = useState("customer");
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendStatus, setResendStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
@@ -32,6 +34,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
+    setResendStatus(null);
     setSubmitting(true);
 
     try {
@@ -39,13 +43,28 @@ const Login = () => {
       const fallback = accountType === "staff" ? "/staff" : "/account";
       navigate(location.state?.from || fallback, { replace: true });
     } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong, try again.",
-      );
+      if (err instanceof ApiError && err.errors?.includes("email_not_verified")) {
+        setNeedsVerification(true);
+        setError(null);
+      } else {
+        setError(
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong, try again.",
+        );
+      }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendStatus(null);
+    try {
+      await apiClient.post("/auth/resend-verification", { email: form.email });
+      setResendStatus("Verification email sent. Check your inbox.");
+    } catch {
+      setResendStatus("Couldn't send verification email. Try again later.");
     }
   };
 
@@ -137,6 +156,34 @@ const Login = () => {
             </div>
 
             {error && <p className={styles.error}>{error}</p>}
+
+            {needsVerification && (
+              <div className={styles.error} style={{ textAlign: "center" }}>
+                <p style={{ marginBottom: "0.5rem" }}>
+                  Please verify your email before logging in.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "var(--verdigris)",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    fontSize: "inherit",
+                    padding: 0,
+                  }}
+                >
+                  Resend verification email
+                </button>
+                {resendStatus && (
+                  <p style={{ marginTop: "0.5rem", fontSize: "0.8rem", opacity: 0.8 }}>
+                    {resendStatus}
+                  </p>
+                )}
+              </div>
+            )}
 
             <button
               type="submit"

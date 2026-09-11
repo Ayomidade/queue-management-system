@@ -1,9 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
 import { createKioskTicket, getKioskTicket, cancelKioskTicket } from "../../features/kiosk/kioskApi";
 import styles from "./Kiosk.module.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
+
+const TICKET_EVENTS = [
+  "ticket:called",
+  "ticket:completed",
+  "ticket:skipped",
+  "ticket:no-show",
+  "ticket:cancelled",
+  "queue:updated",
+];
 
 const Kiosk = () => {
   const { branchId } = useParams();
@@ -16,6 +30,7 @@ const Kiosk = () => {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const refetchTimer = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +44,38 @@ const Kiosk = () => {
     };
     load();
   }, [branchId]);
+
+  const handleTrackKiosk = useCallback(async (kioskId) => {
+    try {
+      const res = await getKioskTicket(kioskId);
+      setTicket(res.data);
+      setStep("ticket");
+    } catch {
+      setError("Ticket not found");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step !== "ticket" || !ticket?.kioskId || !branchId) return;
+
+    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    socket.on("connect", () => {
+      socket.emit("branch:join", branchId);
+    });
+
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer.current);
+      refetchTimer.current = setTimeout(() => {
+        handleTrackKiosk(ticket.kioskId);
+      }, 400);
+    };
+    TICKET_EVENTS.forEach((event) => socket.on(event, scheduleRefetch));
+
+    return () => {
+      clearTimeout(refetchTimer.current);
+      socket.disconnect();
+    };
+  }, [step, ticket?.kioskId, branchId, handleTrackKiosk]);
 
   const handleTakeTicket = async () => {
     if (!selectedQueue) return;
@@ -47,16 +94,6 @@ const Kiosk = () => {
       setError(err.message || "Failed to create ticket");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleTrackKiosk = async (kioskId) => {
-    try {
-      const res = await getKioskTicket(kioskId);
-      setTicket(res.data);
-      setStep("ticket");
-    } catch {
-      setError("Ticket not found");
     }
   };
 

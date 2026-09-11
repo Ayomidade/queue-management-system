@@ -14,23 +14,32 @@ export const createTicket = async (req, res, next) => {
     const userId = req.user.id;
     const user = await User.findById(userId);
 
-    const queue = await Queue.findByIdAndUpdate(
-      queueId,
-      { $inc: { lastTicketNumber: 1 } },
-      { new: true },
-    );
-    if (!queue) {
-      const error = new Error("Queue not found");
-      error.statusCode = 404;
-      return next(error);
-    }
+    let ticket;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const queue = await Queue.findByIdAndUpdate(
+        queueId,
+        { $inc: { lastTicketNumber: 1 } },
+        { new: true },
+      );
+      if (!queue) {
+        const error = new Error("Queue not found");
+        error.statusCode = 404;
+        return next(error);
+      }
 
-    const ticket = await Ticket.create({
-      user: userId,
-      queue: queueId,
-      branch: branchId,
-      ticketNumber: queue.lastTicketNumber,
-    });
+      try {
+        ticket = await Ticket.create({
+          user: userId,
+          queue: queueId,
+          branch: branchId,
+          ticketNumber: queue.lastTicketNumber,
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && attempt < 2) continue;
+        throw err;
+      }
+    }
 
     sendEmail({
       to: user.email,
@@ -471,12 +480,6 @@ export const closeDay = async (req, res, next) => {
     const result = await Ticket.updateMany(
       { branch: branchId, status: { $in: ["waiting", "called"] } },
       { status: "completed", completedAt: now },
-    );
-
-    // Reset all queue ticket counters for this branch
-    await Queue.updateMany(
-      { branch: branchId },
-      { lastTicketNumber: 0 },
     );
 
     // Update branch day status

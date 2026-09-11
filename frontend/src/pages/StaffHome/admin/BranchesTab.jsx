@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../features/auth/AuthContext";
-import { createBranch, deleteBranch } from "../../../features/admin/adminApi";
+import {
+  createBranch,
+  updateBranch,
+  deleteBranch,
+} from "../../../features/admin/adminApi";
 import { ApiError } from "../../../lib/apiClient";
 import styles from "../manager/ManagerPanel.module.css";
 
@@ -18,9 +22,14 @@ const BranchesTab = ({ branches, onChanged }) => {
   const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(INITIAL_FORM);
 
   const handleChange = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleEditChange = (field) => (e) =>
+    setEditForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -35,6 +44,44 @@ const BranchesTab = ({ branches, onChanged }) => {
         err instanceof ApiError
           ? err.errors?.join(", ") || err.message
           : "Couldn't create branch.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const startEditing = (branch) => {
+    setEditingId(branch._id);
+    setEditForm({
+      name: branch.name || "",
+      location: branch.location || "",
+      address: branch.address || "",
+      phone: branch.phone || "",
+      email: branch.email || "",
+    });
+    setError(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditForm(INITIAL_FORM);
+    setError(null);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await updateBranch(editingId, editForm, auth.token);
+      setEditingId(null);
+      setEditForm(INITIAL_FORM);
+      onChanged();
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.errors?.join(", ") || err.message
+          : "Couldn't update branch.",
       );
     } finally {
       setSubmitting(false);
@@ -57,21 +104,100 @@ const BranchesTab = ({ branches, onChanged }) => {
       )}
       {branches.map((b) => (
         <div key={b._id} className={styles.row}>
-          <div>
-            <div style={{ fontWeight: 600 }}>{b.name}</div>
-            <div className={styles.rowSub}>
-              📍 {b.location}
-              {b.address && <> · {b.address}</>}
-              {b.phone && <> · 📞 {b.phone}</>}
-              {b.email && <> · ✉ {b.email}</>}
-            </div>
-          </div>
-          <button
-            className={styles.linkBtn}
-            onClick={() => handleDelete(b._id)}
-          >
-            Delete
-          </button>
+          {editingId === b._id ? (
+            <form onSubmit={handleUpdate} className={styles.branchForm} style={{ width: "100%" }}>
+              <div className={styles.formRow}>
+                <label className={styles.formField}>
+                  <span className={styles.formLabel}>Branch name *</span>
+                  <input
+                    required
+                    placeholder="e.g. Ikeja Main Branch"
+                    value={editForm.name}
+                    onChange={handleEditChange("name")}
+                  />
+                </label>
+                <label className={styles.formField}>
+                  <span className={styles.formLabel}>Area / City *</span>
+                  <input
+                    required
+                    placeholder="e.g. Ikeja, Lagos"
+                    value={editForm.location}
+                    onChange={handleEditChange("location")}
+                  />
+                </label>
+              </div>
+              <label className={styles.formField}>
+                <span className={styles.formLabel}>Full address</span>
+                <input
+                  placeholder="e.g. 15 Oba Akran Avenue, Ikeja, Lagos"
+                  value={editForm.address}
+                  onChange={handleEditChange("address")}
+                />
+              </label>
+              <div className={styles.formRow}>
+                <label className={styles.formField}>
+                  <span className={styles.formLabel}>Phone number</span>
+                  <input
+                    placeholder="e.g. +234 801 234 5678"
+                    value={editForm.phone}
+                    onChange={handleEditChange("phone")}
+                  />
+                </label>
+                <label className={styles.formField}>
+                  <span className={styles.formLabel}>Branch email</span>
+                  <input
+                    type="email"
+                    placeholder="e.g. ikeja@yourbank.com"
+                    value={editForm.email}
+                    onChange={handleEditChange("email")}
+                  />
+                </label>
+              </div>
+              {error && <p className={styles.statusError}>{error}</p>}
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
+                  disabled={submitting}
+                >
+                  {submitting ? "Saving…" : "Save changes"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={cancelEditing}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <div>
+                <div style={{ fontWeight: 600 }}>{b.name}</div>
+                <div className={styles.rowSub}>
+                  📍 {b.location}
+                  {b.address && <> · {b.address}</>}
+                  {b.phone && <> · 📞 {b.phone}</>}
+                  {b.email && <> · ✉ {b.email}</>}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  className={styles.linkBtn}
+                  onClick={() => startEditing(b)}
+                >
+                  Edit
+                </button>
+                <button
+                  className={styles.linkBtn}
+                  onClick={() => handleDelete(b._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ))}
 

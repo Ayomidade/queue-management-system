@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SplitFlapBoard from "../../components/Hero/SplitFlapBoard";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import { apiClient, ApiError } from "../../lib/apiClient";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Contact.module.css";
 
@@ -20,9 +21,6 @@ const fadeUp = {
   }),
 };
 
-const generateTicketNumber = () =>
-  `R${Math.floor(100000 + Math.random() * 900000)}`;
-
 const Contact = () => {
   const [form, setForm] = useState({
     name: "",
@@ -33,15 +31,29 @@ const Contact = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (field) => (e) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder only, nothing is sent yet, wiring to the real API comes later
-    setTicketNumber(generateTicketNumber());
-    setSubmitted(true);
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await apiClient.post("/contact", form);
+      setTicketNumber(res.data.reference);
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.errors?.join(", ") || err.message
+          : "Something went wrong. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -162,8 +174,17 @@ const Contact = () => {
                     placeholder="Long teller lines during lunch hour, no visibility across branches, etc."
                   />
                 </label>
-                <button type="submit" className={styles.submitBtn}>
-                  File request
+                {error && (
+                  <p style={{ color: "var(--signal, #c0392b)", fontSize: "0.85rem" }}>
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className={styles.submitBtn}
+                  disabled={submitting}
+                >
+                  {submitting ? "Sending…" : "File request"}
                 </button>
               </motion.form>
             ) : (

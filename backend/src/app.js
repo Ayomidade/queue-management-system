@@ -12,6 +12,7 @@ import analyticsRouter from "./routes/analytics.routes.js";
 import boardRouter from "./routes/board.routes.js";
 import kioskRouter from "./routes/kiosk.routes.js";
 import appointmentRouter from "./routes/appointment.routes.js";
+import contactRouter from "./routes/contact.routes.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -66,6 +67,7 @@ app.use("/api/analytics", analyticsRouter);
 app.use("/api/board", boardRouter);
 app.use("/api/kiosk", kioskRouter);
 app.use("/api/appointments", appointmentRouter);
+app.use("/api/contact", contactRouter);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
 import {
   getAvailableSlots,
@@ -8,6 +9,19 @@ import {
   getAppointmentTicket,
 } from "../../features/appointment/appointmentApi";
 import styles from "./Appointment.module.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
+
+const TICKET_EVENTS = [
+  "ticket:called",
+  "ticket:completed",
+  "ticket:skipped",
+  "ticket:no-show",
+  "ticket:cancelled",
+  "queue:updated",
+];
 
 const Appointment = () => {
   const { branchId } = useParams();
@@ -25,6 +39,7 @@ const Appointment = () => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [trackId, setTrackId] = useState("");
+  const refetchTimer = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +53,43 @@ const Appointment = () => {
     };
     load();
   }, [branchId]);
+
+  const handleTrack = useCallback(async (id) => {
+    if (!id?.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getAppointmentTicket(id.trim());
+      setBooking(res.data);
+      setStep("track");
+    } catch {
+      setError("Appointment not found");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if ((step !== "booked" && step !== "track") || !booking?.kioskId || !branchId) return;
+
+    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    socket.on("connect", () => {
+      socket.emit("branch:join", branchId);
+    });
+
+    const scheduleRefetch = () => {
+      clearTimeout(refetchTimer.current);
+      refetchTimer.current = setTimeout(() => {
+        handleTrack(booking.kioskId);
+      }, 400);
+    };
+    TICKET_EVENTS.forEach((event) => socket.on(event, scheduleRefetch));
+
+    return () => {
+      clearTimeout(refetchTimer.current);
+      socket.disconnect();
+    };
+  }, [step, booking?.kioskId, branchId, handleTrack]);
 
   useEffect(() => {
     if (!selectedQueue || !selectedDate) return;
@@ -79,21 +131,6 @@ const Appointment = () => {
       setStep("booked");
     } catch (err) {
       setError(err.message || "Failed to book appointment");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTrack = async () => {
-    if (!trackId.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getAppointmentTicket(trackId.trim());
-      setBooking(res.data);
-      setStep("track");
-    } catch {
-      setError("Appointment not found");
     } finally {
       setLoading(false);
     }
@@ -215,7 +252,7 @@ const Appointment = () => {
                 />
                 <button
                   className={styles.trackBtn}
-                  onClick={handleTrack}
+                  onClick={() => handleTrack(trackId)}
                   disabled={!trackId.trim() || loading}
                 >
                   Track

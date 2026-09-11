@@ -7,10 +7,12 @@ import OverviewTab from "./OverviewTab";
 import StaffTab from "./StaffTab";
 import CountersTab from "./CountersTab";
 import TicketsTab from "./TicketsTab";
+import BranchDetailsTab from "./BranchDetailsTab";
 import styles from "./ManagerPanel.module.css";
 
 const TABS = [
   { id: "overview", label: "Overview" },
+  { id: "branch", label: "Branch" },
   { id: "staff", label: "Staff" },
   { id: "counters", label: "Counters" },
   { id: "tickets", label: "Tickets" },
@@ -182,6 +184,7 @@ const ManagerPanel = () => {
 
       <div className={styles.tabContent}>
         {activeTab === "overview" && <OverviewTab branchId={auth.branch} />}
+        {activeTab === "branch" && <BranchDetailsTab branchId={auth.branch} />}
         {activeTab === "staff" && <StaffTab branchId={auth.branch} />}
         {activeTab === "counters" && <CountersTab branchId={auth.branch} />}
         {activeTab === "tickets" && <TicketsTab branchId={auth.branch} />}

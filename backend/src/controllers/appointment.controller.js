@@ -152,27 +152,36 @@ export const createAppointment = async (req, res, next) => {
       });
     }
 
-    const queue = await Queue.findByIdAndUpdate(
-      queueId,
-      { $inc: { lastTicketNumber: 1 } },
-      { new: true },
-    );
-    if (!queue) {
-      return sendError(res, { statusCode: 404, message: "Queue not found" });
-    }
-
     const kioskId = "A" + crypto.randomBytes(4).toString("hex").toUpperCase();
 
-    const ticket = await Ticket.create({
-      kioskId,
-      queue: queueId,
-      branch: branchId,
-      ticketNumber: queue.lastTicketNumber,
-      isAppointment: true,
-      scheduledFor: scheduledDate,
-      guestName: guestName || null,
-      guestPhone: guestPhone || null,
-    });
+    let ticket;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const queue = await Queue.findByIdAndUpdate(
+        queueId,
+        { $inc: { lastTicketNumber: 1 } },
+        { new: true },
+      );
+      if (!queue) {
+        return sendError(res, { statusCode: 404, message: "Queue not found" });
+      }
+
+      try {
+        ticket = await Ticket.create({
+          kioskId,
+          queue: queueId,
+          branch: branchId,
+          ticketNumber: queue.lastTicketNumber,
+          isAppointment: true,
+          scheduledFor: scheduledDate,
+          guestName: guestName || null,
+          guestPhone: guestPhone || null,
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && attempt < 2) continue;
+        throw err;
+      }
+    }
 
     emitToBranch(branchId, "queue:updated", {
       queueId,

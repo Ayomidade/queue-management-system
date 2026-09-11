@@ -50,7 +50,10 @@ export const useMyTicket = () => {
   }, [fetchTicket]);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      auth: { token: auth.token },
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => socket.emit("user:join", auth.id));

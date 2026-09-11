@@ -10,13 +10,14 @@ import {
   createStaffValidator,
   assignStaffValidator,
 } from "../validators/staff.validator.js";
+import { loginValidator } from "../validators/auth.validator.js";
 import { protect, authorize } from "../middlewares/auth.middleware.js";
 import { authLimiter } from "../middlewares/rateLimiter.js";
 import validate from "../middlewares/validate.js";
 
 const router = express.Router();
 
-router.post("/login", authLimiter, loginStaff);
+router.post("/login", authLimiter, loginValidator, validate, loginStaff);
 
 router.use(protect);
 router.use(authorize("admin", "manager"));

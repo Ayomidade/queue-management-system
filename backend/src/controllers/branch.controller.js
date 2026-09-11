@@ -58,6 +58,54 @@ export const getSingleBranch = async (req, res, next) => {
   }
 };
 
+export const updateBranch = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const allowedFields = [
+      "name",
+      "location",
+      "address",
+      "phone",
+      "email",
+      "coordinates",
+      "operatingHours",
+      "maxAppointmentsPerSlot",
+    ];
+
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      const error = new Error("No valid fields provided for update");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    const branch = await Branch.findByIdAndUpdate(id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!branch) {
+      const error = new Error("Branch not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Branch updated successfully",
+      data: branch,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteBranch = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -69,7 +117,7 @@ export const deleteBranch = async (req, res, next) => {
       return next(error);
     }
 
-    await branch.deleteOne();
+    await Branch.findByIdAndUpdate(id, { isActive: false });
     return sendSuccess(res, {
       statusCode: 200,
       message: "Branch deleted successfully",
