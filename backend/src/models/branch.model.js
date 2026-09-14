@@ -72,6 +72,17 @@ const branchSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    waitTimeTargets: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
+
+    notificationWebhooks: {
+      slack: { type: String, default: "" },
+      discord: { type: String, default: "" },
+    },
   },
   { timestamps: true },
 );

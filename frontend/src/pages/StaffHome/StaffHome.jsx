@@ -8,6 +8,7 @@ import TicketHistory from "./TicketHistory";
 import ManagerPanel from "./manager/ManagerPanel";
 import AdminPanel from "./admin/AdminPanel";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
+import AgentChat from "../../components/AgentChat/AgentChat";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./StaffHome.module.css";
 
@@ -124,6 +125,7 @@ const StaffHome = () => {
           </motion.div>
         )}
       </div>
+      <AgentChat />
     </section>
   );
 };

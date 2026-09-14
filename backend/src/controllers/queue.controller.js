@@ -47,7 +47,7 @@ export const updateQueue = async (req, res, next) => {
     const { id } = req.params;
     // FIX: was Queue.findByIdUpdate — not a real Mongoose method, threw on every call
     const queue = await Queue.findByIdAndUpdate(id, req.body, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

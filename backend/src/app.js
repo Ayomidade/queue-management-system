@@ -1,4 +1,5 @@
 import express, { json, urlencoded } from "express";
+import compression from "compression";
 import errorHandler from "./middlewares/error.middleware.js";
 import notFoundHandler from "./middlewares/notFound.js";
 import auth_router from "./routes/auth.routes.js";
@@ -13,6 +14,12 @@ import boardRouter from "./routes/board.routes.js";
 import kioskRouter from "./routes/kiosk.routes.js";
 import appointmentRouter from "./routes/appointment.routes.js";
 import contactRouter from "./routes/contact.routes.js";
+import agentRouter from "./routes/agent.routes.js";
+import webhookRouter from "./routes/webhook.routes.js";
+import staffImportRouter from "./routes/staffImport.routes.js";
+import exportRouter from "./routes/export.routes.js";
+import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
+import pushRouter from "./routes/push.routes.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -30,6 +37,7 @@ const openapiSpec = yaml.load(
 
 const app = express();
 app.use(helmet());
+app.use(compression());
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "http://localhost:5173",
@@ -68,6 +76,12 @@ app.use("/api/board", boardRouter);
 app.use("/api/kiosk", kioskRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/contact", contactRouter);
+app.use("/api/agent", agentRouter);
+app.use("/api/webhooks", webhookRouter);
+app.use("/api/staff-import", staffImportRouter);
+app.use("/api/export", exportRouter);
+app.use("/api/advanced-analytics", advancedAnalyticsRouter);
+app.use("/api/push", pushRouter);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {

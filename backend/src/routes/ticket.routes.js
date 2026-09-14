@@ -24,6 +24,7 @@ import {
   setPriorityValidator,
   branchIdParamValidator,
 } from "../validators/ticket.validator.js";
+import { auditLog } from "../middlewares/audit.middleware.js";
 
 const ticketRouter = Router();
 ticketRouter.use(protect);
@@ -42,6 +43,7 @@ ticketRouter.post(
   authorize("staff", "manager", "admin"),
   callNextValidator,
   validate,
+  auditLog({ action: "call-next", resource: "ticket" }),
   callNextTicket,
 );
 ticketRouter.patch(
@@ -49,6 +51,7 @@ ticketRouter.patch(
   authorize("staff", "manager", "admin"),
   ticketIdParamValidator,
   validate,
+  auditLog({ action: "call-ticket", resource: "ticket" }),
   callTicket,
 );
 ticketRouter.patch(
@@ -56,6 +59,7 @@ ticketRouter.patch(
   authorize("staff", "manager", "admin"),
   ticketIdParamValidator,
   validate,
+  auditLog({ action: "complete-ticket", resource: "ticket" }),
   completeTicket,
 );
 ticketRouter.patch(
@@ -63,6 +67,7 @@ ticketRouter.patch(
   authorize("staff", "manager", "admin"),
   ticketIdParamValidator,
   validate,
+  auditLog({ action: "skip-ticket", resource: "ticket" }),
   skipTicket,
 );
 

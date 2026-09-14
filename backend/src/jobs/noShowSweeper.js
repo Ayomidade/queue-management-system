@@ -15,7 +15,7 @@ const sweepStaleCalledTickets = async () => {
     (ticket = await Ticket.findOneAndUpdate(
       { status: "called", calledAt: { $lte: cutoff } },
       { $set: { status: "skipped" } },
-      { new: true },
+      { returnDocument: "after" },
     ))
   ) {
     emitToBranch(String(ticket.branch), "ticket:no-show", {

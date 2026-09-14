@@ -86,7 +86,7 @@ export const updateBranch = async (req, res, next) => {
     }
 
     const branch = await Branch.findByIdAndUpdate(id, updates, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

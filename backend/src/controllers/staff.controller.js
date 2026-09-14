@@ -131,7 +131,7 @@ export const assignStaffToBranch = async (req, res, next) => {
     const staff = await Staff.findByIdAndUpdate(
       staffId,
       { branch: branchId },
-      { new: true },
+      { returnDocument: "after" },
     ).populate("branch", "name location");
 
     if (!staff) {

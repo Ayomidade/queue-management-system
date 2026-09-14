@@ -159,7 +159,7 @@ export const createAppointment = async (req, res, next) => {
       const queue = await Queue.findByIdAndUpdate(
         queueId,
         { $inc: { lastTicketNumber: 1 } },
-        { new: true },
+        { returnDocument: "after" },
       );
       if (!queue) {
         return sendError(res, { statusCode: 404, message: "Queue not found" });

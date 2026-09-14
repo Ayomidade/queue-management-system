@@ -19,6 +19,11 @@ const queueSchema = new mongoose.Schema({
     default:0,
   },
 
+  lastNotifiedThreshold: {
+    type: Number,
+    default: 0,
+  },
+
   isActive: {
     type: Boolean,
     default:true

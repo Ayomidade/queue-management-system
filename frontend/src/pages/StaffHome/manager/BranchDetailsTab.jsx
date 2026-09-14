@@ -19,6 +19,8 @@ const BranchDetailsTab = ({ branchId }) => {
     address: "",
     phone: "",
     email: "",
+    slackWebhook: "",
+    discordWebhook: "",
   });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +39,8 @@ const BranchDetailsTab = ({ branchId }) => {
           address: res.data.address || "",
           phone: res.data.phone || "",
           email: res.data.email || "",
+          slackWebhook: res.data.notificationWebhooks?.slack || "",
+          discordWebhook: res.data.notificationWebhooks?.discord || "",
         });
       })
       .catch(() => {
@@ -58,8 +62,19 @@ const BranchDetailsTab = ({ branchId }) => {
     setError(null);
     setSubmitting(true);
     try {
-      await updateBranchDetails(branchId, form, auth.token);
-      setBranch((prev) => ({ ...prev, ...form }));
+      const payload = {
+        name: form.name,
+        location: form.location,
+        address: form.address,
+        phone: form.phone,
+        email: form.email,
+        notificationWebhooks: {
+          slack: form.slackWebhook,
+          discord: form.discordWebhook,
+        },
+      };
+      await updateBranchDetails(branchId, payload, auth.token);
+      setBranch((prev) => ({ ...prev, ...payload }));
       setEditing(false);
     } catch (err) {
       setError(
@@ -135,6 +150,26 @@ const BranchDetailsTab = ({ branchId }) => {
               />
             </label>
           </div>
+          <div className={styles.formRow}>
+            <label className={styles.formField}>
+              <span className={styles.formLabel}>Slack Webhook URL</span>
+              <input
+                type="url"
+                placeholder="https://hooks.slack.com/..."
+                value={form.slackWebhook}
+                onChange={handleChange("slackWebhook")}
+              />
+            </label>
+            <label className={styles.formField}>
+              <span className={styles.formLabel}>Discord Webhook URL</span>
+              <input
+                type="url"
+                placeholder="https://discord.com/api/webhooks/..."
+                value={form.discordWebhook}
+                onChange={handleChange("discordWebhook")}
+              />
+            </label>
+          </div>
           {error && <p className={styles.statusError}>{error}</p>}
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
@@ -156,6 +191,8 @@ const BranchDetailsTab = ({ branchId }) => {
                   address: branch.address || "",
                   phone: branch.phone || "",
                   email: branch.email || "",
+                  slackWebhook: branch.notificationWebhooks?.slack || "",
+                  discordWebhook: branch.notificationWebhooks?.discord || "",
                 });
               }}
             >
