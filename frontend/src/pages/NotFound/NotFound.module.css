@@ -87,7 +87,7 @@
 /* ─── Eyebrow ─── */
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -183,7 +183,7 @@
 
 .homeBtn {
   padding: 1.2rem 3rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -248,7 +248,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    var(--verdigris),
+    var(--brand-primary),
     transparent
   );
   margin-top: 0.5rem;

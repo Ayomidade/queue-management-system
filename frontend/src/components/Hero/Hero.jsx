@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import KineticHeadline from "./KineticHeadline";
 import SplitFlapBoard from "./SplitFlapBoard";
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Hero.module.css";
 import { Link } from "react-router-dom";
@@ -16,7 +17,9 @@ const fadeUp = {
   }),
 };
 
-const Hero = () => (
+const Hero = () => {
+  const { brand } = useBrand();
+  return (
   <section className={styles.hero}>
     <div className={styles.container}>
       <div>
@@ -28,7 +31,7 @@ const Hero = () => (
           variants={fadeUp}
         >
           <img src={logoUrl} alt="" className={styles.logoIcon} />
-          <span className={styles.logoText}>Cue</span>
+           <span className={styles.logoText}>{brand.name}</span>
         </motion.div>
         <motion.p
           className={styles.eyebrow}
@@ -85,6 +88,7 @@ const Hero = () => (
       </motion.div>
     </div>
   </section>
-);
+  );
+};
 
 export default Hero;

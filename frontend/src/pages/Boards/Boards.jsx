@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Boards.module.css";
 
@@ -31,6 +32,7 @@ const fadeUp = {
 };
 
 const Boards = () => {
+  const { brand } = useBrand();
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -126,7 +128,7 @@ const Boards = () => {
             variants={fadeUp}
           >
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </motion.div>
           <motion.p className={styles.eyebrow} custom={1} variants={fadeUp}>
             <span className={styles.liveDot} />
@@ -234,7 +236,7 @@ const Boards = () => {
                             textTransform: "uppercase",
                             padding: "0.2rem 0.6rem",
                             borderRadius: "100px",
-                            background: "var(--verdigris)",
+                            background: "var(--brand-primary)",
                             color: "var(--ink)",
                             fontWeight: 700,
                           }}

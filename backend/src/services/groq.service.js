@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { config } from "dotenv";
+import { getBrandSync } from "../config/brand.config.js";
 
 config();
 
@@ -7,7 +8,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
-const SYSTEM_PROMPT = `You are Cue, an AI assistant for a bank queue management system. You help customers and staff with queue operations.
+const SYSTEM_PROMPT = `You are ${getBrandSync().name}, an AI assistant for a bank queue management system. You help customers and staff with queue operations.
 
 You have access to tools that interact with the queue system. Use them when the user asks about tickets, queues, wait times, branches, or analytics.
 

@@ -23,12 +23,12 @@
 }
 
 .error {
-  color: var(--signal);
+  color: var(--brand-alert);
   margin-bottom: 1rem;
 }
 
 .backLink {
-  color: var(--verdigris);
+  color: var(--brand-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -56,7 +56,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -96,7 +96,7 @@
   font-family: var(--font-mono);
   font-size: var(--step-2);
   font-weight: 700;
-  color: var(--verdigris);
+  color: var(--brand-primary);
 }
 
 .statLabel {
@@ -152,7 +152,7 @@
 .queueWaiting {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--verdigris);
+  color: var(--brand-primary);
 }
 
 .queueBar {
@@ -164,7 +164,7 @@
 
 .queueBarFill {
   height: 100%;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   border-radius: 2px;
   transition: width 0.4s ease;
 }
@@ -179,7 +179,7 @@
   display: block;
   text-align: center;
   padding: 1rem 1.5rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;

@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useTheme } from "../../features/theme/ThemeContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Navbar.module.css";
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
 
 const Navbar = () => {
+  const { brand } = useBrand();
   const [open, setOpen] = useState(false);
   const { auth, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -19,8 +21,8 @@ const Navbar = () => {
     <header className={styles.header}>
       <div className={styles.container}>
         <Link to="/" className={styles.logo}>
-          <img src={logoUrl} alt="Cue" className={styles.logoIcon} />
-          <span>Cue</span>
+          <img src={logoUrl} alt={brand.name} className={styles.logoIcon} />
+          <span>{brand.name}</span>
         </Link>
 
         <nav className={styles.nav}>

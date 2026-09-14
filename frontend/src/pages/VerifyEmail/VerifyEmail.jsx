@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiClient, ApiError } from "../../lib/apiClient";
+import { useBrand } from "../../features/brand/BrandContext";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
 import styles from "../Login/Login.module.css";
 
 const VerifyEmail = () => {
+  const { brand } = useBrand();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
@@ -40,7 +42,7 @@ const VerifyEmail = () => {
       <div className={styles.container}>
         <div className={styles.logoHeader} style={{ justifyContent: "center" }}>
           <img src={logoUrl} alt="" />
-          <span>Cue</span>
+          <span>{brand.name}</span>
         </div>
         <motion.div
           className={styles.card}
@@ -60,7 +62,7 @@ const VerifyEmail = () => {
 
           {status === "success" && (
             <>
-              <p style={{ color: "var(--verdigris)", fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.75rem" }}>
+              <p style={{ color: "var(--brand-primary)", fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.75rem" }}>
                 ✓ {message}
               </p>
               <Link
@@ -75,7 +77,7 @@ const VerifyEmail = () => {
 
           {status === "error" && (
             <>
-              <p style={{ color: "var(--signal)", fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.75rem" }}>
+              <p style={{ color: "var(--brand-alert)", fontWeight: 600, fontSize: "1.1rem", marginBottom: "0.75rem" }}>
                 ✗ {message}
               </p>
               <Link

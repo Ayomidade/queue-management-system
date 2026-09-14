@@ -1,6 +1,7 @@
 import Staff from "../models/staff.model.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/email.service.js";
+import { getBrandSync } from "../config/brand.config.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
@@ -27,8 +28,8 @@ export const createStaff = async (req, res, next) => {
 
     await sendEmail({
       to: staff.email,
-      subject: "Your Cue Staff Account is Ready",
-      html: `<h2>Welcome to Cue</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p>Please log in and change your password.</p>`,
+      subject: `Your ${getBrandSync().name} Staff Account is Ready`,
+      html: `<h2>Welcome to ${getBrandSync().name}</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p>Please log in and change your password.</p>`,
     }).catch(() => {});
 
     return sendSuccess(res, {

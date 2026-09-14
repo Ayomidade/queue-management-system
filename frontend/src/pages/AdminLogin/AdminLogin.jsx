@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
@@ -17,6 +18,7 @@ const fadeUp = {
 };
 
 const AdminLogin = () => {
+  const { brand } = useBrand();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -56,7 +58,7 @@ const AdminLogin = () => {
         <motion.div initial="hidden" animate="visible">
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 008 — Admin access
@@ -114,7 +116,7 @@ const AdminLogin = () => {
                 to="/forgot-password"
                 style={{
                   fontSize: "0.8rem",
-                  color: "var(--verdigris)",
+                  color: "var(--brand-primary)",
                   textDecoration: "none",
                 }}
               >

@@ -11,7 +11,7 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   letter-spacing: 0.02em;
 }
 
@@ -22,7 +22,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   font-size: 0.65rem;
   font-weight: 700;
@@ -35,7 +35,7 @@
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--signal);
+  color: var(--brand-alert);
   letter-spacing: 0.02em;
 }
 
@@ -46,7 +46,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--brand-alert);
   color: var(--paper);
   font-size: 0.65rem;
   font-weight: 700;
@@ -55,7 +55,7 @@
 .resendBtn {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   text-align: left;
   padding: 0;
 }
@@ -71,11 +71,11 @@
 
 .sentText {
   font-size: 0.8rem;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   font-weight: 500;
 }
 
 .error {
   font-size: 0.8rem;
-  color: var(--signal);
+  color: var(--brand-alert);
 }

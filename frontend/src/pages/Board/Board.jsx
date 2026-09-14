@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import { useBranchBoard } from "../../features/board/useBranchBoard";
+import { useBrand } from "../../features/brand/BrandContext";
 import NowServingCard from "./NowServingCard";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Board.module.css";
@@ -129,6 +130,7 @@ const useBoardAnimations = (board, dayStatus) => {
 
 const Board = () => {
   const { branchId } = useParams();
+  const { brand } = useBrand();
   const { board, error, connected, dayStatus } = useBranchBoard(branchId);
   const now = useClock();
 
@@ -209,7 +211,7 @@ const Board = () => {
             transition={{ duration: 0.5 }}
           >
             <img src={logoUrl} alt="" className={styles.brandLogo} />
-            <span className={styles.brandName}>Cue</span>
+            <span className={styles.brandName}>{brand.name}</span>
             <Link to="/boards" className={styles.backLink}>
               ← All branches
             </Link>

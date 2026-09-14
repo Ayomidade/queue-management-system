@@ -1,4 +1,4 @@
-const CACHE_NAME = "cue-v1";
+const CACHE_NAME = "queue-app-v1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -9,7 +9,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Cue", body: "You have a new notification" };
+  let data = { title: "Queue App", body: "You have a new notification" };
 
   if (event.data) {
     try {

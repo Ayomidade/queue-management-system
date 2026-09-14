@@ -10,7 +10,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -39,7 +39,7 @@
 .rail {
   width: 100%;
   height: 100%;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   transform-origin: top;
   transform: scaleY(0);
   border-radius: 2px;

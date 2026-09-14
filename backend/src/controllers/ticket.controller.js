@@ -1,6 +1,7 @@
 import Ticket from "../models/ticket.model.js";
 import Queue from "../models/queue.model.js";
 import { sendEmail } from "../services/email.service.js";
+import { getBrandSync } from "../config/brand.config.js";
 import User from "../models/user.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { emitToBranch, emitToUser } from "../socket.js";
@@ -395,7 +396,7 @@ export const completeTicket = async (req, res, next) => {
       sendEmail({
         to: ticket.user.email,
         subject: `Ticket #${ticket.ticketNumber} — Completed`,
-        html: `<h2>Ticket Completed</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been completed. Thank you for visiting Cue!</p>`,
+        html: `<h2>Ticket Completed</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been completed. Thank you for visiting ${getBrandSync().name}!</p>`,
       }).catch(() => {});
     }
 

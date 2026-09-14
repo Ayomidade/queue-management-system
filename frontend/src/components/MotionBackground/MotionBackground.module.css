@@ -9,7 +9,7 @@
 .orb {
   position: absolute;
   border-radius: 50%;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   opacity: 0.15;
   filter: blur(60px);
   will-change: transform, opacity;

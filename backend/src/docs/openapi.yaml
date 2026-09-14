@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Cue — Smart Queue Management API
+  title: Queue Management API
   description: |
-    REST API for the Cue queue management system. Supports customer ticket
+    REST API for the queue management system. Supports customer ticket
     creation, staff counter operations, manager/admin dashboards, public
     board displays, kiosk check-in, and appointment booking.
 
@@ -14,7 +14,7 @@ info:
     appointments): 20 req / 5 min. Public reads: 60 req / 1 min.
   version: 1.0.0
   contact:
-    name: Cue Team
+    name: Queue Management Team
 
 servers:
   - url: http://localhost:3000/api

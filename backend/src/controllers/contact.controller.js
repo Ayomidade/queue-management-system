@@ -1,5 +1,6 @@
 import { sendSuccess } from "../utils/response.js";
 import { sendEmail } from "../services/email.service.js";
+import { getBrandSync } from "../config/brand.config.js";
 
 export const submitContact = async (req, res, next) => {
   try {
@@ -16,7 +17,7 @@ export const submitContact = async (req, res, next) => {
 
     sendEmail({
       to: process.env.CONTACT_EMAIL || process.env.RESEND_FROM || "admin@example.com",
-      subject: `Cue Demo Request — ${organization}`,
+      subject: `${getBrandSync().name} Demo Request — ${organization}`,
       html,
     }).catch(() => {});
 

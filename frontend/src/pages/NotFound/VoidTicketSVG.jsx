@@ -131,7 +131,7 @@ const VoidTicketSVG = () => (
         height="40"
         rx="6"
         fill="none"
-        stroke="var(--signal)"
+        stroke="var(--brand-alert)"
         strokeWidth="3"
         animate={{
           strokeOpacity: [1, 0.4, 1],
@@ -149,7 +149,7 @@ const VoidTicketSVG = () => (
         textAnchor="middle"
         fontFamily="var(--font-mono)"
         fontSize="20"
-        fill="var(--signal)"
+        fill="var(--brand-alert)"
         fontWeight="700"
         letterSpacing="3"
       >

@@ -6,9 +6,9 @@
   --ink-line: #2c4a37;
   --paper: #efe6cf;
   --paper-raised: #e2d3a8;
-  --verdigris: #4fa37b;
-  --brass: #c9a227;
-  --signal: #c1432b;
+  --brand-primary: #4fa37b;
+  --brand-accent: #c9a227;
+  --brand-alert: #c1432b;
   --ink-soft: #8fa89b;
   --paper-ink: #171510;
   --paper-soft: #6e6650;
@@ -36,9 +36,9 @@
   --ink-line: #bfb39e;
   --paper: #1a1a1f;
   --paper-raised: #242429;
-  --verdigris: #5bb88a;
-  --brass: #d4b030;
-  --signal: #e05a3f;
+  --brand-primary: #5bb88a;
+  --brand-accent: #d4b030;
+  --brand-alert: #e05a3f;
   --ink-soft: #a09888;
   --paper-ink: #f0ead8;
   --paper-soft: #9a9285;
@@ -97,7 +97,7 @@ img {
 }
 
 :focus-visible {
-  outline: 2px solid var(--verdigris);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 3px;
 }
 

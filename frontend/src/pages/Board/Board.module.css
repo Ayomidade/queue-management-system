@@ -62,12 +62,12 @@
 }
 .dayOpen {
   background: rgba(145, 170, 130, 0.12);
-  color: var(--verdigris);
+  color: var(--brand-primary);
   border: 1px solid rgba(145, 170, 130, 0.3);
 }
 .dayClosed {
   background: rgba(193, 67, 43, 0.1);
-  color: var(--signal);
+  color: var(--brand-alert);
   border: 1px solid rgba(193, 67, 43, 0.3);
 }
 .dayDot {
@@ -76,11 +76,11 @@
   border-radius: 50%;
 }
 .dayOpen .dayDot {
-  background: var(--verdigris);
+  background: var(--brand-primary);
   box-shadow: 0 0 8px 2px rgba(145, 170, 130, 0.4);
 }
 .dayClosed .dayDot {
-  background: var(--signal);
+  background: var(--brand-alert);
   box-shadow: 0 0 8px 2px rgba(193, 67, 43, 0.3);
 }
 .dayText {
@@ -117,7 +117,7 @@
 }
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 1rem;
   letter-spacing: 0.2em;
   margin-bottom: 0.5rem;
@@ -137,11 +137,11 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   animation: pulse 1.8s ease-in-out infinite;
 }
 .liveDotOffline {
-  background: var(--signal);
+  background: var(--brand-alert);
   animation: none;
 }
 
@@ -179,7 +179,7 @@
   font-family: var(--font-mono);
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 700;
-  color: var(--brass);
+  color: var(--brand-accent);
   line-height: 1;
 }
 .waitingBigLabel {
@@ -244,10 +244,10 @@
 }
 
 .cardPriority {
-  border-color: var(--signal);
+  border-color: var(--brand-alert);
 }
 .cardPriority:hover {
-  border-color: var(--signal);
+  border-color: var(--brand-alert);
 }
 
 .counterLabel {
@@ -270,7 +270,7 @@
   position: absolute;
   top: -10px;
   right: 12px;
-  background: var(--signal);
+  background: var(--brand-alert);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -299,7 +299,7 @@
 }
 .recentLabel {
   letter-spacing: 0.1em;
-  color: var(--brass);
+  color: var(--brand-accent);
   flex-shrink: 0;
 }
 .recentItem {
@@ -313,7 +313,7 @@
 }
 .recentItemLatest {
   background: rgba(145, 170, 130, 0.15);
-  color: var(--verdigris);
+  color: var(--brand-primary);
   border: 1px solid rgba(145, 170, 130, 0.3);
 }
 
@@ -326,7 +326,7 @@
   transition: color 0.2s ease;
 }
 .backLink:hover {
-  color: var(--verdigris);
+  color: var(--brand-primary);
 }
 
 @media (max-width: 768px) {

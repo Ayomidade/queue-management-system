@@ -20,6 +20,7 @@ import staffImportRouter from "./routes/staffImport.routes.js";
 import exportRouter from "./routes/export.routes.js";
 import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
 import pushRouter from "./routes/push.routes.js";
+import brandRouter from "./routes/brand.routes.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -82,6 +83,7 @@ app.use("/api/staff-import", staffImportRouter);
 app.use("/api/export", exportRouter);
 app.use("/api/advanced-analytics", advancedAnalyticsRouter);
 app.use("/api/push", pushRouter);
+app.use("/api/brand", brandRouter);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {
@@ -93,7 +95,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(openapiSpec, {
     customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "Cue API Documentation",
+    customSiteTitle: "Queue Management API Documentation",
   }),
 );
 

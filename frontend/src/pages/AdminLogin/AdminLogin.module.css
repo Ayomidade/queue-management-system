@@ -33,7 +33,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -68,7 +68,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brand-accent);
   background: rgba(201, 162, 39, 0.12);
   border: 1px solid rgba(201, 162, 39, 0.3);
   padding: 0.4rem 0.75rem;
@@ -79,7 +79,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brass);
+  background: var(--brand-accent);
 }
 
 .form {
@@ -105,13 +105,13 @@
   padding: 0.75rem 0.9rem;
 }
 .field input:focus {
-  outline: 2px solid var(--verdigris);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 1px;
 }
 
 .error {
   font-size: 0.85rem;
-  color: var(--signal);
+  color: var(--brand-alert);
   background: rgba(193, 67, 43, 0.12);
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
@@ -120,7 +120,7 @@
 .submitBtn {
   margin-top: 0.25rem;
   padding: 0.9rem 1.5rem;
-  background: var(--brass);
+  background: var(--brand-accent);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -145,7 +145,7 @@
   color: var(--ink-soft);
 }
 .switchLine a {
-  color: var(--verdigris);
+  color: var(--brand-primary);
   font-weight: 600;
 }
 

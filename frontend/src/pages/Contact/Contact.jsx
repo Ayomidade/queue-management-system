@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SplitFlapBoard from "../../components/Hero/SplitFlapBoard";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import { apiClient, ApiError } from "../../lib/apiClient";
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Contact.module.css";
 
@@ -22,6 +23,7 @@ const fadeUp = {
 };
 
 const Contact = () => {
+  const { brand } = useBrand();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -63,7 +65,7 @@ const Contact = () => {
         <div className={styles.intro}>
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p
             className={styles.eyebrow}
@@ -175,7 +177,7 @@ const Contact = () => {
                   />
                 </label>
                 {error && (
-                  <p style={{ color: "var(--signal, #c0392b)", fontSize: "0.85rem" }}>
+                  <p style={{ color: "var(--brand-alert, #c0392b)", fontSize: "0.85rem" }}>
                     {error}
                   </p>
                 )}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
@@ -17,6 +18,7 @@ const fadeUp = {
 };
 
 const Register = () => {
+  const { brand } = useBrand();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -53,7 +55,7 @@ const Register = () => {
         <motion.div initial="hidden" animate="visible">
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 008 — Join

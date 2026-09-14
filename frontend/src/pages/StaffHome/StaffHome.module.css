@@ -36,7 +36,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -114,7 +114,7 @@
 }
 
 .statusError {
-  color: var(--signal);
+  color: var(--brand-alert);
   font-size: 0.9rem;
   background: rgba(193, 67, 43, 0.1);
   padding: 0.6rem 0.8rem;
@@ -155,7 +155,7 @@
 }
 
 .badgeOpen {
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
 }
 
@@ -175,7 +175,7 @@
 }
 
 .toggleBtn:hover {
-  box-shadow: inset 0 0 0 1px var(--brass);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
 .cardEyebrow {
@@ -206,7 +206,7 @@
   display: block;
   width: fit-content;
   margin: 0 auto 1.25rem;
-  background: var(--signal);
+  background: var(--brand-alert);
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -234,7 +234,7 @@
 }
 
 .completeBtn {
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
 }
 
@@ -275,14 +275,14 @@
 }
 
 .field select:focus {
-  outline: 2px solid var(--verdigris);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 1px;
 }
 
 .callBtn {
   width: 100%;
   padding: 0.9rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -369,7 +369,7 @@
 }
 
 .badgeCompleted {
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
 }
 
@@ -381,7 +381,7 @@
 .recallBtn {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   transition: text-decoration 0.15s ease;
 }
 

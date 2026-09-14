@@ -7,7 +7,7 @@ import {
 } from "react";
 
 const ThemeContext = createContext(null);
-const THEME_KEY = "cue_theme";
+const THEME_KEY = "queue-app_theme";
 
 const getInitialTheme = () => {
   try {

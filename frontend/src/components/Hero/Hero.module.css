@@ -33,7 +33,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -75,7 +75,7 @@
 
 .primaryBtn {
   padding: 0.9rem 1.75rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -104,7 +104,7 @@
 }
 
 .ghostBtn:hover {
-  box-shadow: inset 0 0 0 1px var(--brass);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
 .boardPanel {
@@ -131,7 +131,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--brand-alert);
   animation: pulse 1.8s ease-in-out infinite;
 }
 

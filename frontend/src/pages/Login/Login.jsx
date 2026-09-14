@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { apiClient, ApiError } from "../../lib/apiClient";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
@@ -17,6 +18,7 @@ const fadeUp = {
 };
 
 const Login = () => {
+  const { brand } = useBrand();
   const [accountType, setAccountType] = useState("customer");
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
@@ -75,7 +77,7 @@ const Login = () => {
         <motion.div initial="hidden" animate="visible">
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 007 — Sign in
@@ -150,7 +152,7 @@ const Login = () => {
             </label>
 
             <div style={{ textAlign: "right", marginTop: "-0.5rem" }}>
-              <Link to="/forgot-password" style={{ fontSize: "0.8rem", color: "var(--verdigris)", textDecoration: "none" }}>
+              <Link to="/forgot-password" style={{ fontSize: "0.8rem", color: "var(--brand-primary)", textDecoration: "none" }}>
                 Forgot password?
               </Link>
             </div>
@@ -168,7 +170,7 @@ const Login = () => {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "var(--verdigris)",
+                    color: "var(--brand-primary)",
                     cursor: "pointer",
                     textDecoration: "underline",
                     fontSize: "inherit",

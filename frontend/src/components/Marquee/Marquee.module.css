@@ -1,5 +1,5 @@
 .marquee {
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   overflow: hidden;
   padding: 0.85rem 0;

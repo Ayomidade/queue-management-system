@@ -53,7 +53,7 @@
 }
 
 .columns a:hover {
-  color: var(--signal);
+  color: var(--brand-alert);
 }
 
 .bottom {

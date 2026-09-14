@@ -6,14 +6,18 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  define: {
+    __BRAND_NAME__: JSON.stringify(process.env.VITE_BRAND_NAME || 'Cue'),
+    __BRAND_PRIMARY__: JSON.stringify(process.env.VITE_BRAND_PRIMARY_COLOR || '#4fa37b'),
+    __BRAND_ACCENT__: JSON.stringify(process.env.VITE_BRAND_ACCENT_COLOR || '#c9a227'),
+    __BRAND_ALERT__: JSON.stringify(process.env.VITE_BRAND_ALERT_COLOR || '#c1432b'),
+  },
   server: {
     watch: {
-      // ChromeOS containers sometimes fail to watch node_modules properly
       usePolling: true, 
     },
   },
   optimizeDeps: {
-    // Forces Vite to check dependencies on every startup instead of relying on the browser
     force: true, 
   },
 });

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../lib/apiClient";
 import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import EmailVerificationBadge from "../../components/EmailVerificationBadge/EmailVerificationBadge";
 import ChangePassword from "../../components/ChangePassword/ChangePassword";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
@@ -16,6 +17,7 @@ const ROLE_LABEL = {
 };
 
 const Settings = () => {
+  const { brand } = useBrand();
   const { auth } = useAuth();
   const [branchName, setBranchName] = useState(null);
 
@@ -33,7 +35,7 @@ const Settings = () => {
       <div className={styles.container}>
         <div className={styles.logoHeader}>
           <img src={logoUrl} alt="" />
-          <span>Cue</span>
+          <span>{brand.name}</span>
         </div>
         <div className={styles.headerRow}>
           <div>

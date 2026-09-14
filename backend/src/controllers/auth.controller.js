@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Staff from "../models/staff.model.js";
 import Token from "../models/token.model.js";
 import { sendEmail } from "../services/email.service.js";
+import { getBrandSync } from "../config/brand.config.js";
 import jwt from "jsonwebtoken";
 import { sendSuccess, sendError } from "../utils/response.js";
 
@@ -33,8 +34,8 @@ export const registerUser = async (req, res, next) => {
 
     sendEmail({
       to: user.email,
-      subject: "Verify your Cue email",
-      html: `<h2>Welcome to Cue</h2><p>Click the link below to verify your email address:</p><p><a href="${FRONTEND_URL}/verify-email?token=${rawToken}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
+      subject: `Verify your ${getBrandSync().name} email`,
+      html: `<h2>Welcome to ${getBrandSync().name}</h2><p>Click the link below to verify your email address:</p><p><a href="${FRONTEND_URL}/verify-email?token=${rawToken}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
     }).catch(() => {});
 
     const token = jwt.sign(
@@ -142,7 +143,7 @@ export const resendVerification = async (req, res, next) => {
 
     sendEmail({
       to: user.email,
-      subject: "Verify your Cue email",
+      subject: `Verify your ${getBrandSync().name} email`,
       html: `<h2>Verify your email</h2><p>Click the link below to verify your email address:</p><p><a href="${FRONTEND_URL}/verify-email?token=${rawToken}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
     }).catch(() => {});
 
@@ -192,7 +193,7 @@ export const forgotPassword = async (req, res, next) => {
 
     sendEmail({
       to: account.email,
-      subject: "Reset your Cue password",
+      subject: `Reset your ${getBrandSync().name} password`,
       html: `<h2>Password Reset</h2><p>Click the link below to reset your password:</p><p><a href="${FRONTEND_URL}/reset-password?token=${rawToken}">Reset Password</a></p><p>This link expires in 1 hour.</p><p>If you didn't request this, ignore this email.</p>`,
     }).catch(() => {});
 

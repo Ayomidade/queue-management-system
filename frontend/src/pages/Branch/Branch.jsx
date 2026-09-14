@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { apiClient } from "../../lib/apiClient";
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Branch.module.css";
 
@@ -33,6 +34,7 @@ const fadeUp = {
 
 const Branch = () => {
   const { branchId } = useParams();
+  const { brand } = useBrand();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,7 +100,7 @@ const Branch = () => {
         <motion.div initial="hidden" animate="visible">
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 008 — Branch

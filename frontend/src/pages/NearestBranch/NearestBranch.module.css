@@ -15,7 +15,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -41,7 +41,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid var(--ink-line);
-  border-top-color: var(--verdigris);
+  border-top-color: var(--brand-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 1rem;
@@ -59,7 +59,7 @@
 }
 
 .errorText {
-  color: var(--signal);
+  color: var(--brand-alert);
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
 }
@@ -111,7 +111,7 @@
   font-family: var(--font-mono);
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   white-space: nowrap;
 }
 
@@ -148,7 +148,7 @@
 
 .actionBtn {
   padding: 0.4rem 0.75rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--paper);
   border-radius: 6px;
   font-size: 0.8rem;
@@ -173,7 +173,7 @@
 }
 
 .actionBtnSecondary:hover {
-  border-color: var(--verdigris);
+  border-color: var(--brand-primary);
 }
 
 @media (max-width: 480px) {

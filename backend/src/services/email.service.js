@@ -1,10 +1,11 @@
 import { Resend } from "resend";
 import { config } from "dotenv";
+import { getBrandSync } from "../config/brand.config.js";
 
 config();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const FROM = process.env.RESEND_FROM || "Cue <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM || `${getBrandSync().emailFromName} <onboarding@resend.dev>`;
 
 /**
  * Send an email via Resend.

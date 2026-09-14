@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { useMyTicket } from "../../features/tickets/useMyTicket";
 import CreateTicketFlow from "./CreateTicketFlow";
 import ActiveTicketView from "./ActiveTicketView";
@@ -20,6 +21,7 @@ const fadeUp = {
 
 const CustomerHome = () => {
   const { auth, logout } = useAuth();
+  const { brand } = useBrand();
   const { ticket, loading, error, cancelTicket, refetch } = useMyTicket();
 
   return (
@@ -28,7 +30,7 @@ const CustomerHome = () => {
       <div className={styles.container}>
         <div className={styles.logoHeader}>
           <img src={logoUrl} alt="" />
-          <span>Cue</span>
+          <span>{brand.name}</span>
         </div>
         <motion.div
           className={styles.headerRow}

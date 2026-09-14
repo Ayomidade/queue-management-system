@@ -23,7 +23,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   margin-bottom: 0.5rem;
 }
 
@@ -62,11 +62,11 @@
 }
 
 .queueBtn:hover {
-  border-color: var(--verdigris);
+  border-color: var(--brand-primary);
 }
 
 .queueBtnActive {
-  border-color: var(--verdigris);
+  border-color: var(--brand-primary);
   background: rgba(79, 163, 123, 0.1);
 }
 
@@ -103,7 +103,7 @@
 .takeBtn {
   width: 100%;
   padding: 0.8rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--paper);
   border: none;
   border-radius: 10px;
@@ -136,7 +136,7 @@
   font-family: var(--font-mono);
   font-size: clamp(3rem, 8vw, 5rem);
   font-weight: 700;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   line-height: 1;
   margin: 1rem 0 0.5rem;
 }
@@ -161,7 +161,7 @@
 }
 
 .called {
-  color: var(--brass);
+  color: var(--brand-accent);
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 1rem;
@@ -187,15 +187,15 @@
 }
 
 .refreshBtn:hover {
-  border-color: var(--verdigris);
+  border-color: var(--brand-primary);
 }
 
 .cancelBtn {
   padding: 0.5rem 1rem;
   background: none;
-  border: 1px solid var(--signal);
+  border: 1px solid var(--brand-alert);
   border-radius: 8px;
-  color: var(--signal);
+  color: var(--brand-alert);
   font-family: var(--font-body);
   font-size: 0.85rem;
   cursor: pointer;
@@ -209,7 +209,7 @@
 .boardLink {
   display: inline-block;
   margin-top: 1.25rem;
-  color: var(--verdigris);
+  color: var(--brand-primary);
   font-size: 0.85rem;
   text-decoration: none;
   transition: opacity 0.2s;
@@ -220,7 +220,7 @@
 }
 
 .error {
-  color: var(--signal);
+  color: var(--brand-alert);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }

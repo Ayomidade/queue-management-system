@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { ThemeProvider } from "./features/theme/ThemeContext";
+import { BrandProvider } from "./features/brand/BrandContext";
 import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 import ProtectedRoute from "./features/auth/ProtectedRoute";
 import Navbar from "./components/Navbar/Navbar";
@@ -43,6 +44,7 @@ const PageSpinner = () => (
 
 function App() {
   return (
+    <BrandProvider>
     <ThemeProvider>
     <AuthProvider>
       <ErrorBoundary>
@@ -185,6 +187,7 @@ function App() {
       </ErrorBoundary>
     </AuthProvider>
     </ThemeProvider>
+    </BrandProvider>
   );
 }
 

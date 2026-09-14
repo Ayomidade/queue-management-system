@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { useMyCounter } from "../../features/staff/useMyCounter";
 import { useMyStats } from "../../features/staff/useMyStats";
 import CounterConsole from "./CounterConsole";
@@ -25,6 +26,7 @@ const fadeUp = {
 
 const StaffHome = () => {
   const { auth, logout } = useAuth();
+  const { brand } = useBrand();
   const counterState = useMyCounter();
   const { stats, refetch: refetchStats } = useMyStats();
   const roleLabel = ROLE_LABEL[auth.role] || "Staff";
@@ -35,7 +37,7 @@ const StaffHome = () => {
       <div className={styles.container}>
         <div className={styles.logoHeader}>
           <img src={logoUrl} alt="" />
-          <span>Cue</span>
+          <span>{brand.name}</span>
         </div>
         <motion.div
           className={styles.headerRow}

@@ -121,7 +121,7 @@ const AdminStaffTab = ({ branches }) => {
                   borderRadius: "4px",
                   background:
                     s.role === "manager"
-                      ? "var(--verdigris)"
+                      ? "var(--brand-primary)"
                       : "var(--paper-raised)",
                   color: s.role === "manager" ? "var(--ink)" : "var(--paper-soft)",
                 }}

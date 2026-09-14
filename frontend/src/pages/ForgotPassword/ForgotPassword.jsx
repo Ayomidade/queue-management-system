@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { apiClient, ApiError } from "../../lib/apiClient";
+import { useBrand } from "../../features/brand/BrandContext";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
 import logoUrl from "../../assets/logo.svg";
 import styles from "../Login/Login.module.css";
 
 const ForgotPassword = () => {
+  const { brand } = useBrand();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -35,7 +37,7 @@ const ForgotPassword = () => {
         <motion.div initial="hidden" animate="visible">
           <div className={styles.logoHeader}>
             <img src={logoUrl} alt="" />
-            <span>Cue</span>
+            <span>{brand.name}</span>
           </div>
           <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
             № 013 — Reset password
@@ -56,7 +58,7 @@ const ForgotPassword = () => {
         >
           {sent ? (
             <div style={{ textAlign: "center" }}>
-              <p style={{ marginBottom: "1rem", color: "var(--verdigris)", fontWeight: 600 }}>
+              <p style={{ marginBottom: "1rem", color: "var(--brand-primary)", fontWeight: 600 }}>
                 Check your inbox!
               </p>
               <p style={{ color: "var(--ink-soft)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>

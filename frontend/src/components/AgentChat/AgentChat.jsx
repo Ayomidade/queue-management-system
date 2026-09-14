@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../features/auth/AuthContext";
+import { useBrand } from "../../features/brand/BrandContext";
 import { sendAgentMessage } from "../../features/agent/agentApi";
 import styles from "./AgentChat.module.css";
 
 const AgentChat = () => {
   const { auth } = useAuth();
+  const { brand } = useBrand();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -74,7 +76,7 @@ const AgentChat = () => {
           <div className={styles.header}>
             <div className={styles.headerInfo}>
               <span className={styles.headerDot} />
-              <span>Cue Assistant</span>
+              <span>{brand.name} Assistant</span>
             </div>
             <button
               className={styles.closeBtn}
@@ -87,7 +89,7 @@ const AgentChat = () => {
           <div className={styles.messages}>
             {messages.length === 0 && (
               <div className={styles.emptyState}>
-                <p>Hi! I'm your Cue assistant.</p>
+                <p>Hi! I'm your {brand.name} assistant.</p>
                 <p>Ask me about queues, wait times, or branch info.</p>
               </div>
             )}

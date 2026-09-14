@@ -31,7 +31,7 @@
 
 .eyebrow {
   font-family: var(--font-mono);
-  color: var(--brass);
+  color: var(--brand-accent);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -111,14 +111,14 @@
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  outline: 2px solid var(--verdigris);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 1px;
 }
 
 .submitBtn {
   margin-top: 0.5rem;
   padding: 0.9rem 1.5rem;
-  background: var(--verdigris);
+  background: var(--brand-primary);
   color: var(--ink);
   border-radius: 100px;
   font-weight: 700;
@@ -142,7 +142,7 @@
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
-  color: var(--brass);
+  color: var(--brand-accent);
 }
 
 .confirmText {

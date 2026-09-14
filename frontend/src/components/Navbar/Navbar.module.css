@@ -43,7 +43,7 @@
   color: var(--paper-ink);
 }
 .boardsLink {
-  color: var(--verdigris) !important;
+  color: var(--brand-primary) !important;
   font-weight: 600;
 }
 
@@ -60,7 +60,7 @@
 }
 .loginLink:hover,
 .accountLink:hover {
-  color: var(--verdigris);
+  color: var(--brand-primary);
 }
 
 .cta {
@@ -87,7 +87,7 @@
   transition: color 0.2s ease;
 }
 .themeToggle:hover {
-  color: var(--verdigris);
+  color: var(--brand-primary);
 }
 
 .menuToggle {

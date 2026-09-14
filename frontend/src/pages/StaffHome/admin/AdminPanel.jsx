@@ -5,6 +5,7 @@ import { fetchBranches } from "../../../features/admin/adminApi";
 import BranchesTab from "./BranchesTab";
 import ServicesTab from "./ServicesTab";
 import AdminStaffTab from "./AdminStaffTab";
+import BrandTab from "./BrandTab";
 import OverviewTab from "../manager/OverviewTab";
 import CountersTab from "../manager/CountersTab";
 import styles from "../manager/ManagerPanel.module.css";
@@ -15,6 +16,7 @@ const TABS = [
   { id: "branches", label: "Branches" },
   { id: "services", label: "Services" },
   { id: "staff", label: "Staff" },
+  { id: "brand", label: "Brand" },
   { id: "counters", label: "Counters" },
   { id: "boards", label: "Live Boards" },
   { id: "overview", label: "Analytics" },
@@ -85,6 +87,7 @@ const AdminPanel = () => {
         )}
         {activeTab === "services" && <ServicesTab branches={branches} />}
         {activeTab === "staff" && <AdminStaffTab branches={branches} />}
+        {activeTab === "brand" && <BrandTab />}
         {activeTab === "counters" &&
           (selectedBranchId ? (
             <CountersTab branchId={selectedBranchId} />

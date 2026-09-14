@@ -1,13 +1,16 @@
+import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Footer.module.css";
 
-const Footer = () => (
+const Footer = () => {
+  const { brand } = useBrand();
+  return (
   <footer className={styles.footer}>
     <div className={styles.container}>
       <div>
         <div className={styles.brand}>
           <img src={logoUrl} alt="" className={styles.brandIcon} />
-          Cue
+          {brand.name}
         </div>
         <p className={styles.tagline}>
           Queue management for banks that would rather their lobby stayed empty.
@@ -27,9 +30,10 @@ const Footer = () => (
       </div>
     </div>
     <div className={styles.bottom}>
-      © {new Date().getFullYear()} Cue. All rights reserved.
+      © {new Date().getFullYear()} {brand.name}. All rights reserved.
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;
