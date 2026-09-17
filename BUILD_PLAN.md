@@ -2,349 +2,295 @@
 
 A sequenced plan for everything left to build, and why it's ordered this way. Update the relevant status line here as each phase ships.
 
-## Where things stand
+---
 
-| Piece                                                                       | Status         |
-| --------------------------------------------------------------------------- | -------------- |
-| Backend: auth, roles, branches, queues, counters, tickets                   | ✅ Done        |
-| Backend: real-time (Socket.io), no-show handling                            | ✅ Done        |
-| Backend: branch analytics, daily report, staff performance                  | ✅ Done        |
-| Backend: public board endpoint (single branch)                              | ✅ Done        |
-| Backend: public all-boards endpoint                                         | ✅ Done        |
-| Backend: public branch info endpoint                                        | ✅ Done        |
-| Backend: staff ticket history + recall                                      | ✅ Done        |
-| Backend: email notifications (Resend)                                       | ✅ Done        |
-| Backend: email verification flow                                            | ✅ Done        |
-| Backend: forgot/reset password flow                                         | ✅ Done        |
-| Backend: password change endpoint                                           | ✅ Done        |
-| Backend: admin login (auth/login for User model roles)                      | ✅ Done        |
-| Backend: day open/close endpoints (manager)                                 | ✅ Done        |
-| Backend: branch address/phone/email fields                                  | ✅ Done        |
-| Backend: kiosk ticket endpoints (create, track, cancel)                     | ✅ Done        |
-| Backend: appointment booking endpoints (slots, book, track)                 | ✅ Done        |
-| Backend: nearest-branch endpoint (geolocation sort)                         | ✅ Done        |
-| Backend: branch coordinates + operating hours                               | ✅ Done        |
-| Backend: AI agent (Groq API, tool-calling, chat endpoint)                   | ✅ Done        |
-| Backend: webhook support (CRUD, HMAC signing, event dispatch)               | ✅ Done        |
-| Backend: Slack/Discord notifications                                        | ✅ Done        |
-| Backend: audit log (AuditLog model, middleware)                             | ✅ Done        |
-| Backend: bulk staff import (CSV upload)                                     | ✅ Done        |
-| Backend: export analytics (CSV, HTML reports)                               | ✅ Done        |
-| Backend: peak hours heatmap, staff leaderboard, wait time targets           | ✅ Done        |
-| Backend: response compression                                               | ✅ Done        |
-| Backend: automated tests (35 tests, vitest)                                 | ✅ Done        |
-| Backend: Mongoose deprecation fixes                                         | ✅ Done        |
-| Seed script (admin, manager, staff, customer)                               | ✅ Done        |
-| Frontend: landing page, contact page, 404                                   | ✅ Done        |
-| Frontend: auth (login/register), 401 handling                               | ✅ Done        |
-| Frontend: admin login page (/admin-login)                                   | ✅ Done        |
-| Frontend: public Now Serving board (per-branch, GSAP animations)            | ✅ Done        |
-| Frontend: public boards hub (/boards) with location filter                  | ✅ Done        |
-| Frontend: public branch info page                                           | ✅ Done        |
-| Frontend: customer ticket tracker + "View Live Queue" button                | ✅ Done        |
-| Frontend: staff counter dashboard + "Live Board" button                     | ✅ Done        |
-| Frontend: manager dashboard (enhanced overview, day control)                | ✅ Done        |
-| Frontend: admin dashboard (network overview, live boards tab, staff search) | ✅ Done        |
-| Frontend: staff ticket history with recall                                  | ✅ Done        |
-| Frontend: forgot password page                                              | ✅ Done        |
-| Frontend: reset password page                                               | ✅ Done        |
-| Frontend: email verification page                                           | ✅ Done        |
-| Frontend: change password component                                         | ✅ Done        |
-| Frontend: email verification status badge                                   | ✅ Done        |
-| Frontend: settings page (/settings) with branch details                     | ✅ Done        |
-| Frontend: dark mode toggle (ThemeContext)                                   | ✅ Done        |
-| Frontend: mobile responsive pass                                            | ✅ Done        |
-| Frontend: motion backgrounds + page animations                              | ✅ Done        |
-| Frontend: Q-arrow logo on all pages + favicon                               | ✅ Done        |
-| Frontend: branch creation form (name, location, address, phone, email)      | ✅ Done        |
-| Frontend: kiosk check-in page (/kiosk/:branchId)                           | ✅ Done        |
-| Frontend: appointment booking page (/appointment/:branchId)                 | ✅ Done        |
-| Frontend: nearest-branch finder (/find-nearby)                              | ✅ Done        |
-| Frontend: AI agent chat widget (CustomerHome + StaffHome)                   | ✅ Done        |
-| Frontend: peak hours heatmap, staff leaderboard, wait targets               | ✅ Done        |
-| Frontend: webhook management UI                                             | ✅ Done        |
-| Frontend: bulk staff import UI (CSV upload)                                 | ✅ Done        |
-| Frontend: analytics export buttons (CSV, HTML)                              | ✅ Done        |
-| Frontend: notification webhook URLs (Slack/Discord) on branch edit          | ✅ Done        |
-| Frontend: code splitting (React.lazy for all 18 pages)                      | ✅ Done        |
-| Frontend: automated tests (8 tests, vitest + testing-library)               | ✅ Done        |
-| Frontend: error boundary component                                          | ✅ Done        |
-| CI: GitHub Actions pipeline (lint, test, build)                             | ✅ Done        |
-| README: backend and frontend docs updated                                   | ✅ Done        |
+## Pivot: API-First Queue Integration Service
+
+### Concept Shift
+
+**Before:** Standalone queue management platform banks deploy as their own instance
+**After:** API-first service banks integrate into their existing software via REST API + webhooks
+
+The demo frontend becomes a proof-of-concept, not the primary product. Banks call Cue's API from their own systems. The customer never interacts with Cue directly — they interact with the bank's app, which calls Cue.
+
+### Key Architectural Changes
+
+| Area              | Current                                | New                                     |
+| ----------------- | -------------------------------------- | --------------------------------------- |
+| Auth              | JWT tokens for all users               | API keys for bank integrations          |
+| Routes            | `/api/*`                               | `/api/v1/*` (versioned)                 |
+| Branding          | 3-layer (env + MongoDB + BrandContext) | Env vars only                           |
+| Frontend          | Full app with admin/manager panels     | Simplified demo (customer + staff only) |
+| AI Agent          | Groq/LLaMA chatbot                     | Deferred                                |
+| Multi-tenancy     | Implicit (single deployment)           | Explicit (API key → bank/tenant)        |
+| Kiosk/Appointment | Public (no auth)                       | API key required                        |
 
 ---
 
-## Phase 1 — Customer Ticket Tracker ✅
+## Where things stand (Previous Work)
 
-Replaces the `/account` stub. The other half of the loop the board and staff dashboard depend on existing.
+| Piece                                                      | Status             |
+| ---------------------------------------------------------- | ------------------ |
+| Backend: auth, roles, branches, queues, counters, tickets  | ✅ Done            |
+| Backend: real-time (Socket.io), no-show handling           | ✅ Done            |
+| Backend: branch analytics, daily report, staff performance | ✅ Done            |
+| Backend: public board endpoints                            | ✅ Done            |
+| Backend: kiosk, appointments, nearest-branch               | ✅ Done            |
+| Backend: AI agent (Groq API)                               | ✅ Done (deferred) |
+| Backend: webhooks, Slack/Discord notifications             | ✅ Done            |
+| Backend: audit log, bulk import, export                    | ✅ Done            |
+| Backend: email notifications (Resend)                      | ✅ Done            |
+| Backend: automated tests (35 tests)                        | ✅ Done            |
+| Frontend: all 18 pages                                     | ✅ Done            |
+| Frontend: dark mode, responsive, animations                | ✅ Done            |
+| Frontend: automated tests (8 tests)                        | ✅ Done            |
+| CI: GitHub Actions pipeline                                | ✅ Done            |
+
+---
+
+## Phase 1 — API Key Authentication ✅
+
+**Goal:** Replace JWT-only auth with API key authentication for bank integrations.
 
 **Ships:**
 
-- [x] Branch + service picker (`GET /api/branches`, `GET /api/queues`)
-- [x] Create a ticket (`POST /api/tickets`), confirmation with the ticket number
-- [x] Live ticket view: status, position, `estimatedWaitMinutes`, updating over the same socket events the board already listens for
-- [x] Cancel ticket (`PATCH /api/tickets/:id/cancel`)
-- [x] "No active ticket" state with a clear call to pull one
-- [x] "View Live Queue" button linking to branch board
+- [x] `ApiKey` model: `key` (hashed), `bankName`, `label`, `scopes[]`, `rateLimit`, `isActive`, `lastUsedAt`, `expiresAt`, `createdAt`
+- [x] Key generation endpoint: `POST /api/v1/api-keys` (admin only)
+- [x] Key listing: `GET /api/v1/api-keys` (admin only)
+- [x] Key revocation: `DELETE /api/v1/api-keys/:id` (admin only)
+- [x] Key rotation: `POST /api/v1/api-keys/:id/rotate` (generates new key, old key active for 24h grace period)
+- [x] Key toggle: `PATCH /api/v1/api-keys/:id/toggle` (enable/disable without deleting)
+- [x] `authenticateApiKey` middleware: reads `X-API-Key` header, validates key, attaches `req.bank` and `req.apiKey` to request
+- [x] `requireScope(scope)` middleware: checks `req.apiKey.scopes` includes required scope
+- [x] Rate limiting middleware keyed to API key ID (not IP)
+- [x] Seed a default admin API key (`npm run seed:apikey`)
+- [x] V1 routes mounted in `app.js` with API key auth pipeline
+- [x] Tests for `requireScope` and `apiKeyRateLimit` middlewares (10 tests)
+
+**Scopes:**
+
+| Scope             | Access                                               |
+| ----------------- | ---------------------------------------------------- |
+| `branches:read`   | Read branch info, queues, counters, board data       |
+| `tickets:write`   | Create/cancel tickets (kiosk, appointment, customer) |
+| `tickets:read`    | Read ticket status, position, ETA                    |
+| `staff:read`      | Read staff list                                      |
+| `analytics:read`  | Read analytics, reports                              |
+| `webhooks:manage` | Create/delete/toggle webhooks                        |
+| `admin`           | Full access (system management)                      |
 
 ---
 
-## Phase 2 — Staff Counter Dashboard ✅
+## Phase 2 — API Versioning ✅
 
-Replaces `/staff` for `role: staff`. What actually makes the board's data mean something, right now nothing calls tickets.
+**Goal:** Prefix all routes with `/api/v1/` for backward compatibility and future-proofing.
+
+**Architecture:**
+```
+Legacy:  /api/*  → JWT auth (protect middleware)     → existing controllers
+V1:      /api/v1/* → API key auth → bankScope → same controllers (bank-scoping is optional)
+```
+
+Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy), skip.
 
 **Ships:**
 
-- [x] Pull the signed-in staff member's branch and counter (`GET /api/users/profile`)
-- [x] "Call Next" for a chosen queue (`POST /api/tickets/call-next`)
-- [x] Complete / skip the current ticket (`PATCH .../complete`, `PATCH .../skip`)
-- [x] Open / close their own assigned counter (`PATCH /api/counters/:counterId/close`, `/open`)
-- [x] Simple "my day" tally, tickets served today
-- [x] Ticket history with recall for skipped tickets
-- [x] "Live Board" header button linking to branch board
+- [x] V1 routes mounted in `app.js` via clean `v1Router`
+- [x] `bankScope` middleware: finds branches belonging to API key's bank, attaches to `req.bankBranchIds`
+- [x] `validateBranchOwnership` middleware: validates specific branch belongs to bank
+- [x] Board controller: optional bank-scoping on `getAllBoards` and `getBranchBoard`
+- [x] Branch controller: optional bank-scoping on all CRUD + auto-set bank on create
+- [x] Kiosk controller: optional bank validation on create, get, cancel
+- [x] Appointment controller: optional bank validation on slots, create, get
+- [x] V1 route files for all resources (`routes/v1/*.routes.js`)
+- [x] V1 index router with bankScope middleware (`routes/v1/index.js`)
+- [x] Branch model: added `bank` field for multi-tenant isolation
+- [x] Branch name uniqueness scoped to bank (not global)
+- [x] Frontend API client: added `v1Api` helper and `apiKey` option for v1 routes
+- [x] Legacy `/api/` routes preserved for backward compatibility
+- [x] All 45 backend + 8 frontend tests pass
 
 ---
 
-## Phase 3 — Manager Dashboard ✅
+## Phase 3 — Multi-Tenancy Foundation ✅
 
-Extends the same `/staff` shell for `role: manager`.
+**Goal:** Explicit data isolation per bank/tenant.
 
 **Ships:**
 
-- [x] Everything staff can do, plus:
-- [x] Staff management, create/deactivate, branch-scoped (`/api/staff`)
-- [x] Counter management, create/assign/unassign/open/close any counter in-branch (`/api/counters`)
-- [x] Ticket overrides: recall a skipped ticket, flag priority (`/api/tickets/:id/recall`, `/priority`)
-- [x] Branch analytics dashboard, daily report, staff performance, real data this time (`/api/analytics/branch/:branchId`, `.../staff-performance`)
-- [x] Enhanced overview with progress bars, queue bar charts, counter status grid
-- [x] "View Branch Board →" link in panel header
-- [x] Day Control menu — Open day / Close day with confirmation dialog
-- [x] Day status tracked on Branch model (`dayOpen`, `lastOpenedAt`, `lastClosedAt`)
-- [x] Analytics tab: peak hours heatmap, staff leaderboard, wait targets, webhooks, bulk import, export
+- [x] `bank` field added to Branch model (done in Phase 2)
+- [x] Branch name uniqueness scoped to bank (done in Phase 2)
+- [x] `bankScope` middleware attaches `req.bankBranchIds` and `req.bankFilter` (done in Phase 2)
+- [x] V1 controllers filter all queries by `req.bankName` (done in Phase 2)
+- [x] V1 board endpoints: filtered by bank (done in Phase 2)
+- [x] V1 kiosk/appointment endpoints: validate branch belongs to bank (done in Phase 2)
+- [ ] Staff model: add `bank` field (Phase 8 or later)
+- [ ] Ticket model: add `bank` field for direct queries (Phase 8 or later)
 
 ---
 
-## Phase 4 — Admin Dashboard ✅
+## Phase 4 — Simplify Branding ✅
 
-Same shell, `role: admin`, network-wide instead of branch-scoped.
+**Goal:** Remove MongoDB BrandConfig, keep env vars only.
 
 **Ships:**
 
-- [x] Branch management (create with name, location, address, phone, email, notification webhooks)
-- [x] Queue management across branches
-- [x] Network-wide staff management, including cross-branch reassignment (`PATCH /api/staff/:staffId/assign`)
-- [x] Cross-branch view of the analytics already built for managers, same components, a branch picker on top
-- [x] "Network" tab — branch overview with links to board and public page
-- [x] "Live Boards" tab — list all branches with "Open board →" links
-- [x] Staff search by name, email, role, or branch
+- [x] Delete `BrandConfig` model
+- [x] Simplify `brand.config.js` (env vars only, no cache)
+- [x] Delete PATCH endpoint from brand routes (no runtime updates)
+- [x] Keep `GET /api/brand` endpoint (returns env var values, for demo frontend)
+- [x] Remove DB cache/invalidation logic
+- [x] Update email templates to use env vars directly
 
 ---
 
-## Phase 4.5 — Email & Auth Features ✅
+## Phase 5 — New Color Theme ✅
 
-Built between Phase 4 and Phase 5 as foundational infrastructure.
+**Goal:** Update the color palette to be professional, banking-friendly, and welcoming.
 
-**Email notifications (Resend):**
+**Theme: "Verdant Trust"**
 
-- [x] Replace nodemailer with Resend SDK
-- [x] Ticket created confirmation email
-- [x] Ticket called / "proceed to counter" email
-- [x] Staff account created welcome email
-- [x] All emails fire-and-forget (never block requests)
-
-**Email verification:**
-
-- [x] Token model (`Token`) with SHA-256 hashing, 24h expiry, auto-expire index
-- [x] Verification email sent on customer registration
-- [x] `POST /auth/verify-email` — accepts token, marks `isEmailVerified: true`
-- [x] `POST /auth/resend-verification` — resends verification email
-- [x] Frontend: `/verify-email?token=...` — auto-verifies on page load
-
-**Forgot / reset password:**
-
-- [x] `POST /auth/forgot-password` — works for both User and Staff models
-- [x] `POST /auth/reset-password` — accepts token + new password, 1h expiry
-- [x] Generic response to prevent email enumeration
-- [x] Frontend: `/forgot-password` — enter email form
-- [x] Frontend: `/reset-password?token=...` — enter new password form
-- [x] "Forgot password?" link on login page
-
-**Password change (logged in):**
-
-- [x] `PATCH /api/users/change-password` — works for all roles
-- [x] Validates current password, min 8 chars, different from current
-- [x] Reusable `<ChangePassword />` component on customer + staff dashboards
-
-**Admin login:**
-
-- [x] `/admin-login` route — dedicated page that hits `POST /api/auth/login` (User model, where admin accounts live)
-- [x] "Sign in as Admin instead" link on staff login tab
-
----
-
-## Phase 4.7 — UX Polish ✅
-
-Animation, theming, responsive, and settings consolidation.
-
-**Settings page:**
-
-- [x] `/settings` route — consolidated profile, email verification, and password change
-- [x] Settings link in header on customer and staff dashboards
-- [x] Protected route requiring authentication
-- [x] Branch name resolved from public endpoint, shows full details
+| Role       | Current               | New                    | Rationale                |
+| ---------- | --------------------- | ---------------------- | ------------------------ |
+| Primary    | `#4fa37b` (sage)      | `#0d7c66` (deep teal)  | Trust, stability, growth |
+| Accent     | `#c9a227` (gold)      | `#c9a227` (keep)       | Premium feel             |
+| Alert      | `#c1432b` (rust)      | `#dc2626` (clean red)  | Better readability       |
+| Background | `#efe6cf` (parchment) | `#f9fafb` (warm white) | Clean, modern            |
+| Text       | `#101f17` (forest)    | `#111827` (near black) | Better contrast          |
+| Surface    | —                     | `#e8ebe9` (sage gray)  | Cards, surfaces          |
 
 **Dark mode:**
 
-- [x] `ThemeContext` — manages theme state with localStorage persistence
-- [x] Auto-detects `prefers-color-scheme` on first visit
-- [x] `[data-theme="dark"]` CSS variables in `global.css`
-- [x] Toggle button in Navbar
-- [x] Full dark palette with adjusted verdigris/brass/signal for readability
+| Role       | Current   | New                       |
+| ---------- | --------- | ------------------------- |
+| Background | `#1a1a1f` | `#0f1419`                 |
+| Primary    | `#5bb88a` | `#2dd4a8` (brighter teal) |
+| Accent     | `#c9a227` | `#fbbf24` (brighter gold) |
+| Surface    | —         | `#1e272e`                 |
 
-**Mobile responsive pass:**
+**Ships:**
 
-- [x] All dashboards, auth pages, settings, kiosk, appointment — fully responsive
-
-**Animations & motion backgrounds:**
-
-- [x] `MotionBackground` component — 6 floating orbs with blur + subtle grid pattern
-- [x] Staggered fadeUp entrance animations on all dashboards and auth pages
-
-**Branding:**
-
-- [x] Q-arrow SVG logo on Navbar, Footer, all pages
-- [x] Favicon, page title updated to "Cue — Smart Queue Management"
+- [x] Update `global.css` CSS custom properties (light + dark mode)
+- [x] Update `BrandContext` defaults
+- [x] Update env var defaults (.env.example)
 
 ---
 
-## Phase 4.8 — Live Board & Public Hub ✅
+## Phase 6 — Remove Deferred Features ✅
 
-**Per-branch live board (`/board/:branchId`):**
+**Goal:** Clean out code that's no longer part of the core product. Move to `deferred/` folder, do not delete.
 
-- [x] Now serving cards with ticket number (flap display), counter label, service name
-- [x] Total waiting banner with per-service breakdown
-- [x] Recently served list (newest first)
-- [x] GSAP continuous animations: scan line, banner glow, card float, recent drift, day indicator pulse
-- [x] Day status indicator — "BRANCH OPEN" (green) / "BRANCH CLOSED" (red) with timestamps
-- [x] Logo + "← All branches" back link
-- [x] Live clock, connection status dot
+**Ships:**
 
-**Public boards hub (`/boards`):**
-
-- [x] Backend: `GET /api/board` — returns all branches with queue lengths, counter status, called counts
-- [x] Branch cards showing name, location, waiting count, counter status, service breakdown
-- [x] Location filter dropdown
-- [x] Socket.io real-time updates across all branches
-
-**Day control (manager):**
-
-- [x] `POST /api/tickets/close-day` / `/open-day` — marks all active tickets completed, emits socket events
-- [x] Branch model: `dayOpen`, `lastOpenedAt`, `lastClosedAt` fields
-- [x] ManagerPanel: "☀ Day Control" dropdown with Open/Close options + confirmation dialog
+- [x] Move AI agent to `deferred/backend/`: `groq.service.js`, `agent.controller.js`, `agent.routes.js`
+- [x] Move AgentChat component to `deferred/frontend/`
+- [x] Move push notification routes and service to `deferred/backend/`
+- [x] Move `usePushNotifications` hook to `deferred/frontend/`
+- [x] Move Slack/Discord notification service to `deferred/backend/`
+- [x] Remove `notificationWebhooks` field from Branch model
+- [x] Remove agent/push route mounts from `app.js`
+- [x] Remove notification/push imports from `ticket.controller.js`
 
 ---
 
-## Phase 5 — AI Agent ✅
+## Phase 7 — Frontend Simplification
 
-The feature named as a requirement from the start of this project. Uses Groq API with LLaMA 3.3 70B for fast tool-calling. Two distinct surfaces, not one generic chatbot.
+**Goal:** Remove admin/manager panels and advanced features. Keep demo-focused pages.
 
-**Backend:**
+**Move to deferred:**
 
-- [x] `services/groq.service.js` — Groq SDK integration, tool-calling orchestration, role-based tool sets
-- [x] `controllers/agent.controller.js` — 8 tool executors: get_my_ticket, get_branch_queues, list_branches, get_branch_analytics, get_daily_report, get_staff_performance, list_all_branches
-- [x] `routes/agent.routes.js` — `POST /api/agent/chat` (protected)
-- [x] Customer tools: check ticket status/position/ETA, browse branches and queues
-- [x] Staff tools: customer tools + analytics summaries, daily reports, staff performance
-- [x] Admin tools: staff tools + network-wide branch listing
+- [ ] Admin panel (`/pages/StaffHome/admin/` — AdminPanel.jsx + all tabs)
+- [ ] Manager panel (`/pages/StaffHome/manager/` — ManagerPanel.jsx + all tabs)
+- [ ] Advanced analytics components (`PeakHoursHeatmap`, `StaffLeaderboard`, `WaitTimeTargets`)
+- [ ] Webhook management UI
+- [ ] Bulk staff import UI
+- [ ] CSV/PDF export buttons
 
-**Frontend:**
+**Keep (Demo Pages):**
 
-- [x] `components/AgentChat/AgentChat.jsx` — floating chat widget with toggle, messages, typing indicator
-- [x] `components/AgentChat/AgentChat.module.css` — responsive, themed chat window
-- [x] `features/agent/agentApi.js` — `sendAgentMessage()` API function
-- [x] Mounted on `CustomerHome` — customers can ask about queues, wait times, branches
-- [x] Mounted on `StaffHome` — staff/managers/admins get analytics-powered responses
+- [ ] Landing page (`/`) — marketing
+- [ ] Live boards (`/boards`, `/board/:id`) — public demo
+- [ ] Kiosk (`/kiosk/:id`) — walk-in demo
+- [ ] Appointments (`/appointment/:id`) — booking demo
+- [ ] Branch detail (`/branch/:id`) — public info
+- [ ] Find nearby (`/find-nearby`) — location demo
+- [ ] Contact (`/contact`) — sales inquiries
+- [ ] Login/Register — demo auth
+- [ ] Customer dashboard (`/account`) — ticket tracker demo
+- [ ] Staff dashboard (`/staff`) — counter console demo (simplified)
 
-**Config:**
+**Update:**
 
-- [x] `GROQ_API_KEY` env var for authentication
-- [x] `GROQ_MODEL` env var (default: `llama-3.3-70b-versatile`)
-- [x] Tool sets scale by role: customer < staff < admin
-
----
-
-## Phase 6 — Stand-Out Features ✅
-
-Additive features that make the system stand out from a basic queue app.
-
-### QR / Kiosk check-in ✅
-- [x] `POST /api/kiosk/tickets` — create a ticket without authentication, returns a `kioskId` for tracking
-- [x] `GET /api/kiosk/tickets/:kioskId` — track kiosk ticket status, position, and details
-- [x] `PATCH /api/kiosk/tickets/:kioskId/cancel` — cancel a waiting kiosk ticket
-- [x] Frontend: `/kiosk/:branchId` — full kiosk UI with service picker, optional guest name/phone, animated ticket number display
-- [x] Branch page: "Kiosk Check-in" button alongside existing actions
-
-### Appointment booking ✅
-- [x] `GET /api/appointments/slots` — returns available time slots for a branch/service/date
-- [x] `POST /api/appointments` — book a ticket with `scheduledFor` datetime
-- [x] `GET /api/appointments/:kioskId` — look up appointment details
-- [x] Frontend: `/appointment/:branchId` — date picker, time slot grid, guest info, booking confirmation
-- [x] Branch model: `operatingHours`, `maxAppointmentsPerSlot`
-
-### Nearest-branch finder ✅
-- [x] `GET /api/branches/nearest?lat=X&lng=Y` — returns branches sorted by haversine distance
-- [x] Frontend: `/find-nearby` — browser Geolocation API, sorted branch cards with distance
-
-### SMS/WhatsApp notifications
-- [ ] Deferred — requires third-party provider integration (Twilio, etc.)
+- [ ] Staff dashboard: remove manager/admin role checks, show only counter console
+- [ ] Customer dashboard: simplify to branch/service picker + ticket tracker
+- [ ] Remove unused imports and dead code
 
 ---
 
-## Phase 7 — Production Hardening ✅
+## Phase 8 — Staff Auth via API Key
 
-A dedicated pass once the app is feature-complete.
+**Goal:** Staff don't log in via the demo UI. They access the system through the bank's integration.
 
-**Backend**
+**Ships:**
 
-- [x] `helmet`, response compression (`compression` middleware)
-- [x] Pagination on list endpoints (`utils/pagination.js`)
-- [x] API documentation (Swagger/OpenAPI at `/api/docs`)
-- [x] Automated tests (35 tests across 5 test files, vitest)
-- [x] Audit log (`AuditLog` model, `audit.middleware.js`, 90-day TTL)
-- [ ] Refresh tokens, logout / token invalidation (deferred — current single JWT is sufficient)
-- [ ] Structured logging (deferred — console.error is adequate for current scale)
-
-**Frontend**
-
-- [x] Wire the Contact page to a real endpoint (`POST /api/contact`)
-- [x] Automated tests (8 tests across 2 test files, vitest + testing-library)
-- [x] CI pipeline (GitHub Actions: lint, test, build)
-- [x] Error boundary component
-- [x] Code splitting (React.lazy for all 18 pages, main bundle 670KB → 240KB)
+- [ ] Remove `/api/staff/login` endpoint from demo (keep in backend for bank integrations)
+- [ ] Remove customer registration/login from demo frontend
+- [ ] Staff dashboard authenticates via API key (demo uses a pre-seeded key)
+- [ ] Update auth flow: API key → staff/manager role check → access
+- [ ] Remove email verification flow from demo
+- [ ] Remove forgot/reset password flow from demo
+- [ ] Keep these endpoints in backend for bank integrations that need them
 
 ---
 
-## Suggested Next Features
+## Phase 9 — Webhook Enhancement
 
-Completed features from the suggestions list:
+**Goal:** Make webhooks a first-class citizen for bank integrations.
 
-- [x] **Service-level wait time targets** — Branch model `waitTimeTargets` map, GET/PUT endpoints, inline editing UI with on-target/off-target indicators
-- [x] **Bulk staff import** — CSV upload via multer, `POST /api/staff-import/import`, results displayed in manager analytics tab
-- [x] **Audit log** — `AuditLog` model (90-day TTL), `audit.middleware.js` for action logging on ticket operations
-- [x] **Export analytics to CSV/PDF** — CSV and HTML reports with status breakdown + staff performance
-- [x] **Peak hours heatmap** — 7/14/30-day aggregation by day-of-week × hour, color-coded grid
-- [x] **Staff leaderboard** — daily/weekly/monthly rankings with ticket counts and avg handle time
-- [x] **Webhook support** — create/delete/toggle webhooks, event subscription, HMAC signatures
-- [x] **Slack/Discord notifications** — branch-level webhook URLs, auto-fires on ticket call, queue threshold, day open/close
+**Ships:**
 
-Still remaining:
+- [ ] Add more event types: `ticket.created`, `ticket.completed`, `ticket.cancelled`, `queue.updated`, `branch.opened`, `branch.closed`
+- [ ] Exponential backoff retry (1s, 5s, 30s, 5min, 30min)
+- [ ] Webhook delivery log model (event, payload, status, response, timestamp)
+- [ ] `GET /api/v1/webhooks/:id/deliveries` endpoint
+- [ ] Webhook test endpoint: `POST /api/v1/webhooks/:id/test` (sends test event)
 
-- [ ] **Push notifications** — browser push for "your ticket is being called"
-- [ ] **Ticket cancelled/completed email** — notify customer when their ticket is resolved
+---
+
+## Phase 10 — API Documentation & Integration Guide
+
+**Goal:** Banks can integrate without reading source code.
+
+**Ships:**
+
+- [ ] Update OpenAPI spec for all v1 endpoints
+- [ ] Add API key authentication to Swagger UI
+- [ ] Write integration guide: "Integrate Cue into Your Bank's System"
+- [ ] Document webhook payloads and verification
+- [ ] Document rate limits and error codes
+- [ ] Update README files
+
+---
+
+## Phase 11 — Testing & CI Updates
+
+**Goal:** Ensure the refactored system works correctly.
+
+**Ships:**
+
+- [ ] Update existing tests for v1 routes
+- [ ] Add API key auth tests
+- [ ] Add multi-tenancy isolation tests
+- [ ] Update CI pipeline for new structure
+- [ ] Update frontend tests for removed features
+- [ ] Run full test suite, fix any regressions
+
+---
 
 ## Cross-cutting
 
-- [x] Update `backend/README.md` and `frontend/README.md`
-- [x] Automated tests (backend 35, frontend 8)
-- [x] CI pipeline (GitHub Actions)
-- [x] Mongoose deprecation fixes (`new: true` → `returnDocument: 'after'`)
+- [ ] Update `BUILD_PLAN.md` with final status
+- [ ] Update `README.md` with new architecture overview
+- [ ] Update `backend/README.md` with v1 API reference
+- [ ] Update `frontend/README.md` with simplified feature list
+- [ ] Update `.env.example` with new variables (API_KEY_SECRET, etc.)
