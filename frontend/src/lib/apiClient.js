@@ -14,15 +14,31 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Core request function.
+ *
+ * Supports both legacy JWT auth (via `token` option) and
+ * v1 API key auth (via `apiKey` option).
+ *
+ * For legacy routes: pass `{ token: "jwt..." }`
+ * For v1 routes:     pass `{ apiKey: "cue_..." }`
+ *
+ * If both are provided, API key takes precedence.
+ */
 const request = async (
   path,
-  { method = "GET", body, token, headers = {} } = {},
+  { method = "GET", body, token, apiKey, headers = {} } = {},
 ) => {
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // API key auth (v1 routes) takes precedence over JWT auth
+      ...(apiKey
+        ? { "X-API-Key": apiKey }
+        : token
+          ? { Authorization: `Bearer ${token}` }
+          : {}),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -60,4 +76,19 @@ export const apiClient = {
     request(path, { ...opts, method: "PATCH", body }),
   put: (path, body, opts) => request(path, { ...opts, method: "PUT", body }),
   delete: (path, opts) => request(path, { ...opts, method: "DELETE" }),
+};
+
+/**
+ * V1 API client — uses API key auth instead of JWT.
+ *
+ * Usage:
+ *   import { v1Api } from "./lib/apiClient";
+ *   const boards = await v1Api.get("/board", { apiKey: "cue_..." });
+ */
+export const v1Api = {
+  get: (path, opts) => request(`/v1${path}`, { ...opts, method: "GET" }),
+  post: (path, body, opts) => request(`/v1${path}`, { ...opts, method: "POST", body }),
+  patch: (path, body, opts) => request(`/v1${path}`, { ...opts, method: "PATCH", body }),
+  put: (path, body, opts) => request(`/v1${path}`, { ...opts, method: "PUT", body }),
+  delete: (path, opts) => request(`/v1${path}`, { ...opts, method: "DELETE" }),
 };

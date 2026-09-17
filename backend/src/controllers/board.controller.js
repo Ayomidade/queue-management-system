@@ -7,7 +7,14 @@ import { sendSuccess, sendError } from "../utils/response.js";
 
 export const getAllBoards = async (req, res, next) => {
   try {
-    const branches = await Branch.find({ isActive: true })
+    // Optional bank-scoping: if req.bankName is set (v1 API key auth),
+    // only show branches belonging to that bank. Legacy JWT routes skip this.
+    const branchFilter = { isActive: true };
+    if (req.bankName) {
+      branchFilter.bank = req.bankName;
+    }
+
+    const branches = await Branch.find(branchFilter)
       .select("name location")
       .sort({ name: 1 });
 
@@ -106,7 +113,13 @@ export const getBranchBoard = async (req, res, next) => {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
 
-    const branch = await Branch.findById(branchId).select("name dayOpen lastOpenedAt lastClosedAt");
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    const branchFilter = { _id: branchId };
+    if (req.bankName) {
+      branchFilter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOne(branchFilter).select("name dayOpen lastOpenedAt lastClosedAt");
     if (!branch) {
       const error = new Error("Branch not found");
       error.statusCode = 404;

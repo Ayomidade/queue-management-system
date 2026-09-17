@@ -7,8 +7,16 @@ import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 
 export const createBranch = async (req, res, next) => {
   try {
-    const { name, location } = req.body;
-    const branch = await Branch.create({ name, location });
+    const { name, location, address, phone, email, coordinates, operatingHours } = req.body;
+
+    // In v1 mode (API key auth), auto-set the bank from the API key.
+    // In legacy mode (JWT auth), the bank field is not required.
+    const branchData = { name, location, address, phone, email, coordinates, operatingHours };
+    if (req.bankName) {
+      branchData.bank = req.bankName;
+    }
+
+    const branch = await Branch.create(branchData);
     return sendSuccess(res, {
       statusCode: 201,
       message: "Branch created successfully",
@@ -23,6 +31,13 @@ export const getAllBranches = async (req, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
     const filter = { isActive: true };
+
+    // Optional bank-scoping: if req.bankName is set (v1 API key auth),
+    // only show branches belonging to that bank.
+    if (req.bankName) {
+      filter.bank = req.bankName;
+    }
+
     const [total, branches] = await Promise.all([
       Branch.countDocuments(filter),
       Branch.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -40,7 +55,14 @@ export const getAllBranches = async (req, res, next) => {
 export const getSingleBranch = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const branch = await Branch.findById(id);
+
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    const filter = { _id: id };
+    if (req.bankName) {
+      filter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOne(filter);
 
     if (!branch) {
       const error = new Error("Branch not found");
@@ -85,7 +107,13 @@ export const updateBranch = async (req, res, next) => {
       return next(error);
     }
 
-    const branch = await Branch.findByIdAndUpdate(id, updates, {
+    // Optional bank-scoping: only update branches belonging to this bank
+    const filter = { _id: id };
+    if (req.bankName) {
+      filter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOneAndUpdate(filter, updates, {
       returnDocument: "after",
       runValidators: true,
     });
@@ -109,7 +137,14 @@ export const updateBranch = async (req, res, next) => {
 export const deleteBranch = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const branch = await Branch.findById(id);
+
+    // Optional bank-scoping: only delete branches belonging to this bank
+    const filter = { _id: id, isActive: true };
+    if (req.bankName) {
+      filter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOneAndUpdate(filter, { isActive: false });
 
     if (!branch) {
       const error = new Error("Branch not found");
@@ -117,7 +152,6 @@ export const deleteBranch = async (req, res, next) => {
       return next(error);
     }
 
-    await Branch.findByIdAndUpdate(id, { isActive: false });
     return sendSuccess(res, {
       statusCode: 200,
       message: "Branch deleted successfully",
@@ -130,9 +164,16 @@ export const deleteBranch = async (req, res, next) => {
 export const getPublicBranch = async (req, res, next) => {
   try {
     const { branchId } = req.params;
-    const branch = await Branch.findById(branchId).select("name location isActive");
 
-    if (!branch || !branch.isActive) {
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    const filter = { _id: branchId, isActive: true };
+    if (req.bankName) {
+      filter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOne(filter).select("name location isActive");
+
+    if (!branch) {
       const error = new Error("Branch not found");
       error.statusCode = 404;
       return next(error);

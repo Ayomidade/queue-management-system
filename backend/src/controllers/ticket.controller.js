@@ -9,8 +9,6 @@ import mongoose from "mongoose";
 import Branch from "../models/branch.model.js";
 import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 import { dispatchWebhook } from "../services/webhook.service.js";
-import { sendNotification, buildTicketCalledMessage, buildDayClosedMessage, buildDayOpenedMessage } from "../services/notification.service.js";
-import { sendPushNotification, sendPushToBranch } from "../services/push.service.js";
 
 export const createTicket = async (req, res, next) => {
   try {
@@ -72,24 +70,7 @@ export const createTicket = async (req, res, next) => {
           lastNotifiedThreshold: currentThreshold,
         });
 
-        const branchDoc = await Branch.findById(branchId).select("name notificationWebhooks");
         const queueName = queueAfter.serviceName;
-        const branchName = branchDoc?.name || "Branch";
-        const alertMsg = `**Queue alert:** ${branchName} — ${queueName} queue has reached **${waitingCount}** waiting customers`;
-
-        if (branchDoc?.notificationWebhooks?.slack) {
-          sendNotification({ webhookUrl: branchDoc.notificationWebhooks.slack, message: alertMsg });
-        }
-        if (branchDoc?.notificationWebhooks?.discord) {
-          sendNotification({ webhookUrl: branchDoc.notificationWebhooks.discord, message: alertMsg });
-        }
-
-        sendPushToBranch(branchId, "manager", {
-          title: "Queue Alert",
-          body: `${branchName} — ${queueName}: ${waitingCount} waiting customers`,
-          icon: "/favicon.svg",
-          tag: `queue-threshold-${queueId}`,
-        }).catch(() => {});
       }
     }
 
@@ -272,35 +253,13 @@ export const callNextTicket = async (req, res, next) => {
 
     notifyTicketChange(ticket, "ticket:called");
 
-    if (ticket.user) {
-      sendPushNotification(ticket.user._id, "User", {
-        title: "Ticket Called",
-        body: `Ticket #${String(ticket.ticketNumber).padStart(4, "0")} — please proceed to the counter now.`,
-        icon: "/favicon.svg",
-        tag: `ticket-${ticket._id}`,
-      }).catch(() => {});
-    }
-
-    const branchDoc = await Branch.findById(queue.branch).select("name notificationWebhooks");
+    const branchDoc = await Branch.findById(queue.branch).select("name");
     dispatchWebhook("ticket.called", {
       ticketId: ticket._id,
       ticketNumber: ticket.ticketNumber,
       queue: queue.serviceName,
       branch: queue.branch.toString(),
     }, String(queue.branch));
-
-    if (branchDoc?.notificationWebhooks?.slack) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.slack,
-        message: buildTicketCalledMessage(ticket.ticketNumber, branchDoc?.name || "Branch", queue.serviceName),
-      });
-    }
-    if (branchDoc?.notificationWebhooks?.discord) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.discord,
-        message: buildTicketCalledMessage(ticket.ticketNumber, branchDoc?.name || "Branch", queue.serviceName),
-      });
-    }
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -346,15 +305,6 @@ export const callTicket = async (req, res, next) => {
 
     notifyTicketChange(ticket, "ticket:called");
 
-    if (ticket.user) {
-      sendPushNotification(ticket.user._id, "User", {
-        title: "Ticket Called",
-        body: `Ticket #${String(ticket.ticketNumber).padStart(4, "0")} — please proceed to the counter now.`,
-        icon: "/favicon.svg",
-        tag: `ticket-${ticket._id}`,
-      }).catch(() => {});
-    }
-
     return sendSuccess(res, {
       statusCode: 200,
       message: "Ticket called successfully",
@@ -397,15 +347,6 @@ export const completeTicket = async (req, res, next) => {
         to: ticket.user.email,
         subject: `Ticket #${ticket.ticketNumber} — Completed`,
         html: `<h2>Ticket Completed</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been completed. Thank you for visiting ${getBrandSync().name}!</p>`,
-      }).catch(() => {});
-    }
-
-    if (ticket.user) {
-      sendPushNotification(ticket.user._id, "User", {
-        title: "Ticket Completed",
-        body: `Your ticket #${String(ticket.ticketNumber).padStart(4, "0")} has been completed.`,
-        icon: "/favicon.svg",
-        tag: `ticket-${ticket._id}`,
       }).catch(() => {});
     }
 
@@ -479,13 +420,6 @@ export const cancelTicket = async (req, res, next) => {
         html: `<h2>Ticket Cancelled</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been cancelled.</p>`,
       }).catch(() => {});
     }
-
-    sendPushNotification(ticket.user._id, "User", {
-      title: "Ticket Cancelled",
-      body: `Your ticket #${String(ticket.ticketNumber).padStart(4, "0")} has been cancelled.`,
-      icon: "/favicon.svg",
-      tag: `ticket-${ticket._id}`,
-    }).catch(() => {});
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -611,20 +545,6 @@ export const closeDay = async (req, res, next) => {
       ticketsCompleted: result.modifiedCount,
     }, String(branchId));
 
-    const branchDoc = await Branch.findById(branchId).select("name notificationWebhooks");
-    if (branchDoc?.notificationWebhooks?.slack) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.slack,
-        message: buildDayClosedMessage(branchDoc.name, result.modifiedCount),
-      });
-    }
-    if (branchDoc?.notificationWebhooks?.discord) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.discord,
-        message: buildDayClosedMessage(branchDoc.name, result.modifiedCount),
-      });
-    }
-
     return sendSuccess(res, {
       statusCode: 200,
       message: "Day closed successfully",
@@ -655,20 +575,6 @@ export const openDay = async (req, res, next) => {
     });
 
     dispatchWebhook("day.opened", { branchId }, String(branchId));
-
-    const branchDoc = await Branch.findById(branchId).select("name notificationWebhooks");
-    if (branchDoc?.notificationWebhooks?.slack) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.slack,
-        message: buildDayOpenedMessage(branchDoc.name),
-      });
-    }
-    if (branchDoc?.notificationWebhooks?.discord) {
-      sendNotification({
-        webhookUrl: branchDoc.notificationWebhooks.discord,
-        message: buildDayOpenedMessage(branchDoc.name),
-      });
-    }
 
     return sendSuccess(res, {
       statusCode: 200,

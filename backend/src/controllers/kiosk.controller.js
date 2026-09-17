@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import Ticket from "../models/ticket.model.js";
 import Queue from "../models/queue.model.js";
+import Branch from "../models/branch.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { emitToBranch } from "../socket.js";
 
@@ -17,6 +18,19 @@ export const createKioskTicket = async (req, res, next) => {
         statusCode: 400,
         message: "queueId and branchId are required",
       });
+    }
+
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    if (req.bankName) {
+      const branch = await Branch.findOne({ _id: branchId, bank: req.bankName, isActive: true });
+      if (!branch) {
+        return sendError(res, { statusCode: 404, message: "Branch not found" });
+      }
+      // Also validate queue belongs to this branch
+      const queueExists = await Queue.findOne({ _id: queueId, branch: branchId });
+      if (!queueExists) {
+        return sendError(res, { statusCode: 404, message: "Queue not found" });
+      }
     }
 
     let ticket;
@@ -83,9 +97,17 @@ export const getKioskTicket = async (req, res, next) => {
 
     const ticket = await Ticket.findOne({ kioskId })
       .populate("queue", "serviceName")
-      .populate("branch", "name location");
+      .populate("branch", "name location bank");
 
     if (!ticket) {
+      return sendError(res, {
+        statusCode: 404,
+        message: "Ticket not found",
+      });
+    }
+
+    // Optional bank-scoping: validate ticket's branch belongs to this bank
+    if (req.bankName && ticket.branch?.bank !== req.bankName) {
       return sendError(res, {
         statusCode: 404,
         message: "Ticket not found",
@@ -132,8 +154,16 @@ export const cancelKioskTicket = async (req, res, next) => {
   try {
     const { kioskId } = req.params;
 
-    const ticket = await Ticket.findOne({ kioskId });
+    const ticket = await Ticket.findOne({ kioskId }).populate("branch", "bank");
     if (!ticket) {
+      return sendError(res, {
+        statusCode: 404,
+        message: "Ticket not found",
+      });
+    }
+
+    // Optional bank-scoping: validate ticket's branch belongs to this bank
+    if (req.bankName && ticket.branch?.bank !== req.bankName) {
       return sendError(res, {
         statusCode: 404,
         message: "Ticket not found",

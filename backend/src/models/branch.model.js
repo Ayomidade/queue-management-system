@@ -2,6 +2,17 @@ import mongoose from "mongoose";
 
 const branchSchema = new mongoose.Schema(
   {
+    // Identifies which bank/partner owns this branch.
+    // Set from the API key's bankName during creation.
+    // Used for multi-tenant data isolation — each API key can only
+    // access branches belonging to its bank.
+    bank: {
+      type: String,
+      required: [true, "Bank name is required for multi-tenant isolation"],
+      trim: true,
+      index: true,
+    },
+
     name: {
       type: String,
       required: [true, "Branch name is required"],
@@ -78,16 +89,13 @@ const branchSchema = new mongoose.Schema(
       of: Number,
       default: {},
     },
-
-    notificationWebhooks: {
-      slack: { type: String, default: "" },
-      discord: { type: String, default: "" },
-    },
   },
   { timestamps: true },
 );
 
-branchSchema.index({ name: 1, isActive: 1 }, { unique: true });
+// Branch names must be unique within a bank, not globally.
+// Two different banks can have branches with the same name.
+branchSchema.index({ name: 1, bank: 1, isActive: 1 }, { unique: true });
 
 const Branch = mongoose.model("Branch", branchSchema);
 export default Branch;

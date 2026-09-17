@@ -29,7 +29,13 @@ export const getAvailableSlots = async (req, res, next) => {
       });
     }
 
-    const branch = await Branch.findById(branchId);
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    const branchFilter = { _id: branchId };
+    if (req.bankName) {
+      branchFilter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOne(branchFilter);
     if (!branch) {
       return sendError(res, { statusCode: 404, message: "Branch not found" });
     }
@@ -111,7 +117,13 @@ export const createAppointment = async (req, res, next) => {
       });
     }
 
-    const branch = await Branch.findById(branchId);
+    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    const branchFilter = { _id: branchId };
+    if (req.bankName) {
+      branchFilter.bank = req.bankName;
+    }
+
+    const branch = await Branch.findOne(branchFilter);
     if (!branch) {
       return sendError(res, { statusCode: 404, message: "Branch not found" });
     }
@@ -211,9 +223,17 @@ export const getAppointmentTicket = async (req, res, next) => {
 
     const ticket = await Ticket.findOne({ kioskId, isAppointment: true })
       .populate("queue", "serviceName")
-      .populate("branch", "name location");
+      .populate("branch", "name location bank");
 
     if (!ticket) {
+      return sendError(res, {
+        statusCode: 404,
+        message: "Appointment not found",
+      });
+    }
+
+    // Optional bank-scoping: validate ticket's branch belongs to this bank
+    if (req.bankName && ticket.branch?.bank !== req.bankName) {
       return sendError(res, {
         statusCode: 404,
         message: "Appointment not found",

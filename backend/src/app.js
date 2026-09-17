@@ -14,13 +14,14 @@ import boardRouter from "./routes/board.routes.js";
 import kioskRouter from "./routes/kiosk.routes.js";
 import appointmentRouter from "./routes/appointment.routes.js";
 import contactRouter from "./routes/contact.routes.js";
-import agentRouter from "./routes/agent.routes.js";
 import webhookRouter from "./routes/webhook.routes.js";
 import staffImportRouter from "./routes/staffImport.routes.js";
 import exportRouter from "./routes/export.routes.js";
 import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
-import pushRouter from "./routes/push.routes.js";
 import brandRouter from "./routes/brand.routes.js";
+import apiKeyRouter from "./routes/apiKey.routes.js";
+import v1Router from "./routes/v1/index.js";
+import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -77,13 +78,24 @@ app.use("/api/board", boardRouter);
 app.use("/api/kiosk", kioskRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/contact", contactRouter);
-app.use("/api/agent", agentRouter);
 app.use("/api/webhooks", webhookRouter);
 app.use("/api/staff-import", staffImportRouter);
 app.use("/api/export", exportRouter);
 app.use("/api/advanced-analytics", advancedAnalyticsRouter);
-app.use("/api/push", pushRouter);
 app.use("/api/brand", brandRouter);
+
+// ── V1 API Routes (API-key authenticated) ──────────────────────
+// These routes are the primary integration surface for banks.
+// They use API key authentication via the X-API-Key header.
+// The v1Router applies: authenticateApiKey → apiKeyRateLimit → bankScope
+import { bankScope } from "./middlewares/bankScope.middleware.js";
+
+// API key management (admin JWT auth — used to create/revoke keys)
+app.use("/api/v1/api-keys", apiKeyRouter);
+
+// V1 resource routes — all require API key auth + rate limiting
+// The bankScope middleware inside v1Router handles tenant isolation
+app.use("/api/v1", authenticateApiKey, apiKeyRateLimit, v1Router);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {
