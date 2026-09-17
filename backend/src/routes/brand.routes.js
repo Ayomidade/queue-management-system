@@ -1,10 +1,15 @@
 import { Router } from "express";
-import { getBrandConfig, updateBrandConfig } from "../controllers/brand.controller.js";
-import { protect, authorize } from "../middlewares/auth.middleware.js";
+import { getBrandConfig } from "../controllers/brand.controller.js";
+
+/**
+ * Brand Routes
+ *
+ * GET /api/brand — Returns brand config from environment variables.
+ * No PATCH endpoint — branding is configured via .env, not at runtime.
+ */
 
 const brandRouter = Router();
 
 brandRouter.get("/", getBrandConfig);
-brandRouter.patch("/", protect, authorize("admin"), updateBrandConfig);
 
 export default brandRouter;

@@ -8,11 +8,11 @@ const BrandContext = createContext(null);
 const getInitialBrand = () => ({
   name: typeof __BRAND_NAME__ !== "undefined" ? __BRAND_NAME__ : "Cue",
   primaryColor:
-    typeof __BRAND_PRIMARY__ !== "undefined" ? __BRAND_PRIMARY__ : "#4fa37b",
+    typeof __BRAND_PRIMARY__ !== "undefined" ? __BRAND_PRIMARY__ : "#0d7c66",
   accentColor:
     typeof __BRAND_ACCENT__ !== "undefined" ? __BRAND_ACCENT__ : "#c9a227",
   alertColor:
-    typeof __BRAND_ALERT__ !== "undefined" ? __BRAND_ALERT__ : "#c1432b",
+    typeof __BRAND_ALERT__ !== "undefined" ? __BRAND_ALERT__ : "#dc2626",
   supportEmail: "",
   emailFromName: "",
 });
