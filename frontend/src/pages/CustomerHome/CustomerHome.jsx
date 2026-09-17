@@ -6,7 +6,6 @@ import { useMyTicket } from "../../features/tickets/useMyTicket";
 import CreateTicketFlow from "./CreateTicketFlow";
 import ActiveTicketView from "./ActiveTicketView";
 import MotionBackground from "../../components/MotionBackground/MotionBackground";
-import AgentChat from "../../components/AgentChat/AgentChat";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./CustomerHome.module.css";
 
@@ -111,7 +110,6 @@ const CustomerHome = () => {
           {/* <ChangePassword /> */}
         </motion.div>
       </div>
-      <AgentChat />
     </section>
   );
 };
