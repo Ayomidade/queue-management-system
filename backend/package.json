@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed:all": "node src/scripts/seedAll.js",
+    "seed:apikey": "node src/scripts/seedApiKey.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
