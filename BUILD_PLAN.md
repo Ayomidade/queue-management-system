@@ -193,37 +193,44 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 
 ---
 
-## Phase 7 — Frontend Simplification
+## Phase 7 — Frontend Simplification ✅
 
 **Goal:** Remove admin/manager panels and advanced features. Keep demo-focused pages.
 
-**Move to deferred:**
+**Moved to deferred:**
 
-- [ ] Admin panel (`/pages/StaffHome/admin/` — AdminPanel.jsx + all tabs)
-- [ ] Manager panel (`/pages/StaffHome/manager/` — ManagerPanel.jsx + all tabs)
-- [ ] Advanced analytics components (`PeakHoursHeatmap`, `StaffLeaderboard`, `WaitTimeTargets`)
-- [ ] Webhook management UI
-- [ ] Bulk staff import UI
-- [ ] CSV/PDF export buttons
+- [x] Admin panel (`/pages/StaffHome/admin/` — AdminPanel.jsx + all tabs)
+- [x] Manager panel (`/pages/StaffHome/manager/` — ManagerPanel.jsx + all tabs)
+- [x] Advanced analytics components (`PeakHoursHeatmap`, `StaffLeaderboard`, `WaitTimeTargets`)
+- [x] Webhook management UI (`WebhookSettings`)
+- [x] Bulk staff import UI (inline in AnalyticsTab)
+- [x] CSV/PDF export buttons (inline in AnalyticsTab)
+- [x] Admin login page (`/pages/AdminLogin/`)
+- [x] Forgot password page (`/pages/ForgotPassword/`)
+- [x] Reset password page (`/pages/ResetPassword/`)
+- [x] Verify email page (`/pages/VerifyEmail/`)
+- [x] Settings page (`/pages/Settings/`)
+- [x] Admin API module (`features/admin/adminApi.js`)
+- [x] Manager API module (`features/manager/managerApi.js`)
 
-**Keep (Demo Pages):**
+**Updated:**
 
-- [ ] Landing page (`/`) — marketing
-- [ ] Live boards (`/boards`, `/board/:id`) — public demo
-- [ ] Kiosk (`/kiosk/:id`) — walk-in demo
-- [ ] Appointments (`/appointment/:id`) — booking demo
-- [ ] Branch detail (`/branch/:id`) — public info
-- [ ] Find nearby (`/find-nearby`) — location demo
-- [ ] Contact (`/contact`) — sales inquiries
-- [ ] Login/Register — demo auth
-- [ ] Customer dashboard (`/account`) — ticket tracker demo
-- [ ] Staff dashboard (`/staff`) — counter console demo (simplified)
+- [x] StaffHome: removed manager/admin panels, shows only CounterConsole + TicketHistory
+- [x] App.jsx: removed 5 routes (admin-login, forgot-password, reset-password, verify-email, settings)
+- [x] Removed Settings link from staff header
 
-**Update:**
+**Kept (Demo Pages):**
 
-- [ ] Staff dashboard: remove manager/admin role checks, show only counter console
-- [ ] Customer dashboard: simplify to branch/service picker + ticket tracker
-- [ ] Remove unused imports and dead code
+- [x] Landing page (`/`) — marketing
+- [x] Live boards (`/boards`, `/board/:id`) — public demo
+- [x] Kiosk (`/kiosk/:id`) — walk-in demo
+- [x] Appointments (`/appointment/:id`) — booking demo
+- [x] Branch detail (`/branch/:id`) — public info
+- [x] Find nearby (`/find-nearby`) — location demo
+- [x] Contact (`/contact`) — sales inquiries
+- [x] Login/Register — demo auth
+- [x] Customer dashboard (`/account`) — ticket tracker demo
+- [x] Staff dashboard (`/staff`) — counter console demo (simplified)
 
 ---
 
