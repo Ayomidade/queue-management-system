@@ -19,13 +19,13 @@ import bcrypt from "bcryptjs";
 // Allowed permission scopes for API keys.
 // A key can have multiple scopes depending on what the bank needs.
 const VALID_SCOPES = [
-  "branches:read",    // Read branch info, queues, counters, board data
-  "tickets:write",    // Create/cancel tickets (kiosk, appointment, customer)
-  "tickets:read",     // Read ticket status, position, ETA
-  "staff:read",       // Read staff list
-  "analytics:read",   // Read analytics, reports
-  "webhooks:manage",  // Create/delete/toggle webhooks
-  "admin",            // Full access (system management)
+  "branches:read", // Read branch info, queues, counters, board data
+  "tickets:write", // Create/cancel tickets (kiosk, appointment, customer)
+  "tickets:read", // Read ticket status, position, ETA
+  "staff:read", // Read staff list
+  "analytics:read", // Read analytics, reports
+  "webhooks:manage", // Create/delete/toggle webhooks
+  "admin", // Full access (system management)
 ];
 
 const apiKeySchema = new mongoose.Schema(
@@ -84,6 +84,12 @@ const apiKeySchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    defaultStaffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      default: null,
     },
 
     // Timestamp of the last time this key was used to make a request.
@@ -146,10 +152,7 @@ apiKeySchema.statics.generateKey = async function () {
 apiKeySchema.statics.verifyKey = async function (rawKey) {
   // Find all potentially valid keys (active, or in grace period)
   const candidates = await this.find({
-    $or: [
-      { isActive: true },
-      { gracePeriodEndsAt: { $gt: new Date() } },
-    ],
+    $or: [{ isActive: true }, { gracePeriodEndsAt: { $gt: new Date() } }],
   }).select("+keyHash");
 
   // Check each candidate until we find a match

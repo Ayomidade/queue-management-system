@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, v1Api } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -27,8 +27,8 @@ export const useMyTicket = () => {
 
   const fetchTicket = useCallback(async () => {
     try {
-      const response = await apiClient.get("/tickets/my-ticket", {
-        token: auth.token,
+      const response = await v1Api.get("/tickets/my-ticket", {
+        apiKey: auth.apiKey,
       });
       setTicket(response.data);
       setError(null);
@@ -42,7 +42,7 @@ export const useMyTicket = () => {
     } finally {
       setLoading(false);
     }
-  }, [auth.token]);
+  }, [auth.apiKey]);
 
   const scheduleRefetch = useCallback(() => {
     clearTimeout(refetchTimer.current);
@@ -52,7 +52,7 @@ export const useMyTicket = () => {
   useEffect(() => {
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      auth: { token: auth.token },
+      auth: { token: auth.apiKey },
     });
     socketRef.current = socket;
 
@@ -80,13 +80,13 @@ export const useMyTicket = () => {
 
   const cancelTicket = useCallback(async () => {
     if (!ticket) return;
-    await apiClient.patch(
+    await v1Api.patch(
       `/tickets/${ticket._id}/cancel`,
       {},
-      { token: auth.token },
+      { apiKey: auth.apiKey },
     );
     await fetchTicket();
-  }, [ticket, auth.token, fetchTicket]);
+  }, [ticket, auth.apiKey, fetchTicket]);
 
   return { ticket, loading, error, cancelTicket, refetch: fetchTicket };
 };

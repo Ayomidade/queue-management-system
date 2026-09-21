@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { apiClient, ApiError } from "../../lib/apiClient";
+import { apiClient, ApiError, v1Api } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 export const useCounterOperations = ({ onServed } = {}) => {
@@ -15,10 +15,10 @@ export const useCounterOperations = ({ onServed } = {}) => {
       setError(null);
       setEmpty(false);
       try {
-        const response = await apiClient.post(
+        const response = await v1Api.post(
           "/tickets/call-next",
           { queueId },
-          { token: auth.token },
+          { apiKey: auth.apiKey },
         );
         setCurrentTicket(response.data);
       } catch (err) {
@@ -33,7 +33,7 @@ export const useCounterOperations = ({ onServed } = {}) => {
         setBusy(false);
       }
     },
-    [auth.token],
+    [auth.apiKey],
   );
 
   const resolveTicket = useCallback(
@@ -42,10 +42,10 @@ export const useCounterOperations = ({ onServed } = {}) => {
       setBusy(true);
       setError(null);
       try {
-        await apiClient.patch(
+        await v1Api.patch(
           `/tickets/${currentTicket._id}/${action}`,
           {},
-          { token: auth.token },
+          { apiKey: auth.apiKey },
         );
         setCurrentTicket(null);
         onServed?.();
@@ -59,7 +59,7 @@ export const useCounterOperations = ({ onServed } = {}) => {
         setBusy(false);
       }
     },
-    [currentTicket, auth.token, onServed],
+    [currentTicket, auth.apiKey, onServed],
   );
 
   return {

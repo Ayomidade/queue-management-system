@@ -15,11 +15,11 @@ const CreateTicketFlow = ({ onCreated }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchQueues(auth.token)
+    fetchQueues(auth.apiKey)
       .then((res) => setQueues(res.data))
       .catch((err) => setError(err.message || "Couldn't load branches."))
       .finally(() => setLoadingQueues(false));
-  }, [auth.token]);
+  }, [auth.apiKey]);
 
   const branches = useMemo(() => {
     const map = new Map();
@@ -44,7 +44,7 @@ const CreateTicketFlow = ({ onCreated }) => {
     setError(null);
     setSubmitting(true);
     try {
-      await createTicket({ queueId, branchId }, auth.token);
+      await createTicket({ queueId, branchId }, auth.apiKey);
       onCreated();
     } catch (err) {
       setError(

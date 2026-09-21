@@ -89,13 +89,15 @@ app.use("/api/brand", brandRouter);
 // They use API key authentication via the X-API-Key header.
 // The v1Router applies: authenticateApiKey → apiKeyRateLimit → bankScope
 import { bankScope } from "./middlewares/bankScope.middleware.js";
+import { resolveStaffUser } from "./middlewares/resolveStaffUser.js";
 
 // API key management (admin JWT auth — used to create/revoke keys)
 app.use("/api/v1/api-keys", apiKeyRouter);
 
 // V1 resource routes — all require API key auth + rate limiting
 // The bankScope middleware inside v1Router handles tenant isolation
-app.use("/api/v1", authenticateApiKey, apiKeyRateLimit, v1Router);
+// V1 routes: authenticate API key → resolve staff identity → rate limit → bank scope
+app.use("/api/v1", authenticateApiKey, resolveStaffUser,apiKeyRateLimit, v1Router);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {

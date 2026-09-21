@@ -234,19 +234,21 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 
 ---
 
-## Phase 8 — Staff Auth via API Key
+## Phase 8 — Staff Auth via API Key ✅
 
 **Goal:** Staff don't log in via the demo UI. They access the system through the bank's integration.
 
 **Ships:**
 
-- [ ] Remove `/api/staff/login` endpoint from demo (keep in backend for bank integrations)
-- [ ] Remove customer registration/login from demo frontend
-- [ ] Staff dashboard authenticates via API key (demo uses a pre-seeded key)
-- [ ] Update auth flow: API key → staff/manager role check → access
-- [ ] Remove email verification flow from demo
-- [ ] Remove forgot/reset password flow from demo
-- [ ] Keep these endpoints in backend for bank integrations that need them
+- [x] Remove Login + Register pages from demo frontend (moved to deferred/)
+- [x] Staff dashboard authenticates via API key (demo uses VITE_DEMO_API_KEY)
+- [x] AuthContext simplified: API-key-first, auto-initializes from env var
+- [x] ProtectedRoute works with API key auth
+- [x] All staff hooks (useMyCounter, useMyStats, useCounterOperations, useTicketHistory) use apiKey
+- [x] All customer hooks (useMyTicket, ticketsApi) use apiKey
+- [x] App.jsx routes: removed login, register routes
+- [x] Removed email verification, forgot/reset password flows from demo
+- [x] Backend auth endpoints preserved for bank integrations
 
 ---
 

@@ -6,6 +6,7 @@ import Staff from "../models/staff.model.js";
 import Branch from "../models/branch.model.js";
 import Queue from "../models/queue.model.js";
 import Counter from "../models/counter.model.js";
+import ApiKey from "../models/apiKey.model.js";
 
 dotenv.config();
 
@@ -13,6 +14,9 @@ dotenv.config();
  *  Default values — override via env vars if needed   *
  * -------------------------------------------------- */
 const SEED = {
+  // Bank (used for multi-tenant isolation on branches + API keys)
+  bankName: process.env.SEED_BANK_NAME || "Cue Demo",
+
   // Branch
   branchName: process.env.SEED_BRANCH_NAME || "Main Branch",
   branchLocation: process.env.SEED_BRANCH_LOCATION || "Downtown",
@@ -53,15 +57,17 @@ const run = async () => {
   console.log("\n🌱  Seeding database…\n");
 
   /* ------ Branch ------ */
-  let branch = await Branch.findOne({ name: SEED.branchName });
+  let branch = await Branch.findOne({ name: SEED.branchName, bank: SEED.bankName });
   if (!branch) {
     branch = await Branch.create({
       name: SEED.branchName,
       location: SEED.branchLocation,
+      bank: SEED.bankName,
     });
     console.log("✅  Branch created:");
     log("Name", branch.name);
     log("Location", branch.location);
+    log("Bank", SEED.bankName);
   } else {
     console.log(`ℹ️   Branch "${branch.name}" already exists — skipping.`);
   }
@@ -138,16 +144,17 @@ const run = async () => {
     role: "admin",
   });
 
-  /* ------ Manager ------ */
+  /* ------ Manager (assigned to counter 2) ------ */
   await ensureStaff({
     name: SEED.managerName,
     email: SEED.managerEmail,
     password: SEED.managerPassword,
     role: "manager",
     branchId: branch._id,
+    counterId: counters[1]?._id,
   });
 
-  /* ------ Staff ------ */
+  /* ------ Staff (assigned to counter 1) ------ */
   await ensureStaff({
     name: SEED.staffName,
     email: SEED.staffEmail,
@@ -165,15 +172,62 @@ const run = async () => {
     role: "customer",
   });
 
+  /* ------ Demo API Key ------ */
+  let rawApiKey = null;
+  let demoApiKey = await ApiKey.findOne({ bankName: SEED.bankName, label: "Demo API Key" });
+  if (demoApiKey) {
+    console.log(`ℹ️   Demo API key already exists — skipping.`);
+  } else {
+    const { rawKey, keyHash, keyPrefix } = await ApiKey.generateKey();
+    demoApiKey = await ApiKey.create({
+      bankName: SEED.bankName,
+      label: "Demo API Key",
+      keyHash,
+      keyPrefix,
+      scopes: ["admin"],
+      rateLimit: 1000,
+      isActive: true,
+    });
+    rawApiKey = rawKey;
+    console.log("✅  API key created: Demo API Key");
+  }
+
+  /* ------ Link API key to staff member ------ */
+  const staffMember = await Staff.findOne({ email: SEED.staffEmail });
+  if (demoApiKey && staffMember) {
+    await ApiKey.updateOne(
+      { _id: demoApiKey._id },
+      { $set: { defaultStaffId: staffMember._id } },
+    );
+    console.log(`✅  API key linked to staff: ${staffMember.name}`);
+  }
+
+  /* ------ Summary ------ */
   console.log("\n🎉  Seed complete!\n");
 
   console.log("───────────────────────────────────");
+  console.log("  DEMO ENVIRONMENT");
+  console.log("───────────────────────────────────");
+  log("Bank", SEED.bankName);
+  log("Branch", `${branch.name} (${branch.location})`);
+  log("Queues", queueNames.join(", "));
+  log("Counters", `${counterLabels[0]} (staff), ${counterLabels[1]} (manager)`);
+  console.log("───────────────────────────────────");
   console.log("  TEST ACCOUNTS (email / password)");
   console.log("───────────────────────────────────");
-  console.log(`  Admin    : ${SEED.adminEmail} / ${SEED.adminPassword}`);
-  console.log(`  Manager  : ${SEED.managerEmail} / ${SEED.managerPassword}`);
-  console.log(`  Staff    : ${SEED.staffEmail} / ${SEED.staffPassword}`);
-  console.log(`  Customer : ${SEED.customerEmail} / ${SEED.customerPassword}`);
+  log("Admin", `${SEED.adminEmail} / ${SEED.adminPassword}`);
+  log("Manager", `${SEED.managerEmail} / ${SEED.managerPassword}`);
+  log("Staff", `${SEED.staffEmail} / ${SEED.staffPassword}`);
+  log("Customer", `${SEED.customerEmail} / ${SEED.customerPassword}`);
+  console.log("───────────────────────────────────");
+
+  if (rawApiKey) {
+    console.log("  API KEY (paste into frontend .env as VITE_DEMO_API_KEY):");
+    console.log(`  ${rawApiKey}`);
+  } else {
+    console.log("  API KEY: already seeded (check DB for Demo API Key)");
+  }
+
   console.log("───────────────────────────────────\n");
 };
 

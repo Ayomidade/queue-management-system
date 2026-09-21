@@ -10,8 +10,6 @@ import Footer from "./components/Footer/Footer";
 
 const Landing = lazy(() => import("./pages/Landing/Landing"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
-const Login = lazy(() => import("./pages/Login/Login"));
-const Register = lazy(() => import("./pages/Register/Register"));
 const CustomerHome = lazy(() => import("./pages/CustomerHome/CustomerHome"));
 const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
 const Board = lazy(() => import("./pages/Board/Board"));
@@ -61,26 +59,6 @@ function App() {
             <>
               <Navbar />
               <Contact />
-              <Footer />
-            </>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <>
-              <Navbar />
-              <Login />
-              <Footer />
-            </>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <>
-              <Navbar />
-              <Register />
               <Footer />
             </>
           }

@@ -7,6 +7,7 @@ import ticketRouter from "./ticket.routes.js";
 import kioskRouter from "./kiosk.routes.js";
 import appointmentRouter from "./appointment.routes.js";
 import { bankScope } from "../../middlewares/bankScope.middleware.js";
+import { getme } from "../../controllers/v1Auth.controller.js";
 
 /**
  * V1 Routes Index
@@ -43,5 +44,6 @@ v1Router.use("/counters", counterRouter);
 v1Router.use("/tickets", ticketRouter);
 v1Router.use("/kiosk", kioskRouter);
 v1Router.use("/appointments", appointmentRouter);
+v1Router.get("/auth/me", getme)
 
 export default v1Router;

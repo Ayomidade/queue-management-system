@@ -49,9 +49,6 @@ const CustomerHome = () => {
             custom={2}
             variants={fadeUp}
           >
-            <Link to="/settings" className={styles.settingsLink}>
-              Settings
-            </Link>
             <button className={styles.logoutBtn} onClick={logout}>
               Sign out
             </button>

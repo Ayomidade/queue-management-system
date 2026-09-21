@@ -1,8 +1,12 @@
+/**
+ * Auth API — minimal for the demo frontend.
+ *
+ * The demo uses API key auth via VITE_DEMO_API_KEY.
+ * Login/register endpoints are kept in the backend for bank integrations
+ * but are not used by the demo frontend.
+ */
+
 import { apiClient } from "../../lib/apiClient";
 
-export const registerCustomer = (data) =>
-  apiClient.post("/auth/register", data);
-export const loginCustomer = (data) => apiClient.post("/auth/login", data);
-export const loginStaff = (data) => apiClient.post("/staff/login", data);
-export const changePassword = (data, token) =>
-  apiClient.patch("/users/change-password", data, { token });
+export const changePassword = (data, apiKey) =>
+  apiClient.patch("/users/change-password", data, { apiKey });

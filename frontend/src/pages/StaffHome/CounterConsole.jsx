@@ -29,12 +29,12 @@ const CounterConsole = ({ counterState, onServed }) => {
 
   useEffect(() => {
     if (!auth.branch) return;
-    fetchQueues(auth.token)
+    fetchQueues(auth.apiKey)
       .then((res) =>
         setQueues(res.data.filter((q) => q.branch?._id === auth.branch)),
       )
       .catch(() => {});
-  }, [auth.token, auth.branch]);
+  }, [auth.apiKey, auth.branch]);
 
   if (!auth.branch) {
     return (

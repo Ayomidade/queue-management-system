@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, v1Api } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 export const useMyCounter = () => {
@@ -14,8 +14,8 @@ export const useMyCounter = () => {
       return;
     }
     try {
-      const response = await apiClient.get(`/counters/${auth.branch}`, {
-        token: auth.token,
+      const response = await v1Api.get(`/counters/${auth.branch}`, {
+        apiKey: auth.apiKey,
       });
       const mine = response.data.find((c) => c.assignedStaff?._id === auth.id);
       setCounter(mine || null);
@@ -25,7 +25,7 @@ export const useMyCounter = () => {
     } finally {
       setLoading(false);
     }
-  }, [auth.branch, auth.token, auth.id]);
+  }, [auth.branch, auth.apiKey, auth.id]);
 
   useEffect(() => {
     fetchCounter();
@@ -34,13 +34,13 @@ export const useMyCounter = () => {
   const toggleCounter = useCallback(async () => {
     if (!counter) return;
     const action = counter.isOpen ? "close" : "open";
-    await apiClient.patch(
+    await v1Api.patch(
       `/counters/${counter._id}/${action}`,
       {},
-      { token: auth.token },
+      { apiKey: auth.apiKey },
     );
     await fetchCounter();
-  }, [counter, auth.token, fetchCounter]);
+  }, [counter, auth.apiKey, fetchCounter]);
 
   return { counter, loading, error, toggleCounter, refetch: fetchCounter };
 };

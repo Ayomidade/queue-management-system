@@ -10,7 +10,7 @@ const STATUS_STYLE = {
 
 const TicketHistory = () => {
   const { auth } = useAuth();
-  const { tickets, loading, error, recall } = useTicketHistory(auth.token);
+  const { tickets, loading, error, recall } = useTicketHistory(auth.apiKey);
 
   if (loading) return <p className={styles.status}>Loading history…</p>;
   if (error) return <p className={styles.statusError}>{error}</p>;

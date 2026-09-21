@@ -1,5 +1,5 @@
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, v1Api } from "../../lib/apiClient";
 
-export const fetchQueues = (token) => apiClient.get("/queues", { token });
-export const createTicket = (data, token) =>
-  apiClient.post("/tickets", data, { token });
+export const fetchQueues = (apiKey) => v1Api.get("/queues", { apiKey });
+export const createTicket = (data, apiKey) =>
+  apiClient.post("/tickets", data, { apiKey });

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiClient, ApiError } from "../../lib/apiClient";
+import { apiClient, ApiError, v1Api } from "../../lib/apiClient";
 
-export const useTicketHistory = (token) => {
+export const useTicketHistory = (apiKey) => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await apiClient.get("/tickets/my-history", { token });
+      const res = await v1Api.get("/tickets/my-history", { apiKey });
       setTickets(res.data);
       setError(null);
     } catch (err) {
@@ -16,7 +16,7 @@ export const useTicketHistory = (token) => {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [apiKey]);
 
   useEffect(() => {
     load();
@@ -25,7 +25,7 @@ export const useTicketHistory = (token) => {
   const recall = useCallback(
     async (ticketId) => {
       try {
-        await apiClient.patch(`/tickets/${ticketId}/recall`, {}, { token });
+        await v1Api.patch(`/tickets/${ticketId}/recall`, {}, { apiKey });
         await load();
         return true;
       } catch (err) {
@@ -35,7 +35,7 @@ export const useTicketHistory = (token) => {
         return false;
       }
     },
-    [token, load],
+    [apiKey, load],
   );
 
   return { tickets, loading, error, recall, refetch: load };

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiClient } from "../../lib/apiClient";
+import { apiClient, v1Api } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 export const useMyStats = () => {
@@ -8,14 +8,14 @@ export const useMyStats = () => {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await apiClient.get("/tickets/my-stats", {
-        token: auth.token,
+      const response = await v1Api.get("/tickets/my-stats", {
+        apiKey: auth.apiKey,
       });
       setStats(response.data);
     } catch {
       // non-critical, the dashboard still works without this number
     }
-  }, [auth.token]);
+  }, [auth.apiKey]);
 
   useEffect(() => {
     fetchStats();
