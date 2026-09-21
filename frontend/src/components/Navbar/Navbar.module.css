@@ -132,3 +132,90 @@
     display: none;
   }
 }
+
+/* ── User Switcher ─────────────────────────────────── */
+
+.switcherWrap {
+  position: relative;
+}
+
+.switcherBtn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 100px;
+  border: 1px solid var(--ink-line);
+  background: transparent;
+  color: var(--paper-ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.switcherBtn:hover {
+  background: var(--paper-raised);
+  border-color: var(--brand-primary);
+}
+
+.switcherDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--paper);
+  border: 1px solid var(--ink-line);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.35rem;
+  z-index: 100;
+}
+
+.switcherItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.switcherItem:hover {
+  background: var(--paper-raised);
+}
+
+.switcherName {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--paper-ink);
+}
+
+.badgeAdmin,
+.badgeManager,
+.badgeStaff,
+.badgeCustomer {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 100px;
+}
+.badgeAdmin {
+  background: #dc262620;
+  color: #dc2626;
+}
+.badgeManager {
+  background: #7c3aed20;
+  color: #7c3aed;
+}
+.badgeStaff {
+  background: #0d7c6620;
+  color: #0d7c66;
+}
+.badgeCustomer {
+  background: #c9a22720;
+  color: #c9a227;
+}

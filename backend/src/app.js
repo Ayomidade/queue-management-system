@@ -20,6 +20,7 @@ import exportRouter from "./routes/export.routes.js";
 import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
 import brandRouter from "./routes/brand.routes.js";
 import apiKeyRouter from "./routes/apiKey.routes.js";
+import demoRouter from "./routes/v1/demo.routes.js";
 import v1Router from "./routes/v1/index.js";
 import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
 import { sendSuccess } from "./utils/response.js";
@@ -93,6 +94,9 @@ import { resolveStaffUser } from "./middlewares/resolveStaffUser.js";
 
 // API key management (admin JWT auth — used to create/revoke keys)
 app.use("/api/v1/api-keys", apiKeyRouter);
+
+// Demo helper routes (no auth required)
+app.use("/api/v1/demo", demoRouter);
 
 // V1 resource routes — all require API key auth + rate limiting
 // The bankScope middleware inside v1Router handles tenant isolation

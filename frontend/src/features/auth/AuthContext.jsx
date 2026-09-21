@@ -14,18 +14,14 @@ import { useNavigate } from "react-router-dom";
  * In production, banks manage their own auth and call Cue's API via X-API-Key.
  * The demo uses a pre-seeded API key stored in VITE_DEMO_API_KEY.
  *
- * Legacy JWT login is still supported for backward compatibility but
- * is not the primary flow for the demo.
+ * The user switcher lets visitors explore the demo from each persona's
+ * perspective (admin, manager, staff, customer).
  */
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "cue_auth";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-/**
- * Demo mode: the frontend uses a pre-seeded API key.
- * Staff and customer roles are resolved from the key's scopes.
- */
 const DEMO_API_KEY = import.meta.env.VITE_DEMO_API_KEY || "";
 
 const readStoredAuth = () => {
@@ -62,10 +58,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * After setting the API key, fetch /v1/auth/me to resolve
+   * the staff identity (id, branch, counter, etc.)
+   */
   useEffect(() => {
     if (!auth?.apiKey) return;
     fetch(`${API_URL}/v1/auth/me`, {
-      headers: { "X-API-Key": auth.apiKey },
+      headers: { "X-Staff-Id": auth.id || "", "X-API-Key": auth.apiKey },
     })
       .then((r) => r.json())
       .then((res) => {
@@ -74,12 +74,38 @@ export const AuthProvider = ({ children }) => {
         }
       })
       .catch(() => {});
-  }, [auth?.apiKey]);
+  }, [auth?.apiKey, auth?.id]);
+
+  /**
+   * Switch to a different demo user.
+   * Updates auth state and navigates to the correct dashboard.
+   */
+  const switchUser = useCallback(
+    (user) => {
+      const nextAuth = {
+        ...auth,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        accountType: user.type === "customer" ? "customer" : "staff",
+        branch: user.branch || null,
+      };
+      setAuth(nextAuth);
+
+      // Navigate to the correct dashboard based on role
+      if (user.type === "customer") {
+        return "/account";
+      }
+      return "/staff";
+    },
+    [auth],
+  );
 
   const logout = useCallback(() => setAuth(null), []);
 
   return (
-    <AuthContext.Provider value={{ auth, logout }}>
+    <AuthContext.Provider value={{ auth, switchUser, logout }}>
       {children}
       <AuthInterceptor setAuth={setAuth} />
     </AuthContext.Provider>

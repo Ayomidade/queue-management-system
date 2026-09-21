@@ -1,12 +1,15 @@
 import Staff from "../models/staff.model.js";
+import User from "../models/user.model.js";
 import { sendError } from "../utils/response.js";
 
 /**
  * Resolve Staff User Middleware
  *
- * After API key authentication, resolves the staff member making the request.
+ * After API key authentication, resolves the user making the request.
  * Uses X-Staff-Id header (from the bank's system) or the API key's defaultStaffId.
  * Sets req.user and req.role so legacy controllers work unchanged.
+ *
+ * Looks up Staff first, then falls back to User model (for customer personas).
  */
 export const resolveStaffUser = async (req, res, next) => {
   try {
@@ -15,27 +18,35 @@ export const resolveStaffUser = async (req, res, next) => {
       return next();
     }
 
-    const staffId = req.headers["x-staff-id"] || req.apiKey?.defaultStaffId;
+    const userId = req.headers["x-staff-id"] || req.apiKey?.defaultStaffId;
 
-    if (!staffId) {
+    if (!userId) {
       return sendError(res, {
         statusCode: 400,
         message:
-          "No staff identity. Pass X-Staff-Id header or configure a default on the API key.",
+          "No user identity. Pass X-Staff-Id header or configure a default on the API key.",
       });
     }
 
-    const staff = await Staff.findById(staffId).select("-password");
-    if (!staff || !staff.isActive) {
-      return sendError(res, {
-        statusCode: 401,
-        message: "Staff member not found or inactive",
-      });
+    // Try Staff model first, then fall back to User model
+    let account = await Staff.findById(userId).select("-password");
+    if (account) {
+      req.user = account;
+      req.role = account.role;
+      return next();
     }
 
-    req.user = staff;
-    req.role = staff.role;
-    next();
+    account = await User.findById(userId).select("-password");
+    if (account) {
+      req.user = account;
+      req.role = account.role;
+      return next();
+    }
+
+    return sendError(res, {
+      statusCode: 401,
+      message: "User not found or inactive",
+    });
   } catch (error) {
     next(error);
   }
