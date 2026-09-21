@@ -15,16 +15,11 @@ const Register = lazy(() => import("./pages/Register/Register"));
 const CustomerHome = lazy(() => import("./pages/CustomerHome/CustomerHome"));
 const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
 const Board = lazy(() => import("./pages/Board/Board"));
-const Branch = lazy(() => import("./pages/Branch/Branch"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword/ResetPassword"));
-const VerifyEmail = lazy(() => import("./pages/VerifyEmail/VerifyEmail"));
-const Settings = lazy(() => import("./pages/Settings/Settings"));
-const AdminLogin = lazy(() => import("./pages/AdminLogin/AdminLogin"));
 const Boards = lazy(() => import("./pages/Boards/Boards"));
 const Kiosk = lazy(() => import("./pages/Kiosk/Kiosk"));
 const Appointment = lazy(() => import("./pages/Appointment/Appointment"));
 const NearestBranch = lazy(() => import("./pages/NearestBranch/NearestBranch"));
+const Branch = lazy(() => import("./pages/Branch/Branch"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 
 const PageSpinner = () => (
@@ -81,16 +76,6 @@ function App() {
           }
         />
         <Route
-          path="/admin-login"
-          element={
-            <>
-              <Navbar />
-              <AdminLogin />
-              <Footer />
-            </>
-          }
-        />
-        <Route
           path="/register"
           element={
             <>
@@ -122,48 +107,6 @@ function App() {
                 <Footer />
               </>
             </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute allowedRoles={["customer", "staff", "manager", "admin"]}>
-              <>
-                <Navbar />
-                <Settings />
-                <Footer />
-              </>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/forgot-password"
-          element={
-            <>
-              <Navbar />
-              <ForgotPassword />
-              <Footer />
-            </>
-          }
-        />
-        <Route
-          path="/reset-password"
-          element={
-            <>
-              <Navbar />
-              <ResetPassword />
-              <Footer />
-            </>
-          }
-        />
-        <Route
-          path="/verify-email"
-          element={
-            <>
-              <Navbar />
-              <VerifyEmail />
-              <Footer />
-            </>
           }
         />
         <Route path="/boards" element={<Boards />} />
