@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
-import User from "../models/user.model.js";
+import Staff from "../models/staff.model.js";
 
 dotenv.config();
 
@@ -18,7 +18,7 @@ const run = async () => {
 
   await connectDB();
 
-  const existingAdmin = await User.findOne({ role: "admin" });
+  const existingAdmin = await Staff.findOne({ role: "admin" });
   if (existingAdmin) {
     console.log(
       `An admin already exists (${existingAdmin.email}). Nothing to do.`,
@@ -26,14 +26,14 @@ const run = async () => {
     return;
   }
 
-  const existingEmail = await User.findOne({ email });
+  const existingEmail = await Staff.findOne({ email });
   if (existingEmail) {
     throw new Error(
-      `A user with email ${email} already exists but isn't an admin. Choose a different SEED_ADMIN_EMAIL.`,
+      `A staff member with email ${email} already exists but isn't an admin. Choose a different SEED_ADMIN_EMAIL.`,
     );
   }
 
-  const admin = await User.create({ name, email, password, role: "admin" });
+  const admin = await Staff.create({ name, email, password, role: "admin" });
 
   console.log("Admin account created:");
   console.log(`  Email: ${admin.email}`);

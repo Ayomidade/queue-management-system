@@ -1,4 +1,3 @@
-import User from "../models/user.model.js";
 import Staff from "../models/staff.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
@@ -39,11 +38,7 @@ export const changePassword = async (req, res, next) => {
       });
     }
 
-    // Pick the right model based on role
-    const Model =
-      req.role === "staff" || req.role === "manager" ? Staff : User;
-
-    const account = await Model.findById(req.user._id).select("+password");
+    const account = await Staff.findById(req.user._id).select("+password");
     if (!account) {
       return sendError(res, {
         statusCode: 404,

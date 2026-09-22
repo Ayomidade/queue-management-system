@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createTicket,
-  getMyTicket,
+  // getMyTicket,
   callNextTicket,
   callTicket,
   completeTicket,
@@ -53,7 +53,7 @@ ticketRouter.post("/", createTicketValidator, validate, createTicket);
 // GET /api/v1/tickets/my-ticket — Get active ticket (requires user context)
 // NOTE: In v1, this endpoint requires the bank to pass a userId query param
 // or use a different identification mechanism. For now, it uses JWT auth.
-ticketRouter.get("/my-ticket", getMyTicket);
+// ticketRouter.get("/my-ticket", getMyTicket);
 
 // GET /api/v1/tickets/my-stats — Get tickets served today (requires user context)
 ticketRouter.get("/my-stats", getMyStats);

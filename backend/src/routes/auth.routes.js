@@ -1,32 +1,7 @@
 import { Router } from "express";
-import {
-  loginUser,
-  registerUser,
-  verifyEmail,
-  resendVerification,
-  forgotPassword,
-  resetPassword,
-} from "../controllers/auth.controller.js";
-import {
-  validateRegistration,
-  loginValidator,
-} from "../validators/auth.validator.js";
-import validate from "../middlewares/validate.js";
-import { authLimiter } from "../middlewares/rateLimiter.js";
 
 const auth_router = Router();
 
-auth_router.post(
-  "/register",
-  authLimiter,
-  validateRegistration,
-  validate,
-  registerUser,
-);
-auth_router.post("/login", authLimiter, loginValidator, validate, loginUser);
-auth_router.post("/verify-email", verifyEmail);
-auth_router.post("/resend-verification", authLimiter, resendVerification);
-auth_router.post("/forgot-password", authLimiter, forgotPassword);
-auth_router.post("/reset-password", authLimiter, resetPassword);
+// All user auth endpoints removed — staff authenticate via API key (v1 routes).
 
 export default auth_router;

@@ -1,25 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../../features/auth/AuthContext";
-import { fetchQueues, createTicket } from "../../features/tickets/ticketsApi";
-import { ApiError } from "../../lib/apiClient";
-import styles from "./CustomerHome.module.css";
+import styles from "./TicketPage.module.css";
 
-const CreateTicketFlow = ({ onCreated }) => {
-  const { auth } = useAuth();
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
+const TicketForm = ({ onCreated }) => {
   const [queues, setQueues] = useState([]);
   const [loadingQueues, setLoadingQueues] = useState(true);
   const [branchId, setBranchId] = useState("");
   const [queueId, setQueueId] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [purpose, setPurpose] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchQueues(auth.apiKey)
-      .then((res) => setQueues(res.data))
-      .catch((err) => setError(err.message || "Couldn't load branches."))
+    fetch(`${API_URL}/v1/queues`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.status === "success") setQueues(res.data);
+      })
+      .catch(() => setError("Couldn't load branches."))
       .finally(() => setLoadingQueues(false));
-  }, [auth.apiKey]);
+  }, []);
 
   const branches = useMemo(() => {
     const map = new Map();
@@ -44,14 +49,26 @@ const CreateTicketFlow = ({ onCreated }) => {
     setError(null);
     setSubmitting(true);
     try {
-      await createTicket({ queueId, branchId }, auth.apiKey);
-      onCreated();
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Couldn't create your ticket, try again.",
-      );
+      const res = await fetch(`${API_URL}/v1/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          queueId,
+          branchId,
+          guestName,
+          guestPhone: guestPhone || undefined,
+          guestEmail: guestEmail || undefined,
+          purpose: purpose || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        onCreated(data.data);
+      } else {
+        setError(data.message || "Couldn't create ticket.");
+      }
+    } catch {
+      setError("Couldn't connect to server.");
     } finally {
       setSubmitting(false);
     }
@@ -74,6 +91,49 @@ const CreateTicketFlow = ({ onCreated }) => {
     >
       <p className={styles.cardEyebrow}>Pull a ticket</p>
       <form onSubmit={handleSubmit} className={styles.form}>
+        <label className={styles.field}>
+          <span>Your name</span>
+          <input
+            type="text"
+            required
+            maxLength={100}
+            placeholder="e.g. John Smith"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+          />
+        </label>
+
+        <label className={styles.field}>
+          <span>Phone (optional)</span>
+          <input
+            type="tel"
+            placeholder="e.g. +234 801 234 5678"
+            value={guestPhone}
+            onChange={(e) => setGuestPhone(e.target.value)}
+          />
+        </label>
+
+        <label className={styles.field}>
+          <span>Email (optional, for notifications)</span>
+          <input
+            type="email"
+            placeholder="e.g. john@example.com"
+            value={guestEmail}
+            onChange={(e) => setGuestEmail(e.target.value)}
+          />
+        </label>
+
+        <label className={styles.field}>
+          <span>Purpose of visit</span>
+          <input
+            type="text"
+            placeholder="e.g. Open a new account"
+            maxLength={500}
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+          />
+        </label>
+
         <label className={styles.field}>
           <span>Branch</span>
           <select required value={branchId} onChange={handleBranchChange}>
@@ -112,7 +172,7 @@ const CreateTicketFlow = ({ onCreated }) => {
         <button
           type="submit"
           className={styles.submitBtn}
-          disabled={submitting || !queueId}
+          disabled={submitting || !queueId || !guestName.trim()}
         >
           {submitting ? "Pulling ticket…" : "Pull ticket"}
         </button>
@@ -121,4 +181,4 @@ const CreateTicketFlow = ({ onCreated }) => {
   );
 };
 
-export default CreateTicketFlow;
+export default TicketForm;

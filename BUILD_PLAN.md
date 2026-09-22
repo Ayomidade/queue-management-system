@@ -37,14 +37,15 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 | Backend: public board endpoints                            | ✅ Done            |
 | Backend: kiosk, appointments, nearest-branch               | ✅ Done            |
 | Backend: AI agent (Groq API)                               | ✅ Done (deferred) |
-| Backend: webhooks, Slack/Discord notifications             | ✅ Done            |
+| Backend: webhooks, Slack/Discord notifications             | ✅ Done (deferred) |
 | Backend: audit log, bulk import, export                    | ✅ Done            |
-| Backend: email notifications (Resend)                      | ✅ Done            |
-| Backend: automated tests (35 tests)                        | ✅ Done            |
-| Frontend: all 18 pages                                     | ✅ Done            |
+| Backend: email notifications (Resend)                      | ✅ Done (deferred) |
+| Backend: automated tests (45 tests)                        | ✅ Done            |
+| Frontend: all 18 pages                                     | ✅ Done (simplified) |
 | Frontend: dark mode, responsive, animations                | ✅ Done            |
 | Frontend: automated tests (8 tests)                        | ✅ Done            |
 | CI: GitHub Actions pipeline                                | ✅ Done            |
+| Customer accounts removed — guest-based tickets            | ✅ Done            |
 
 ---
 
@@ -190,6 +191,7 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 - [x] Remove `notificationWebhooks` field from Branch model
 - [x] Remove agent/push route mounts from `app.js`
 - [x] Remove notification/push imports from `ticket.controller.js`
+- [x] Remove email notifications (Resend) — moved to deferred (no longer used in core ticket flow)
 
 ---
 
@@ -249,6 +251,44 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 - [x] App.jsx routes: removed login, register routes
 - [x] Removed email verification, forgot/reset password flows from demo
 - [x] Backend auth endpoints preserved for bank integrations
+
+---
+
+## Phase 8b — Guest-Based Tickets & Remove Customer Accounts ✅
+
+**Goal:** Customers don't register or log in. They walk up, fill a form (name, phone, email, purpose), get a ticket, and check status via a public page.
+
+**Ships:**
+
+- [x] Ticket model: removed `user` field; added `guestEmail`, `purpose` fields
+- [x] Ticket creation (`POST /api/v1/tickets`): public, accepts guest info (`guestName`, `guestPhone`, `guestEmail`, `purpose`)
+- [x] Ticket lookup (`GET /api/v1/tickets/public/:id`): public, looks up by `_id` or `kioskId`
+- [x] Ticket cancellation (`PATCH /api/v1/tickets/:id/cancel`): public, anyone with ticket ID can cancel
+- [x] `createTicket` controller: generates `kioskId`, removes email sending, removes User model dependency
+- [x] `getMyTicket` controller: removed (customers use public endpoint)
+- [x] `cancelTicket` controller: simplified to find by ticket ID only
+- [x] `notifyTicketChange`: removed user emission (no user accounts)
+- [x] `callNextTicket`, `callTicket`, `completeTicket`: removed email sending
+- [x] Ticket validator: added guest field validation
+- [x] Deleted `User` model (`backend/src/models/user.model.js`)
+- [x] Deleted `auth.controller.js` (all user auth endpoints removed)
+- [x] Emptied `auth.routes.js` (no user auth routes)
+- [x] `protect` middleware: simplified to only query Staff model
+- [x] `resolveStaffUser` middleware: removed User fallback
+- [x] `user.controller.js`: simplified `changePassword` to Staff only
+- [x] `demo.controller.js`: returns only Staff users (no customers)
+- [x] `seedAll.js`: removed customer seeding; admin created as Staff role
+- [x] `seedAdmin.js`: updated to seed Staff model
+- [x] Frontend: deleted `CustomerHome` page and `CreateTicketFlow` component
+- [x] Frontend: created `TicketPage` with `TicketForm` (name, phone, email, purpose, branch, service) and `TicketStatus` (ticket number, position, ETA, auto-refresh)
+- [x] Frontend: ticket ID stored in localStorage for status persistence
+- [x] Frontend: routes updated — `/ticket` and `/ticket/:ticketId` replace `/account`
+- [x] Frontend: `AuthContext` simplified — removed `accountType`, `switchUser` always navigates to `/staff`
+- [x] Frontend: `Navbar` removed customer role badge and accountType logic
+- [x] Frontend: deleted `EmailVerificationBadge` component
+- [x] Frontend: `useMyTicket` hook rewritten for public endpoint
+- [x] Frontend: `CounterConsole` updated — `user.email` → `guestEmail`
+- [x] All 45 backend + 8 frontend tests pass
 
 ---
 

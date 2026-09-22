@@ -1,22 +1,24 @@
+import crypto from "crypto";
 import Ticket from "../models/ticket.model.js";
 import Queue from "../models/queue.model.js";
-import { sendEmail } from "../services/email.service.js";
-import { getBrandSync } from "../config/brand.config.js";
-import User from "../models/user.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import { emitToBranch, emitToUser } from "../socket.js";
+import { emitToBranch } from "../socket.js";
 import mongoose from "mongoose";
 import Branch from "../models/branch.model.js";
 import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 import { dispatchWebhook } from "../services/webhook.service.js";
 
+const generateKioskId = () => {
+  return "K" + crypto.randomBytes(4).toString("hex").toUpperCase();
+};
+
 export const createTicket = async (req, res, next) => {
   try {
-    const { queueId, branchId } = req.body;
-    const userId = req.user.id;
-    const user = await User.findById(userId);
+    const { queueId, branchId, guestName, guestPhone, guestEmail, purpose } =
+      req.body;
 
     let ticket;
+    let kioskId;
     for (let attempt = 0; attempt < 3; attempt++) {
       const queue = await Queue.findByIdAndUpdate(
         queueId,
@@ -29,12 +31,18 @@ export const createTicket = async (req, res, next) => {
         return next(error);
       }
 
+      kioskId = generateKioskId();
+
       try {
         ticket = await Ticket.create({
-          user: userId,
+          kioskId,
           queue: queueId,
           branch: branchId,
           ticketNumber: queue.lastTicketNumber,
+          guestName: guestName.trim(),
+          guestPhone: guestPhone || null,
+          guestEmail: guestEmail || null,
+          purpose: purpose || null,
         });
         break;
       } catch (err) {
@@ -43,16 +51,18 @@ export const createTicket = async (req, res, next) => {
       }
     }
 
-    sendEmail({
-      to: user.email,
-      subject: `Your Ticket #${ticket.ticketNumber} is Confirmed`,
-      html: `<h2>Ticket Confirmed</h2><p>Your queue ticket has been created.</p><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>We'll notify you when it's your turn.</p>`,
-    }).catch(() => {});
-
     emitToBranch(branchId, "queue:updated", {
       queueId,
       reason: "ticket-created",
     });
+
+    dispatchWebhook("ticket.created", {
+      ticketId: ticket._id,
+      ticketNumber: ticket.ticketNumber,
+      queue: queueId,
+      branch: branchId,
+      guestName: ticket.guestName,
+    }, branchId);
 
     const queueAfter = await Queue.findById(queueId);
     if (queueAfter) {
@@ -60,7 +70,6 @@ export const createTicket = async (req, res, next) => {
         queue: queueId,
         status: "waiting",
       });
-      // Threshold: 10, then every 5 more (15, 20, 25...)
       const thresholds = [10, 15, 20, 25, 30, 35, 40, 45, 50];
       const currentThreshold = thresholds.findLast((t) => waitingCount >= t);
       const lastNotified = queueAfter.lastNotifiedThreshold || 0;
@@ -69,15 +78,61 @@ export const createTicket = async (req, res, next) => {
         await Queue.findByIdAndUpdate(queueId, {
           lastNotifiedThreshold: currentThreshold,
         });
-
-        const queueName = queueAfter.serviceName;
       }
     }
 
     return sendSuccess(res, {
       statusCode: 201,
       message: "Ticket created successfully",
-      data: ticket,
+      data: {
+        ticketId: ticket._id,
+        kioskId: ticket.kioskId,
+        ticketNumber: ticket.ticketNumber,
+        guestName: ticket.guestName,
+        queue: queueId,
+        branch: branchId,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPublicTicket = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const ticket = await Ticket.findOne({
+      $or: [{ _id: id }, { kioskId: id }],
+    })
+      .populate("queue", "serviceName")
+      .populate("branch", "name location")
+      .populate("servedBy", "name");
+
+    if (!ticket) {
+      const error = new Error("Ticket not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    let position = 0;
+    let estimatedWaitMinutes = null;
+
+    if (ticket.status === "waiting") {
+      position = await countTicketsAhead(
+        ticket.queue._id,
+        ticket.ticketNumber,
+        ticket.priority,
+      );
+      const avgMinutes = await getAverageHandlingMinutes(ticket.queue._id);
+      estimatedWaitMinutes =
+        avgMinutes !== null ? Math.round(position * avgMinutes) : null;
+    }
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Ticket fetched successfully",
+      data: { ...ticket.toObject(), position, estimatedWaitMinutes },
     });
   } catch (error) {
     next(error);
@@ -129,46 +184,6 @@ const getAverageHandlingMinutes = async (queueId) => {
   return totalMs / recent.length / 60000;
 };
 
-export const getMyTicket = async (req, res, next) => {
-  try {
-    const ticket = await Ticket.findOne({
-      user: req.user.id,
-      status: { $in: ["waiting", "called"] },
-    });
-
-    if (!ticket) {
-      const error = new Error("No active ticket found");
-      error.statusCode = 404;
-      return next(error);
-    }
-
-    let position = 0;
-    let estimatedWaitMinutes = null;
-
-    if (ticket.status === "waiting") {
-      position = await countTicketsAhead(
-        ticket.queue,
-        ticket.ticketNumber,
-        ticket.priority,
-      );
-      const avgMinutes = await getAverageHandlingMinutes(ticket.queue);
-      estimatedWaitMinutes =
-        avgMinutes !== null ? Math.round(position * avgMinutes) : null;
-    }
-
-    await ticket.populate("queue", "serviceName");
-    await ticket.populate("branch", "name location");
-
-    return sendSuccess(res, {
-      statusCode: 200,
-      message: "Active ticket fetched successfully",
-      data: { ...ticket.toObject(), position, estimatedWaitMinutes },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const findTicketInBranchScope = async (id, req) => {
   const ticket = await Ticket.findById(id);
   if (!ticket) return { ticket: null, forbidden: false };
@@ -185,11 +200,6 @@ const notifyTicketChange = (ticket, event) => {
     ticketId: ticket._id,
     ticketNumber: ticket.ticketNumber,
     queueId: ticket.queue,
-    status: ticket.status,
-  });
-  emitToUser(String(ticket.user), event, {
-    ticketId: ticket._id,
-    ticketNumber: ticket.ticketNumber,
     status: ticket.status,
   });
 };
@@ -243,17 +253,8 @@ export const callNextTicket = async (req, res, next) => {
       });
     }
 
-    await ticket.populate("user", "email");
-
-    sendEmail({
-      to: ticket.user.email,
-      subject: `Ticket #${ticket.ticketNumber} — Please Proceed`,
-      html: `<h2>Your Ticket is Being Called</h2><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>Please proceed to the counter now.</p>`,
-    }).catch(() => {});
-
     notifyTicketChange(ticket, "ticket:called");
 
-    const branchDoc = await Branch.findById(queue.branch).select("name");
     dispatchWebhook("ticket.called", {
       ticketId: ticket._id,
       ticketNumber: ticket.ticketNumber,
@@ -295,13 +296,6 @@ export const callTicket = async (req, res, next) => {
     ticket.calledAt = new Date();
     ticket.servedBy = req.user.id;
     await ticket.save();
-    await ticket.populate("user", "email");
-
-    sendEmail({
-      to: ticket.user.email,
-      subject: `Ticket #${ticket.ticketNumber} — Please Proceed`,
-      html: `<h2>Your Ticket is Being Called</h2><p>Ticket number: <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b></p><p>Please proceed to the counter now.</p>`,
-    }).catch(() => {});
 
     notifyTicketChange(ticket, "ticket:called");
 
@@ -338,17 +332,8 @@ export const completeTicket = async (req, res, next) => {
     ticket.completedAt = new Date();
     if (!ticket.servedBy) ticket.servedBy = req.user.id;
     await ticket.save();
-    await ticket.populate("user", "email name");
 
     notifyTicketChange(ticket, "ticket:completed");
-
-    if (ticket.user?.email) {
-      sendEmail({
-        to: ticket.user.email,
-        subject: `Ticket #${ticket.ticketNumber} — Completed`,
-        html: `<h2>Ticket Completed</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been completed. Thank you for visiting ${getBrandSync().name}!</p>`,
-      }).catch(() => {});
-    }
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -396,14 +381,23 @@ export const skipTicket = async (req, res, next) => {
 
 export const cancelTicket = async (req, res, next) => {
   try {
-    const ticket = await Ticket.findOne({
-      _id: req.params.id,
-      user: req.user.id,
-    }).populate("user", "email name");
+    const ticket = await Ticket.findById(req.params.id);
 
     if (!ticket) {
       const error = new Error("Ticket not found");
       error.statusCode = 404;
+      return next(error);
+    }
+
+    if (ticket.status === "completed") {
+      const error = new Error("Cannot cancel a completed ticket");
+      error.statusCode = 400;
+      return next(error);
+    }
+
+    if (ticket.status === "cancelled") {
+      const error = new Error("Ticket is already cancelled");
+      error.statusCode = 400;
       return next(error);
     }
 
@@ -412,14 +406,6 @@ export const cancelTicket = async (req, res, next) => {
     await ticket.save();
 
     notifyTicketChange(ticket, "ticket:cancelled");
-
-    if (ticket.user?.email) {
-      sendEmail({
-        to: ticket.user.email,
-        subject: `Ticket #${ticket.ticketNumber} — Cancelled`,
-        html: `<h2>Ticket Cancelled</h2><p>Your ticket <b>#${String(ticket.ticketNumber).padStart(4, "0")}</b> has been cancelled.</p>`,
-      }).catch(() => {});
-    }
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -523,13 +509,11 @@ export const closeDay = async (req, res, next) => {
     const branchId = req.user.branch;
     const now = new Date();
 
-    // Mark all waiting and called tickets as completed
     const result = await Ticket.updateMany(
       { branch: branchId, status: { $in: ["waiting", "called"] } },
       { status: "completed", completedAt: now },
     );
 
-    // Update branch day status
     await Branch.findByIdAndUpdate(branchId, {
       dayOpen: false,
       lastClosedAt: now,
@@ -563,7 +547,6 @@ export const openDay = async (req, res, next) => {
     const branchId = req.user.branch;
     const now = new Date();
 
-    // Update branch day status
     await Branch.findByIdAndUpdate(branchId, {
       dayOpen: true,
       lastOpenedAt: now,
@@ -611,7 +594,9 @@ export const getMyStats = async (req, res, next) => {
 
 export const getMyRecentTickets = async (req, res, next) => {
   try {
-    const { page, limit, skip } = parsePagination(req.query, { defaultLimit: 20 });
+    const { page, limit, skip } = parsePagination(req.query, {
+      defaultLimit: 20,
+    });
     const filter = {
       servedBy: req.user.id,
       status: { $in: ["completed", "skipped"] },
@@ -622,8 +607,7 @@ export const getMyRecentTickets = async (req, res, next) => {
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate("queue", "serviceName")
-        .populate("user", "email name"),
+        .populate("queue", "serviceName"),
     ]);
 
     return sendSuccess(res, {
@@ -662,8 +646,7 @@ export const getBranchTickets = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .populate("queue", "serviceName")
-        .populate("user", "email"),
+        .populate("queue", "serviceName"),
     ]);
 
     return sendSuccess(res, {

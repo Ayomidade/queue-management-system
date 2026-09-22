@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { apiClient, v1Api } from "../../lib/apiClient";
+import { v1Api } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -16,7 +16,7 @@ const TICKET_EVENTS = [
   "queue:updated",
 ];
 
-export const useMyTicket = () => {
+export const useMyTicket = (ticketId) => {
   const { auth } = useAuth();
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +26,13 @@ export const useMyTicket = () => {
   const refetchTimer = useRef(null);
 
   const fetchTicket = useCallback(async () => {
+    if (!ticketId) {
+      setTicket(null);
+      setLoading(false);
+      return;
+    }
     try {
-      const response = await v1Api.get("/tickets/my-ticket", {
-        apiKey: auth.apiKey,
-      });
+      const response = await v1Api.get(`/tickets/public/${ticketId}`);
       setTicket(response.data);
       setError(null);
     } catch (err) {
@@ -37,12 +40,12 @@ export const useMyTicket = () => {
         setTicket(null);
         setError(null);
       } else {
-        setError(err.message || "Couldn't load your ticket.");
+        setError(err.message || "Couldn't load ticket.");
       }
     } finally {
       setLoading(false);
     }
-  }, [auth.apiKey]);
+  }, [ticketId]);
 
   const scheduleRefetch = useCallback(() => {
     clearTimeout(refetchTimer.current);

@@ -13,7 +13,6 @@ const ROLE_BADGE = {
   admin: { label: "Admin", className: styles.badgeAdmin },
   manager: { label: "Manager", className: styles.badgeManager },
   staff: { label: "Staff", className: styles.badgeStaff },
-  customer: { label: "Customer", className: styles.badgeCustomer },
 };
 
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
@@ -24,7 +23,6 @@ const Navbar = () => {
   const { auth, switchUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const accountHref = auth?.role === "customer" ? "/account" : "/staff";
   const firstName = auth?.name?.split(" ")[0];
 
   return (
@@ -61,7 +59,7 @@ const Navbar = () => {
           {auth ? (
             <>
               {auth.apiKey && <UserSwitcher switchUser={switchUser} navigate={navigate} apiKey={auth.apiKey} />}
-              <Link to={accountHref} className={styles.accountLink}>
+              <Link to="/staff" className={styles.accountLink}>
                 {firstName}
               </Link>
               <button className={styles.cta} onClick={logout}>
@@ -117,7 +115,7 @@ const Navbar = () => {
             </Link>
             {auth ? (
               <>
-                <Link to={accountHref} onClick={() => setOpen(false)}>
+                <Link to="/staff" onClick={() => setOpen(false)}>
                   {firstName}
                 </Link>
                 <button
@@ -154,9 +152,9 @@ const Navbar = () => {
 /**
  * User Switcher Dropdown
  *
- * Fetches all demo users and shows a dropdown to switch between personas.
+ * Fetches all demo staff users and shows a dropdown to switch between personas.
  */
-const UserSwitcher = ({ switchUser, navigate, apiKey }) => {
+const UserSwitcher = ({ switchUser, navigate }) => {
   const [users, setUsers] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -207,7 +205,6 @@ const UserSwitcher = ({ switchUser, navigate, apiKey }) => {
           >
             {users.map((user) => {
               const badge = ROLE_BADGE[user.role] || ROLE_BADGE.staff;
-              const isCurrent = user.email === undefined ? false : true;
               return (
                 <button
                   key={user.id}

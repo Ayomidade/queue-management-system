@@ -11,6 +11,27 @@ export const createTicketValidator = [
     .withMessage("branchId is required")
     .isMongoId()
     .withMessage("Invalid branch ID"),
+  body("guestName")
+    .notEmpty()
+    .withMessage("Name is required")
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Name must be 1-100 characters"),
+  body("guestPhone")
+    .optional()
+    .isString()
+    .trim(),
+  body("guestEmail")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email address"),
+  body("purpose")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Purpose must be under 500 characters"),
 ];
 
 export const callNextValidator = [
@@ -45,7 +66,7 @@ export const setPriorityValidator = [
 export const branchIdParamValidator = [
   param("branchId")
     .notEmpty()
-    .withMessage("branchId is required")
+    .withMessage("Branch ID is required")
     .isMongoId()
     .withMessage("Invalid branch ID"),
 ];

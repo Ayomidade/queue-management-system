@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
-import User from "../models/user.model.js";
 import Staff from "../models/staff.model.js";
 import Branch from "../models/branch.model.js";
 import Queue from "../models/queue.model.js";
@@ -43,11 +42,6 @@ const SEED = {
   staffName: process.env.SEED_STAFF_NAME || "Front Desk Staff",
   staffEmail: process.env.SEED_STAFF_EMAIL || "staff@queue.com",
   staffPassword: process.env.SEED_STAFF_PASSWORD || "Staff@1234",
-
-  // Customer
-  customerName: process.env.SEED_CUSTOMER_NAME || "John Customer",
-  customerEmail: process.env.SEED_CUSTOMER_EMAIL || "customer@queue.com",
-  customerPassword: process.env.SEED_CUSTOMER_PASSWORD || "Customer@1234",
 };
 
 const log = (label, value) => console.log(`  ${label}: ${value}`);
@@ -100,20 +94,7 @@ const run = async () => {
     counters.push(counter);
   }
 
-  /* ------ Helper to create a unique user or skip ------ */
-  const ensureUser = async ({ name, email, password, role }) => {
-    let user = await User.findOne({ email });
-    if (user) {
-      console.log(`ℹ️   User "${email}" already exists — skipping.`);
-      return user;
-    }
-    user = await User.create({ name, email, password, role });
-    console.log(`✅  User created: ${role}`);
-    log("Email", user.email);
-    log("Password", password);
-    return user;
-  };
-
+  /* ------ Helper to create a unique staff or skip ------ */
   const ensureStaff = async ({ name, email, password, role, branchId, counterId }) => {
     let s = await Staff.findOne({ email });
     if (s) {
@@ -137,11 +118,12 @@ const run = async () => {
   };
 
   /* ------ Admin ------ */
-  await ensureUser({
+  await ensureStaff({
     name: SEED.adminName,
     email: SEED.adminEmail,
     password: SEED.adminPassword,
     role: "admin",
+    branchId: branch._id,
   });
 
   /* ------ Manager (assigned to counter 2) ------ */
@@ -162,14 +144,6 @@ const run = async () => {
     role: "staff",
     branchId: branch._id,
     counterId: counters[0]?._id,
-  });
-
-  /* ------ Customer ------ */
-  await ensureUser({
-    name: SEED.customerName,
-    email: SEED.customerEmail,
-    password: SEED.customerPassword,
-    role: "customer",
   });
 
   /* ------ Demo API Key ------ */
@@ -218,7 +192,6 @@ const run = async () => {
   log("Admin", `${SEED.adminEmail} / ${SEED.adminPassword}`);
   log("Manager", `${SEED.managerEmail} / ${SEED.managerPassword}`);
   log("Staff", `${SEED.staffEmail} / ${SEED.staffPassword}`);
-  log("Customer", `${SEED.customerEmail} / ${SEED.customerPassword}`);
   console.log("───────────────────────────────────");
 
   if (rawApiKey) {

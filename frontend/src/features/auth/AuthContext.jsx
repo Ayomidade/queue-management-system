@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
  * The demo uses a pre-seeded API key stored in VITE_DEMO_API_KEY.
  *
  * The user switcher lets visitors explore the demo from each persona's
- * perspective (admin, manager, staff, customer).
+ * perspective (admin, manager, staff).
  */
 
 const AuthContext = createContext(null);
@@ -49,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     if (!auth && DEMO_API_KEY) {
       const demoAuth = {
         apiKey: DEMO_API_KEY,
-        accountType: "staff",
         role: "admin",
         name: "Demo Staff",
         branch: null,
@@ -78,7 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Switch to a different demo user.
-   * Updates auth state and navigates to the correct dashboard.
+   * Updates auth state and navigates to the staff dashboard.
    */
   const switchUser = useCallback(
     (user) => {
@@ -88,15 +87,10 @@ export const AuthProvider = ({ children }) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        accountType: user.type === "customer" ? "customer" : "staff",
         branch: user.branch || null,
       };
       setAuth(nextAuth);
 
-      // Navigate to the correct dashboard based on role
-      if (user.type === "customer") {
-        return "/account";
-      }
       return "/staff";
     },
     [auth],

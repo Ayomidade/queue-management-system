@@ -90,8 +90,8 @@ const CounterConsole = ({ counterState, onServed }) => {
                 <FlapUnit key={i} char={char} />
               ))}
             </div>
-            {currentTicket.user?.email && (
-              <p className={styles.customerLine}>{currentTicket.user.email}</p>
+            {currentTicket.guestEmail && (
+              <p className={styles.customerLine}>{currentTicket.guestEmail}</p>
             )}
             {currentTicket.priority === "priority" && (
               <span className={styles.priorityTag}>PRIORITY</span>

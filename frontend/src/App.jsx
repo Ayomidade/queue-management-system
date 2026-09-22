@@ -10,7 +10,6 @@ import Footer from "./components/Footer/Footer";
 
 const Landing = lazy(() => import("./pages/Landing/Landing"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
-const CustomerHome = lazy(() => import("./pages/CustomerHome/CustomerHome"));
 const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
 const Board = lazy(() => import("./pages/Board/Board"));
 const Boards = lazy(() => import("./pages/Boards/Boards"));
@@ -18,6 +17,7 @@ const Kiosk = lazy(() => import("./pages/Kiosk/Kiosk"));
 const Appointment = lazy(() => import("./pages/Appointment/Appointment"));
 const NearestBranch = lazy(() => import("./pages/NearestBranch/NearestBranch"));
 const Branch = lazy(() => import("./pages/Branch/Branch"));
+const TicketPage = lazy(() => import("./pages/TicketPage/TicketPage"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 
 const PageSpinner = () => (
@@ -64,15 +64,23 @@ function App() {
           }
         />
         <Route
-          path="/account"
+          path="/ticket"
           element={
-            <ProtectedRoute allowedRoles={["customer"]}>
-              <>
-                <Navbar />
-                <CustomerHome />
-                <Footer />
-              </>
-            </ProtectedRoute>
+            <>
+              <Navbar />
+              <TicketPage />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/ticket/:ticketId"
+          element={
+            <>
+              <Navbar />
+              <TicketPage />
+              <Footer />
+            </>
           }
         />
         <Route

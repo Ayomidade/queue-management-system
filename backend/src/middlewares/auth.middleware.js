@@ -1,5 +1,3 @@
-import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
 import Staff from "../models/staff.model.js";
 import { sendError } from "../utils/response.js";
 
@@ -15,12 +13,10 @@ export const protect = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
+    const jwt = (await import("jsonwebtoken")).default;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const account =
-      decoded.role === "staff" || decoded.role === "manager"
-        ? await Staff.findById(decoded.id).select("-password")
-        : await User.findById(decoded.id).select("-password");
+    const account = await Staff.findById(decoded.id).select("-password");
 
     if (!account) {
       return sendError(res, {

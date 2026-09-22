@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
   createTicket,
-  getMyTicket,
+  getPublicTicket,
+  cancelTicket,
   callNextTicket,
   callTicket,
   completeTicket,
   skipTicket,
-  cancelTicket,
   recallTicket,
   setTicketPriority,
   getMyStats,
@@ -27,16 +27,20 @@ import {
 import { auditLog } from "../middlewares/audit.middleware.js";
 
 const ticketRouter = Router();
+
+// Public routes — no auth required
+ticketRouter.post("/", createTicketValidator, validate, createTicket);
+ticketRouter.get("/public/:id", getPublicTicket);
+ticketRouter.patch("/:id/cancel", ticketIdParamValidator, validate, cancelTicket);
+
+// Protected staff routes
 ticketRouter.use(protect);
 
-ticketRouter.post("/", authorize("customer"), createTicketValidator, validate, createTicket);
-ticketRouter.get("/my-ticket", authorize("customer"), getMyTicket);
 ticketRouter.get(
   "/my-stats",
   authorize("staff", "manager", "admin"),
   getMyStats,
 );
-ticketRouter.patch("/:id/cancel", authorize("customer"), ticketIdParamValidator, validate, cancelTicket);
 
 ticketRouter.post(
   "/call-next",
