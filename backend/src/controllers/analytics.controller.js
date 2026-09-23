@@ -5,8 +5,26 @@ import Counter from "../models/counter.model.js";
 import Staff from "../models/staff.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
-const canAccessBranch = (req, branchId) => {
-  if (req.role === "admin") return true;
+/**
+ * Whether the current principal may read analytics for `branchId`.
+ *
+ * - manager/staff: only their own branch
+ * - admin with bank context (req.bankName from API key): only branches
+ *   whose `bank` matches (Option B — bank-scoped admin)
+ * - admin without bank context (legacy JWT): any branch (single-deployment)
+ */
+const canAccessBranch = async (req, branchId) => {
+  if (req.role === "admin") {
+    // Bank-scoped admin: verify the target branch belongs to their bank.
+    if (req.bankName) {
+      const Branch = (await import("../models/branch.model.js")).default;
+      const branch = await Branch.findById(branchId).select("bank").lean();
+      if (!branch) return false;
+      return branch.bank === req.bankName;
+    }
+    // Legacy JWT admin (no API-key bank context) — permissive.
+    return true;
+  }
   return String(req.user.branch) === branchId;
 };
 
@@ -55,7 +73,7 @@ export const getBranchAnalytics = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(branchId)) {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
-    if (!canAccessBranch(req, branchId)) {
+    if (!(await canAccessBranch(req, branchId))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only view analytics for your own branch",
@@ -150,7 +168,7 @@ export const getBranchDailyReport = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(branchId)) {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
-    if (!canAccessBranch(req, branchId)) {
+    if (!(await canAccessBranch(req, branchId))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only view reports for your own branch",
@@ -228,7 +246,7 @@ export const getBranchStaffPerformance = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(branchId)) {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
-    if (!canAccessBranch(req, branchId)) {
+    if (!(await canAccessBranch(req, branchId))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only view staff performance for your own branch",

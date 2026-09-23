@@ -1,0 +1,499 @@
+/* ── Platform console (superadmin) — Verdant Trust theme ── */
+
+.page {
+  min-height: 85vh;
+  background: var(--paper);
+  padding: 4rem 1.5rem;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.loginContainer {
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.logoHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+.logoHeader img {
+  width: 40px;
+  height: 40px;
+}
+.logoHeader span {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--paper-ink);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  color: var(--brand-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.heading {
+  font-size: var(--step-3);
+}
+
+.subhead {
+  margin-top: 0.75rem;
+  color: var(--paper-soft);
+  font-size: var(--step-1);
+  max-width: 42ch;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.ghostBtn {
+  padding: 0.6rem 1.1rem;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--paper-soft);
+  text-decoration: none;
+  transition: box-shadow 0.2s ease;
+}
+.ghostBtn:hover {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.logoutBtn {
+  padding: 0.6rem 1.1rem;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Login card ─────────────────────────────────────── */
+.loginCard {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-accent);
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  padding: 0.4rem 0.75rem;
+  border-radius: 100px;
+  margin-bottom: 1.5rem;
+}
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-accent);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+}
+.field input {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--paper);
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+}
+
+.submitBtn {
+  padding: 0.85rem 1.25rem;
+  background: var(--brand-primary);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.submitBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.switchLine {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+  text-align: center;
+}
+.switchLine a {
+  color: var(--brand-accent);
+}
+
+.errorMsg {
+  color: var(--brand-alert);
+  font-size: 0.85rem;
+  background: rgba(220, 38, 38, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+/* ── Tabs ───────────────────────────────────────────── */
+.topTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--paper-raised);
+  border-radius: 100px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+.topTab,
+.topTabActive {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.topTab {
+  background: transparent;
+  color: var(--paper-soft);
+}
+.topTabActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ── Panel / stats ──────────────────────────────────── */
+.panel {
+  background: var(--paper-raised);
+  border-radius: 16px;
+  padding: 1.75rem;
+}
+
+.status {
+  color: var(--paper-soft);
+  font-size: 0.9rem;
+}
+
+.subHeading {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-soft);
+  margin: 1.5rem 0 0.75rem;
+}
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+.statCard {
+  background: var(--paper);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.statValue {
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--paper-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Bar chart (7-day requests) ─────────────────────── */
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  min-height: 140px;
+  padding: 0.5rem 0;
+}
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.bar {
+  width: 100%;
+  max-width: 48px;
+  min-height: 4px;
+  background: var(--brand-primary);
+  border-radius: 6px 6px 0 0;
+  align-self: flex-end;
+}
+.barChart {
+  align-items: flex-end;
+}
+.barCol {
+  justify-content: flex-end;
+  height: 140px;
+}
+.barLabel {
+  font-size: 0.65rem;
+  color: var(--paper-soft);
+  font-family: var(--font-mono);
+}
+.barValue {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Rows / table-ish list ──────────────────────────── */
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--paper);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.rowTitle {
+  font-weight: 600;
+  color: var(--ink);
+}
+.rowSub {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+}
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badgeCount {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--paper);
+  padding: 0.3rem 0.6rem;
+  border-radius: 100px;
+  color: var(--ink);
+}
+.badgeActive {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  background: rgba(13, 124, 102, 0.12);
+  padding: 0.3rem 0.6rem;
+  border-radius: 100px;
+}
+.badgeSuspended {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-alert);
+  background: rgba(220, 38, 38, 0.1);
+  padding: 0.3rem 0.6rem;
+  border-radius: 100px;
+}
+.badgePending {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-accent);
+  background: rgba(201, 162, 39, 0.15);
+  padding: 0.3rem 0.6rem;
+  border-radius: 100px;
+}
+
+.smallBtn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 100px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+.smallBtn:hover {
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.smallBtnDanger {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 100px;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--brand-alert);
+  cursor: pointer;
+}
+
+/* ── Inline create form ─────────────────────────────── */
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.inlineForm input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  color: var(--ink);
+  min-width: 140px;
+}
+
+/* ── Key request cards ──────────────────────────────── */
+.requestCard {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--paper);
+}
+.requestTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.requestActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.requestActions input {
+  flex: 1;
+  min-width: 180px;
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+}
+
+/* ── Raw key modal ──────────────────────────────────── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 20, 25, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+.modal {
+  background: var(--paper-raised);
+  border-radius: 16px;
+  padding: 1.75rem;
+  max-width: 560px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.modal h3 {
+  font-size: var(--step-1);
+  color: var(--ink);
+}
+.rawKeyBox {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  background: var(--paper);
+  border: 1px dashed var(--paper-soft);
+  border-radius: 10px;
+  padding: 0.85rem;
+}
+.rawKeyBox code {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  word-break: break-all;
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .headerRow {
+    flex-direction: column;
+  }
+  .statRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .inlineForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .inlineForm input {
+    min-width: 0;
+    width: 100%;
+  }
+}

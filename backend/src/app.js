@@ -19,7 +19,7 @@ import staffImportRouter from "./routes/staffImport.routes.js";
 import exportRouter from "./routes/export.routes.js";
 import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
 import brandRouter from "./routes/brand.routes.js";
-import apiKeyRouter from "./routes/apiKey.routes.js";
+import platformRouter from "./routes/platform/index.js";
 import demoRouter from "./routes/v1/demo.routes.js";
 import v1Router from "./routes/v1/index.js";
 import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
@@ -92,8 +92,12 @@ app.use("/api/brand", brandRouter);
 import { bankScope } from "./middlewares/bankScope.middleware.js";
 import { resolveStaffUser } from "./middlewares/resolveStaffUser.js";
 
-// API key management (admin JWT auth — used to create/revoke keys)
-app.use("/api/v1/api-keys", apiKeyRouter);
+// ── Platform routes (superadmin JWT auth) ───────────────────────
+// Superadmin-only console: API key lifecycle, usage monitoring,
+// key-request approval. NOT under /api/v1 and NOT bank-scoped —
+// the superadmin is a platform operator, not a bank tenant.
+// Mounted BEFORE the v1 API-key pipeline so JWT auth is independent.
+app.use("/api/platform", platformRouter);
 
 // Demo helper routes (no auth required)
 app.use("/api/v1/demo", demoRouter);

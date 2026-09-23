@@ -10,6 +10,7 @@ import styles from "./Navbar.module.css";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const ROLE_BADGE = {
+  superadmin: { label: "Superadmin", className: styles.badgeSuperadmin },
   admin: { label: "Admin", className: styles.badgeAdmin },
   manager: { label: "Manager", className: styles.badgeManager },
   staff: { label: "Staff", className: styles.badgeStaff },
@@ -58,10 +59,22 @@ const Navbar = () => {
         <div className={styles.authGroup}>
           {auth ? (
             <>
-              {auth.apiKey && <UserSwitcher switchUser={switchUser} navigate={navigate} apiKey={auth.apiKey} />}
-              <Link to="/staff" className={styles.accountLink}>
-                {firstName}
-              </Link>
+              {auth.apiKey && auth.role !== "superadmin" && (
+                <UserSwitcher
+                  switchUser={switchUser}
+                  navigate={navigate}
+                  apiKey={auth.apiKey}
+                />
+              )}
+              {auth.role === "superadmin" ? (
+                <Link to="/platform" className={styles.accountLink}>
+                  Platform
+                </Link>
+              ) : (
+                <Link to="/staff" className={styles.accountLink}>
+                  {firstName}
+                </Link>
+              )}
               <button className={styles.cta} onClick={logout}>
                 Sign out
               </button>
@@ -70,6 +83,9 @@ const Navbar = () => {
             <>
               <Link to="/boards" className={styles.loginLink}>
                 Live Boards
+              </Link>
+              <Link to="/platform/login" className={styles.loginLink}>
+                Platform
               </Link>
               <Link to="/contact" className={styles.cta}>
                 Request a demo

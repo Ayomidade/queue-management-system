@@ -99,6 +99,14 @@ const apiKeySchema = new mongoose.Schema(
       default: null,
     },
 
+    // Lifetime request counter, $inc'd fire-and-forget by authenticateApiKey.
+    // Daily buckets live in ApiKeyUsage; this is the cheap total for dashboards.
+    requestCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // Optional expiration date. If set, the key is rejected after this date.
     // null means the key never expires.
     expiresAt: {

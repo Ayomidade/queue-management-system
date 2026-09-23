@@ -6,13 +6,29 @@ import {
   createBranch,
 } from "../../features/staff/adminApi";
 import { createStaff } from "../../features/staff/manageApi";
+import {
+  requestApiKey,
+  fetchApiKeyRequests,
+  revealApiKeyRequest,
+} from "../../features/staff/apiKeyRequestApi";
 import { ApiError } from "../../lib/apiClient";
 import styles from "./StaffHome.module.css";
 
+// Scopes a bank admin may request (admin scope is superadmin-only).
+const REQUESTABLE_SCOPES = [
+  "branches:read",
+  "tickets:read",
+  "tickets:write",
+  "staff:read",
+  "analytics:read",
+  "webhooks:manage",
+];
+
 /**
- * AdminOverview — cross-branch dashboard for admin role.
- * Shows all branches with live stats, all managers with staff counts,
- * and forms to create new branches and managers.
+ * AdminOverview — cross-branch dashboard for bank-scoped admin role.
+ * Shows all branches (this bank only), all managers with staff counts,
+ * forms to create branches/managers, and the API key request panel
+ * (request new key + view status / one-time reveal).
  */
 const AdminOverview = () => {
   const { auth } = useAuth();
@@ -35,6 +51,17 @@ const AdminOverview = () => {
   const [mgrFormError, setMgrFormError] = useState(null);
   const [mgrSubmitting, setMgrSubmitting] = useState(false);
 
+  // API key request state
+  const [keyRequests, setKeyRequests] = useState([]);
+  const [keyForm, setKeyForm] = useState({
+    label: "",
+    rateLimit: 100,
+    scopes: ["branches:read", "tickets:read", "tickets:write"],
+  });
+  const [keyFormError, setKeyFormError] = useState(null);
+  const [keySubmitting, setKeySubmitting] = useState(false);
+  const [revealedKey, setRevealedKey] = useState(null); // one-time raw key display
+
   const load = useCallback(async () => {
     try {
       const res = await fetchAdminOverview(auth.apiKey);
@@ -47,9 +74,20 @@ const AdminOverview = () => {
     }
   }, [auth.apiKey]);
 
+  const loadKeyRequests = useCallback(async () => {
+    try {
+      const res = await fetchApiKeyRequests(auth.apiKey);
+      setKeyRequests(res.data?.items || res.data?.data || []);
+    } catch {
+      // Non-fatal — request panel just stays empty.
+      setKeyRequests([]);
+    }
+  }, [auth.apiKey]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadKeyRequests();
+  }, [load, loadKeyRequests]);
 
   const handleBranchChange = (field) => (e) =>
     setBranchForm((f) => ({ ...f, [field]: e.target.value }));
@@ -90,6 +128,56 @@ const AdminOverview = () => {
       );
     } finally {
       setMgrSubmitting(false);
+    }
+  };
+
+  // ── API key request handlers ──────────────────────────────
+  const toggleScope = (scope) =>
+    setKeyForm((f) => ({
+      ...f,
+      scopes: f.scopes.includes(scope)
+        ? f.scopes.filter((s) => s !== scope)
+        : [...f.scopes, scope],
+    }));
+
+  const handleRequestKey = async (e) => {
+    e.preventDefault();
+    setKeyFormError(null);
+    if (keyForm.scopes.length === 0) {
+      setKeyFormError("Select at least one scope.");
+      return;
+    }
+    setKeySubmitting(true);
+    try {
+      await requestApiKey(keyForm, auth.apiKey);
+      setKeyForm({
+        label: "",
+        rateLimit: 100,
+        scopes: ["branches:read", "tickets:read", "tickets:write"],
+      });
+      await loadKeyRequests();
+    } catch (err) {
+      setKeyFormError(
+        err instanceof ApiError
+          ? err.errors?.join(", ") || err.message
+          : "Couldn't submit request.",
+      );
+    } finally {
+      setKeySubmitting(false);
+    }
+  };
+
+  const handleRevealKey = async (id) => {
+    try {
+      const res = await revealApiKeyRequest(id, auth.apiKey);
+      if (res.data?.key) {
+        setRevealedKey({ id, key: res.data.key });
+      } else {
+        setKeyFormError("Key already revealed previously.");
+      }
+      await loadKeyRequests();
+    } catch (err) {
+      setKeyFormError(err.message || "Couldn't reveal key.");
     }
   };
 
@@ -235,6 +323,134 @@ const AdminOverview = () => {
           {mgrSubmitting ? "Adding…" : "Add manager"}
         </button>
       </form>
+
+      {/* ── API Key Request Panel ─────────────────────── */}
+      <div className={styles.mgmtSubHeading}>API key access</div>
+      <p className={styles.mgmtStatus}>
+        Request an API key for your bank. The superadmin reviews it on the
+        platform console — once approved you can reveal the key once here.
+      </p>
+
+      <form onSubmit={handleRequestKey} className={styles.mgmtInlineForm}>
+        <input
+          placeholder="Label (e.g. Core banking backend)"
+          value={keyForm.label}
+          onChange={(e) =>
+            setKeyForm((f) => ({ ...f, label: e.target.value }))
+          }
+        />
+        <input
+          type="number"
+          min={1}
+          max={10000}
+          title="Rate limit (requests/min)"
+          placeholder="Rate limit"
+          value={keyForm.rateLimit}
+          onChange={(e) =>
+            setKeyForm((f) => ({
+              ...f,
+              rateLimit: parseInt(e.target.value, 10) || 100,
+            }))
+          }
+          style={{ maxWidth: 140 }}
+        />
+        <div className={styles.scopeChips}>
+          {REQUESTABLE_SCOPES.map((scope) => (
+            <button
+              type="button"
+              key={scope}
+              className={
+                keyForm.scopes.includes(scope)
+                  ? styles.scopeChipActive
+                  : styles.scopeChip
+              }
+              onClick={() => toggleScope(scope)}
+            >
+              {scope}
+            </button>
+          ))}
+        </div>
+        {keyFormError && (
+          <p className={styles.mgmtStatusError}>{keyFormError}</p>
+        )}
+        <button
+          type="submit"
+          className={styles.mgmtSubmitBtn}
+          disabled={keySubmitting}
+        >
+          {keySubmitting ? "Submitting…" : "Request API key"}
+        </button>
+      </form>
+
+      {/* One-time raw key reveal modal */}
+      {revealedKey && (
+        <div className={styles.keyModalBackdrop}>
+          <div className={styles.keyModal}>
+            <h4>Your API key</h4>
+            <div className={styles.rawKeyBox}>
+              <code>{revealedKey.key}</code>
+              <button
+                type="button"
+                className={styles.scopeChip}
+                onClick={() => navigator.clipboard?.writeText(revealedKey.key)}
+              >
+                Copy
+              </button>
+            </div>
+            <p className={styles.mgmtStatusError} style={{ background: "none", padding: 0 }}>
+              This is the only time this key will be shown. Store it securely.
+            </p>
+            <button
+              type="button"
+              className={styles.mgmtSubmitBtn}
+              onClick={() => setRevealedKey(null)}
+            >
+              I've saved it
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.mgmtSubHeading}>Request status</div>
+      {keyRequests.length === 0 && (
+        <p className={styles.mgmtStatus}>No API key requests yet.</p>
+      )}
+      {keyRequests.map((r) => (
+        <div key={r.id} className={styles.mgmtRow}>
+          <div>
+            <div className={styles.mgmtRowTitle}>
+              {r.label || "API key request"}
+            </div>
+            <div className={styles.mgmtRowSub}>
+              scopes: {r.scopes?.join(", ")} · {r.rateLimit}/min ·{" "}
+              {new Date(r.createdAt).toLocaleString()}
+              {r.reviewNote ? ` · note: ${r.reviewNote}` : ""}
+            </div>
+          </div>
+          <div className={styles.mgmtRowActions}>
+            <span
+              className={
+                r.status === "approved"
+                  ? styles.mgmtBadgeOpen
+                  : r.status === "rejected"
+                    ? styles.mgmtBadgeClosed
+                    : styles.mgmtBadgePending
+              }
+            >
+              {r.status}
+            </span>
+            {r.canRevealKey && (
+              <button
+                type="button"
+                className={styles.mgmtSubmitBtn}
+                onClick={() => handleRevealKey(r.id)}
+              >
+                Reveal key
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
     </motion.div>
   );
 };

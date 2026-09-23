@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
 import StaffSubTab from "./StaffSubTab";
 import CounterSubTab from "./CounterSubTab";

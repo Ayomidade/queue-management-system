@@ -26,7 +26,9 @@ const staffSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["admin", "staff", "manager"],
+      // superadmin = platform operator (JWT login at /platform, not bank-scoped)
+      // admin = bank-scoped admin (API-key demo flow)
+      enum: ["superadmin", "admin", "staff", "manager"],
       default: "staff",
     },
 

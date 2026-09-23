@@ -9,6 +9,7 @@ import appointmentRouter from "./appointment.routes.js";
 import staffRouter from "./staff.routes.js";
 import adminRouter from "./admin.routes.js";
 import analyticsRouter from "./analytics.routes.js";
+import apiKeyRequestRouter from "./apiKeyRequest.routes.js";
 import { bankScope } from "../../middlewares/bankScope.middleware.js";
 import { getme } from "../../controllers/v1Auth.controller.js";
 
@@ -53,6 +54,8 @@ v1Router.use("/appointments", appointmentRouter);
 v1Router.use("/staff", staffRouter);
 v1Router.use("/admin", adminRouter);
 v1Router.use("/analytics", analyticsRouter);
+// Bank admin → superadmin API key request flow (bank-scoped via bankName).
+v1Router.use("/api-key-requests", apiKeyRequestRouter);
 v1Router.get("/auth/me", getme);
 
 export default v1Router;

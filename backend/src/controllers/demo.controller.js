@@ -7,10 +7,16 @@ import { sendSuccess } from "../utils/response.js";
  * Returns all active staff members from the Staff model.
  * Used by the demo frontend's user switcher dropdown.
  * No auth required — this is public demo data.
+ *
+ * Superadmin is excluded: they must log in with real credentials at
+ * /platform (JWT), never via the demo switcher.
  */
 export const getDemoUsers = async (req, res, next) => {
   try {
-    const staffMembers = await Staff.find({ isActive: true })
+    const staffMembers = await Staff.find({
+      isActive: true,
+      role: { $ne: "superadmin" },
+    })
       .select("name email role branch")
       .lean();
 

@@ -11,6 +11,8 @@ import Footer from "./components/Footer/Footer";
 const Landing = lazy(() => import("./pages/Landing/Landing"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
+const PlatformLogin = lazy(() => import("./pages/Platform/PlatformLogin"));
+const PlatformDashboard = lazy(() => import("./pages/Platform/PlatformDashboard"));
 const Board = lazy(() => import("./pages/Board/Board"));
 const Boards = lazy(() => import("./pages/Boards/Boards"));
 const Kiosk = lazy(() => import("./pages/Kiosk/Kiosk"));
@@ -92,6 +94,24 @@ function App() {
                 <StaffHome />
                 <Footer />
               </>
+            </ProtectedRoute>
+          }
+        />
+        {/* Superadmin platform console — JWT login only, not bank-scoped */}
+        <Route
+          path="/platform/login"
+          element={
+            <>
+              <Navbar />
+              <PlatformLogin />
+            </>
+          }
+        />
+        <Route
+          path="/platform"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin"]}>
+              <PlatformDashboard />
             </ProtectedRoute>
           }
         />

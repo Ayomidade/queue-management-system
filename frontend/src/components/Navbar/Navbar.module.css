@@ -195,6 +195,7 @@
 .badgeAdmin,
 .badgeManager,
 .badgeStaff,
+.badgeSuperadmin,
 .badgeCustomer {
   font-size: 0.65rem;
   font-weight: 700;
@@ -214,6 +215,10 @@
 .badgeStaff {
   background: #0d7c6620;
   color: #0d7c66;
+}
+.badgeSuperadmin {
+  background: #c9a22730;
+  color: #c9a227;
 }
 .badgeCustomer {
   background: #c9a22720;

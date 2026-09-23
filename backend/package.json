@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
+    "seed:superadmin": "node src/scripts/seedSuperadmin.js",
     "seed:all": "node src/scripts/seedAll.js",
     "seed:apikey": "node src/scripts/seedApiKey.js",
     "test": "vitest run",

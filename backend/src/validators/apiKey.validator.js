@@ -17,7 +17,7 @@ const VALID_SCOPES = [
 /**
  * Validation rules for creating a new API key.
  *
- * POST /api/v1/api-keys
+ * POST /api/platform/api-keys
  * Body: { bankName, label?, scopes?, rateLimit?, expiresAt? }
  */
 export const validateCreateApiKey = [
@@ -66,7 +66,7 @@ export const validateCreateApiKey = [
 /**
  * Validation rules for rotating an API key.
  *
- * POST /api/v1/api-keys/:id/rotate
+ * POST /api/platform/api-keys/:id/rotate
  * Params: { id }
  */
 export const validateRotateApiKey = [
@@ -78,7 +78,7 @@ export const validateRotateApiKey = [
 /**
  * Validation rules for deleting an API key.
  *
- * DELETE /api/v1/api-keys/:id
+ * DELETE /api/platform/api-keys/:id
  * Params: { id }
  */
 export const validateDeleteApiKey = [

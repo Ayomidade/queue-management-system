@@ -5,10 +5,14 @@ import { sendSuccess } from "../utils/response.js";
 /**
  * GET /api/v1/admin/overview
  *
- * Admin-only endpoint that returns a cross-branch overview:
- * - All branches with basic info
- * - All managers with their staff counts
- * - Summary totals
+ * Bank-scoped admin-only endpoint that returns a cross-branch overview
+ * for THIS admin's bank only (Option B multi-tenancy):
+ * - All branches belonging to req.bankName (if v1/API-key context)
+ * - All managers whose branch is in req.bankBranchIds
+ * - Summary totals scoped to that bank
+ *
+ * Legacy JWT admins without req.bankName keep the old unscoped behavior
+ * (single-deployment / non-tenanted mode).
  */
 export const getAdminOverview = async (req, res, next) => {
   try {
@@ -19,12 +23,32 @@ export const getAdminOverview = async (req, res, next) => {
       return next(error);
     }
 
+    // Bank scoping: when the request carries a bank context (v1 API key),
+    // only return that bank's branches and managers.
+    const branchFilter = { isActive: true };
+    if (req.bankName) {
+      branchFilter.bank = req.bankName;
+    }
+
+    let managerFilter = { role: "manager", isActive: true };
+    // If bankScope populated bankBranchIds, restrict managers to those branches.
+    if (req.bankName && Array.isArray(req.bankBranchIds)) {
+      managerFilter = {
+        ...managerFilter,
+        branch: { $in: req.bankBranchIds },
+      };
+    }
+
     const [branches, managers, totalStaff] = await Promise.all([
-      Branch.find({ isActive: true }).sort({ createdAt: -1 }),
-      Staff.find({ role: "manager", isActive: true })
+      Branch.find(branchFilter).sort({ createdAt: -1 }),
+      Staff.find(managerFilter)
         .select("name email branch")
         .populate("branch", "name location"),
-      Staff.countDocuments({ isActive: true }),
+      Staff.countDocuments(
+        req.bankName && Array.isArray(req.bankBranchIds)
+          ? { isActive: true, branch: { $in: req.bankBranchIds } }
+          : { isActive: true },
+      ),
     ]);
 
     // Count staff per manager's branch

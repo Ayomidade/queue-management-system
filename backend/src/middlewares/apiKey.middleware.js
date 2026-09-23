@@ -1,5 +1,7 @@
 import ApiKey from "../models/apiKey.model.js";
+import ApiKeyUsage from "../models/apiKeyUsage.model.js";
 import { sendError } from "../utils/response.js";
+import { usageDateKey } from "../utils/keyWrap.js";
 
 /**
  * API Key Authentication Middleware
@@ -67,12 +69,25 @@ export const authenticateApiKey = async (req, res, next) => {
     req.apiKey = keyDoc;
     req.bankName = keyDoc.bankName;
 
-    // Update lastUsedAt fire-and-forget (non-blocking)
-    // We use updateOne instead of save to avoid triggering middleware
+    // Update lastUsedAt + usage counters fire-and-forget (non-blocking).
+    // We use updateOne instead of save to avoid triggering middleware.
+    // Usage tracking:
+    //   - ApiKey.requestCount  → lifetime total (cheap $inc)
+    //   - ApiKeyUsage          → daily bucket {apiKey, date:"YYYY-MM-DD"} for charts
+    const today = usageDateKey();
     ApiKey.updateOne(
       { _id: keyDoc._id },
-      { $set: { lastUsedAt: new Date() } },
+      {
+        $set: { lastUsedAt: new Date() },
+        $inc: { requestCount: 1 },
+      },
     ).exec().catch(() => {}); // silently ignore errors
+
+    ApiKeyUsage.updateOne(
+      { apiKey: keyDoc._id, date: today },
+      { $inc: { count: 1 } },
+      { upsert: true },
+    ).exec().catch(() => {});
 
     next();
   } catch (error) {
