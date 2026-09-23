@@ -1,16 +1,19 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
-import Staff from "../models/staff.model.js";
+import Superadmin from "../models/superadmin.model.js";
 
 dotenv.config();
 
 /**
- * Seeds the platform superadmin account.
+ * Seeds the platform superadmin account (Superadmin collection).
  *
  * The superadmin is the ONLY persona who logs in with email/password
- * (JWT) for the /platform console. They manage API keys and usage
- * monitoring across all banks — they are not bank-scoped.
+ * at /platform (JWT with kind="superadmin"). They manage API keys and
+ * usage monitoring across all banks — they are not bank-scoped.
+ *
+ * After the four-model split, bank admins register themselves via
+ * POST /api/auth/register/admin — they are NOT seeded.
  *
  * Required env vars:
  *   SEED_SUPERADMIN_EMAIL
@@ -31,7 +34,7 @@ const run = async () => {
 
   await connectDB();
 
-  const existingSuperadmin = await Staff.findOne({ role: "superadmin" });
+  const existingSuperadmin = await Superadmin.findOne({});
   if (existingSuperadmin) {
     console.log(
       `A superadmin already exists (${existingSuperadmin.email}). Nothing to do.`,
@@ -39,23 +42,22 @@ const run = async () => {
     return;
   }
 
-  const existingEmail = await Staff.findOne({ email });
+  const existingEmail = await Superadmin.findOne({ email });
   if (existingEmail) {
     throw new Error(
-      `A staff member with email ${email} already exists but isn't a superadmin. Choose a different SEED_SUPERADMIN_EMAIL.`,
+      `A superadmin with email ${email} already exists. Choose a different SEED_SUPERADMIN_EMAIL.`,
     );
   }
 
-  const superadmin = await Staff.create({
+  const superadmin = await Superadmin.create({
     name,
     email,
     password,
-    role: "superadmin",
   });
 
   console.log("Superadmin account created:");
   console.log(`  Email: ${superadmin.email}`);
-  console.log(`  Role:  ${superadmin.role}`);
+  console.log(`  Kind:  superadmin`);
 };
 
 run()

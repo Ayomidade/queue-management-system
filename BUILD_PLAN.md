@@ -49,6 +49,52 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 | Staff management (staff/counter/queue assignment)         | ✅ Done (Phase 8c) |
 | Role-based dashboards (admin/manager overview)            | ✅ Done (Phase 8c) |
 | Superadmin platform console + key request flow            | ✅ Done (Phase 12) |
+| Four-model split (Staff/Admin/Manager/Superadmin) + kind JWT | ✅ Done (Phase 13 WP1–2) |
+
+---
+
+## Phase 13 — Real product auth (four-model split) 🚧
+
+**Goal:** Replace the demo switcher with real per-role login/registration and split identity into four collections. Dashboard becomes JWT-only; v1 stays API-key-only for bank integrations.
+
+**Locked decisions:**
+- Four collections: `Staff`, `Admin`, `Manager`, `Superadmin` (no `role` field — collection = role)
+- JWT carries `kind` + `role` claims; `protect` dispatches by `kind`
+- Manager fields: name, email, password, branch, bank, isActive, mustChangePassword — no queues/counter, cannot serve tickets
+- Admin has `bank` (informational + tenantMatch) but runtime scoping still from API key; **403 if admin.bank ≠ key.bankName**
+- Dashboard: JWT-only; v1: API-key-only for external bank systems
+- Seeds: **superadmin only** (admins self-register public; managers/staff via temp-password + invite links — both mechanisms)
+- Demo switcher / `/v1/demo/*` / `VITE_DEMO_API_KEY` fully removed (WP7)
+- Open admin registration: instant, `bankName` required, rate-limited
+- Manager keeps oversight (overview, analytics, staff create, counters open/close/assign others, close/open day) but **cannot serve tickets**
+
+### WP1 — Four models ✅
+- [x] `staff.model.js` slimmed: name, email, password, branch, counter, queues, isEmailVerified, isActive, mustChangePassword — **no `role`**
+- [x] New `admin.model.js`: name, email, password, **bank** (required, indexed), isActive, mustChangePassword
+- [x] New `manager.model.js`: name, email, password, branch, bank (denormalized), isActive, mustChangePassword — no counter/queues
+- [x] New `superadmin.model.js`: name, email, password, isActive, mustChangePassword — not bank-scoped
+- [x] Refs: `ApiKeyRequest.requestedBy` → Admin, `reviewedBy` → Superadmin; token/auditLog/pushSubscription refPath enums → `[Staff, Admin, Manager, Superadmin]`
+- [x] `migrateSplitStaff.js` (+ `npm run migrate:split-staff`, `--dry-run` supported): routes legacy `role` docs into the four collections, denormalizes manager/admin bank from branch, strips role from remaining staff
+- [x] `seedSuperadmin.js` → Superadmin model; `seedAdmin.js` → Admin model (+ `SEED_ADMIN_BANK`); **`seedAll.js` deleted**, `seed:all` script removed
+
+### WP2 — Identity: kind JWT + protect dispatch ✅
+- [x] `protect`: `modelForToken(decoded)` picks Staff/Admin/Manager/Superadmin by `kind` (falls back to `role` for pre-split tokens); rejects unknown kind; **checks `isActive`** (was missing)
+- [x] JWTs signed with `{ id, kind, role }` by both login paths (platform + staff login)
+- [x] `resolveStaffUser`: Staff only; `req.role = "staff"` (collection = role); rejects inactive
+- [x] New `tenantMatch` middleware: admin bank vs `req.bankName` → 403 on mismatch; mounted on authenticated v1 chain
+- [x] `audit.middleware` maps role → model name for refPath
+- [x] Admin overview queries `Manager` collection (no role filter); `getAllStaff` stamps `role: "staff"` for API consumers
+- [x] `createStaff` / staffImport / staff validator: role no longer accepted (Staff-only creation)
+- [x] Frontend: StaffSubTab staff-only form; AdminOverview manager-create form deferred to WP4
+- [x] Tests: `modelForToken` (7), `tenantMatch` (5), `fourModelSplit` schemas (8) → **80 backend** green; **8 frontend** + `vite build` green
+
+### WP3 — Four login endpoints + admin public registration + invites ⏳
+### WP4 — Provisioning controllers (manager/staff create, temp password, invite links) ⏳
+### WP5 — Role/permission enforcement (manager cannot serve; requireScope wiring) ⏳
+### WP6 — Dashboard moves off v1 onto JWT `/api/*` surface ⏳
+### WP7 — Frontend: 4 login pages, kill demo switcher/API-key mode ⏳
+### WP8 — Platform console adjustments (Superadmin model everywhere) ⏳
+### WP9 — Docs, env cleanup, full test pass ⏳
 
 ---
 

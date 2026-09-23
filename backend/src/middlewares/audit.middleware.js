@@ -10,8 +10,14 @@ export const auditLog = ({ action, resource, getDetails }) => {
 
         AuditLog.create({
           user: req.user._id,
+          // Map JWT role/kind → Mongoose model name for polymorphic populate.
           userModel:
-            req.role === "staff" || req.role === "manager" ? "Staff" : "User",
+            {
+              staff: "Staff",
+              admin: "Admin",
+              manager: "Manager",
+              superadmin: "Superadmin",
+            }[req.role] || "Staff",
           action,
           resource,
           resourceId: req.params.id || null,

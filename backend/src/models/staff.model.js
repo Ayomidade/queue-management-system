@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+/**
+ * Staff model — front-desk staff only.
+ *
+ * After the four-model split (Phase 13 / WP1), this collection holds
+ * solely staff members. Role is implied by the collection itself, so
+ * there is no `role` field. Managers live in Manager, bank admins in
+ * Admin, platform operators in Superadmin.
+ */
 const staffSchema = new mongoose.Schema(
   {
     name: {
@@ -22,14 +30,6 @@ const staffSchema = new mongoose.Schema(
       required: [true, "Password is required"],
       minlength: 8,
       select: false,
-    },
-
-    role: {
-      type: String,
-      // superadmin = platform operator (JWT login at /platform, not bank-scoped)
-      // admin = bank-scoped admin (API-key demo flow)
-      enum: ["superadmin", "admin", "staff", "manager"],
-      default: "staff",
     },
 
     branch: {
@@ -60,11 +60,16 @@ const staffSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // True when the account was created with a temporary password and
+    // the user must set a new one on first login.
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );
-
-// staffSchema.index({ email: 1 }, { unique: true });
 
 // Hash password before saving
 staffSchema.pre("save", async function () {

@@ -10,8 +10,9 @@ export const createStaff = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    // Manager can only create plain "staff" in their own branch; admin can set both freely
-    const role = req.role === "manager" ? "staff" : req.body.role;
+    // Staff collection holds only staff after the four-model split —
+    // managers are created via the Manager model (WP4), admins self-register.
+    // Branch is forced to the creator's branch for managers; admins pick one.
     const branch = req.role === "manager" ? req.user.branch : req.body.branch;
 
     if (!branch) {
@@ -25,12 +26,12 @@ export const createStaff = async (req, res, next) => {
       return next(error);
     }
 
-    const staff = await Staff.create({ name, email, password, role, branch });
+    const staff = await Staff.create({ name, email, password, branch });
 
     await sendEmail({
       to: staff.email,
       subject: `Your ${getBrandSync().name} Staff Account is Ready`,
-      html: `<h2>Welcome to ${getBrandSync().name}</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p><b>Role:</b> ${staff.role}</p><p>Please log in and change your password.</p>`,
+      html: `<h2>Welcome to ${getBrandSync().name}</h2><p>Your staff account has been created.</p><p><b>Email:</b> ${staff.email}</p><p>Please log in and change your password.</p>`,
     }).catch(() => {});
 
     return sendSuccess(res, {
@@ -40,7 +41,7 @@ export const createStaff = async (req, res, next) => {
         id: staff._id,
         name: staff.name,
         email: staff.email,
-        role: staff.role,
+        role: "staff",
         branch: staff.branch,
       },
     });
@@ -76,8 +77,10 @@ export const loginStaff = async (req, res, next) => {
       });
     }
 
+    // Staff collection = staff role after the four-model split.
+    // kind tells `protect` which collection to load for this token.
     const token = jwt.sign(
-      { id: staff._id, role: staff.role },
+      { id: staff._id, kind: "staff", role: "staff" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
@@ -90,7 +93,7 @@ export const loginStaff = async (req, res, next) => {
           id: staff._id,
           name: staff.name,
           email: staff.email,
-          role: staff.role,
+          role: "staff",
           branch: staff.branch,
           counter: staff.counter,
           isEmailVerified: staff.isEmailVerified,
@@ -121,10 +124,16 @@ export const getAllStaff = async (req, res, next) => {
         .skip(skip)
         .limit(limit),
     ]);
+    // Staff docs have no role field — stamp "staff" for API consumers
+    // that still read `.role` (frontend list views).
+    const items = staffs.map((s) => ({
+      ...(typeof s.toObject === "function" ? s.toObject() : s),
+      role: "staff",
+    }));
     return sendSuccess(res, {
       statusCode: 200,
       message: "Staff fetched successfully",
-      ...paginatedResponse(staffs, total, page, limit),
+      ...paginatedResponse(items, total, page, limit),
     });
   } catch (error) {
     next(error);
@@ -169,20 +178,14 @@ export const deactivateStaff = async (req, res, next) => {
       return next(error);
     }
 
-    if (req.role === "manager") {
-      if (String(target.branch) !== String(req.user.branch)) {
-        return sendError(res, {
-          statusCode: 403,
-          message: "You can only deactivate staff in your own branch",
-        });
+      if (req.role === "manager") {
+        if (String(target.branch) !== String(req.user.branch)) {
+          return sendError(res, {
+            statusCode: 403,
+            message: "You can only deactivate staff in your own branch",
+          });
+        }
       }
-      if (target.role === "manager") {
-        return sendError(res, {
-          statusCode: 403,
-          message: "Managers cannot deactivate other managers",
-        });
-      }
-    }
 
     target.isActive = false;
     await target.save();

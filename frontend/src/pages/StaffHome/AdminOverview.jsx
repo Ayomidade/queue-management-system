@@ -5,7 +5,6 @@ import {
   fetchAdminOverview,
   createBranch,
 } from "../../features/staff/adminApi";
-import { createStaff } from "../../features/staff/manageApi";
 import {
   requestApiKey,
   fetchApiKeyRequests,
@@ -27,8 +26,11 @@ const REQUESTABLE_SCOPES = [
 /**
  * AdminOverview — cross-branch dashboard for bank-scoped admin role.
  * Shows all branches (this bank only), all managers with staff counts,
- * forms to create branches/managers, and the API key request panel
+ * a form to create branches, and the API key request panel
  * (request new key + view status / one-time reveal).
+ *
+ * Manager creation form is deferred to WP4 (Manager model + dedicated
+ * endpoint with temp password + invite links).
  */
 const AdminOverview = () => {
   const { auth } = useAuth();
@@ -40,16 +42,6 @@ const AdminOverview = () => {
   const [branchForm, setBranchForm] = useState({ name: "", location: "" });
   const [branchFormError, setBranchFormError] = useState(null);
   const [branchSubmitting, setBranchSubmitting] = useState(false);
-
-  // Manager creation form
-  const [mgrForm, setMgrForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    branch: "",
-  });
-  const [mgrFormError, setMgrFormError] = useState(null);
-  const [mgrSubmitting, setMgrSubmitting] = useState(false);
 
   // API key request state
   const [keyRequests, setKeyRequests] = useState([]);
@@ -106,28 +98,6 @@ const AdminOverview = () => {
       );
     } finally {
       setBranchSubmitting(false);
-    }
-  };
-
-  const handleMgrChange = (field) => (e) =>
-    setMgrForm((f) => ({ ...f, [field]: e.target.value }));
-
-  const handleCreateManager = async (e) => {
-    e.preventDefault();
-    setMgrFormError(null);
-    setMgrSubmitting(true);
-    try {
-      await createStaff({ ...mgrForm, role: "manager" }, auth.apiKey);
-      setMgrForm({ name: "", email: "", password: "", branch: "" });
-      await load();
-    } catch (err) {
-      setMgrFormError(
-        err instanceof ApiError
-          ? err.errors?.join(", ") || err.message
-          : "Couldn't create manager.",
-      );
-    } finally {
-      setMgrSubmitting(false);
     }
   };
 
@@ -257,7 +227,10 @@ const AdminOverview = () => {
       {/* ── Managers List ──────────────────────────── */}
       <div className={styles.mgmtSubHeading}>Managers</div>
       {data.managers.length === 0 && (
-        <p className={styles.mgmtStatus}>No managers yet.</p>
+        <p className={styles.mgmtStatus}>
+          No managers yet. Manager accounts are created via the dedicated
+          Manager flow (coming in WP4).
+        </p>
       )}
       {data.managers.map((m) => (
         <div key={m.id} className={styles.mgmtRow}>
@@ -275,54 +248,6 @@ const AdminOverview = () => {
           </div>
         </div>
       ))}
-
-      {/* ── Create Manager Form ────────────────────── */}
-      <div className={styles.mgmtSubHeading}>Add manager</div>
-      <form onSubmit={handleCreateManager} className={styles.mgmtInlineForm}>
-        <input
-          required
-          placeholder="Name"
-          value={mgrForm.name}
-          onChange={handleMgrChange("name")}
-        />
-        <input
-          required
-          type="email"
-          placeholder="Email"
-          value={mgrForm.email}
-          onChange={handleMgrChange("email")}
-        />
-        <input
-          required
-          type="password"
-          placeholder="Temporary password"
-          value={mgrForm.password}
-          onChange={handleMgrChange("password")}
-        />
-        <select
-          required
-          value={mgrForm.branch}
-          onChange={handleMgrChange("branch")}
-          className={styles.mgmtInlineSelect}
-        >
-          <option value="" disabled>
-            Assign branch…
-          </option>
-          {data.branches.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-        {mgrFormError && <p className={styles.mgmtStatusError}>{mgrFormError}</p>}
-        <button
-          type="submit"
-          className={styles.mgmtSubmitBtn}
-          disabled={mgrSubmitting}
-        >
-          {mgrSubmitting ? "Adding…" : "Add manager"}
-        </button>
-      </form>
 
       {/* ── API Key Request Panel ─────────────────────── */}
       <div className={styles.mgmtSubHeading}>API key access</div>

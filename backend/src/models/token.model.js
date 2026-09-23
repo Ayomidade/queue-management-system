@@ -12,7 +12,7 @@ const tokenSchema = new mongoose.Schema({
   userModel: {
     type: String,
     required: true,
-    enum: ["User", "Staff"],
+    enum: ["Staff", "Admin", "Manager", "Superadmin"],
   },
 
   type: {

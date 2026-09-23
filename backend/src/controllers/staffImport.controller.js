@@ -37,7 +37,7 @@ export const bulkImportStaff = async (req, res, next) => {
     if (!rows.length) {
       return sendError(res, {
         statusCode: 400,
-        message: "No valid rows found in CSV. Expected headers: name, email, password, role (optional, default: staff)",
+        message: "No valid rows found in CSV. Expected headers: name, email, password, branch (optional)",
       });
     }
 
@@ -61,12 +61,12 @@ export const bulkImportStaff = async (req, res, next) => {
       }
 
       try {
+        // Staff collection only — managers/admins are not importable via CSV.
         await Staff.create({
           name: row.name,
           email: row.email.toLowerCase(),
           password: row.password,
-          role: row.role === "manager" ? "manager" : "staff",
-          branch: req.user.role === "manager" ? req.user.branch : row.branch || null,
+          branch: req.role === "manager" ? req.user.branch : row.branch || null,
           isEmailVerified: false,
         });
         results.created++;

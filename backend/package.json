@@ -9,8 +9,8 @@
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/seedAdmin.js",
     "seed:superadmin": "node src/scripts/seedSuperadmin.js",
-    "seed:all": "node src/scripts/seedAll.js",
     "seed:apikey": "node src/scripts/seedApiKey.js",
+    "migrate:split-staff": "node src/scripts/migrateSplitStaff.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

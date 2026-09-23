@@ -23,9 +23,10 @@ const apiKeyRequestSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    // The bank admin (Admin collection) who submitted the request.
     requestedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Staff",
+      ref: "Admin",
       required: true,
     },
     label: {
@@ -50,9 +51,10 @@ const apiKeyRequestSchema = new mongoose.Schema(
       default: "pending",
       index: true,
     },
+    // The platform superadmin who approved or rejected the request.
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Staff",
+      ref: "Superadmin",
       default: null,
     },
     reviewNote: {

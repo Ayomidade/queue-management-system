@@ -1,4 +1,5 @@
 import Staff from "../models/staff.model.js";
+import Manager from "../models/manager.model.js";
 import Branch from "../models/branch.model.js";
 import { sendSuccess } from "../utils/response.js";
 
@@ -13,6 +14,9 @@ import { sendSuccess } from "../utils/response.js";
  *
  * Legacy JWT admins without req.bankName keep the old unscoped behavior
  * (single-deployment / non-tenanted mode).
+ *
+ * After the four-model split, managers live in the Manager collection
+ * (no role field to filter on).
  */
 export const getAdminOverview = async (req, res, next) => {
   try {
@@ -30,7 +34,7 @@ export const getAdminOverview = async (req, res, next) => {
       branchFilter.bank = req.bankName;
     }
 
-    let managerFilter = { role: "manager", isActive: true };
+    let managerFilter = { isActive: true };
     // If bankScope populated bankBranchIds, restrict managers to those branches.
     if (req.bankName && Array.isArray(req.bankBranchIds)) {
       managerFilter = {
@@ -41,7 +45,7 @@ export const getAdminOverview = async (req, res, next) => {
 
     const [branches, managers, totalStaff] = await Promise.all([
       Branch.find(branchFilter).sort({ createdAt: -1 }),
-      Staff.find(managerFilter)
+      Manager.find(managerFilter)
         .select("name email branch")
         .populate("branch", "name location"),
       Staff.countDocuments(
@@ -51,14 +55,13 @@ export const getAdminOverview = async (req, res, next) => {
       ),
     ]);
 
-    // Count staff per manager's branch
+    // Count staff per manager's branch (Staff collection = all staff)
     const managerBranchIds = managers.map((m) => m.branch?._id).filter(Boolean);
     const staffCounts = await Staff.aggregate([
       {
         $match: {
           isActive: true,
           branch: { $in: managerBranchIds },
-          role: "staff",
         },
       },
       { $group: { _id: "$branch", count: { $sum: 1 } } },

@@ -16,8 +16,10 @@ import styles from "./StaffHome.module.css";
  * StaffSubTab — staff list, create form, and queue assignment.
  * Used inside ManagePanel for manager/admin.
  *
- * Admin: can create managers and staff, assigns to branch via dropdown.
- * Manager: creates staff only, auto-assigns to own branch.
+ * After the four-model split this form creates Staff only — managers
+ * have their own collection and creation flow (WP4).
+ * Admin: picks a branch via dropdown.
+ * Manager: auto-assigns to own branch.
  */
 const StaffSubTab = () => {
   const { auth } = useAuth();
@@ -32,7 +34,6 @@ const StaffSubTab = () => {
     name: "",
     email: "",
     password: "",
-    role: "staff",
     branch: "",
   });
   const [formError, setFormError] = useState(null);
@@ -81,10 +82,9 @@ const StaffSubTab = () => {
       const payload = { ...form };
       if (!isAdmin) {
         payload.branch = auth.branch;
-        delete payload.role;
       }
       await createStaff(payload, auth.apiKey);
-      setForm({ name: "", email: "", password: "", role: "staff", branch: "" });
+      setForm({ name: "", email: "", password: "", branch: "" });
       await load();
     } catch (err) {
       setFormError(
@@ -142,7 +142,7 @@ const StaffSubTab = () => {
             <div>
               <div className={styles.mgmtRowTitle}>{s.name}</div>
               <div className={styles.mgmtRowSub}>
-                {s.email} · {s.role}
+                {s.email} · {s.role || "staff"}
                 {s.branch?.name && <> · {s.branch.name}</>}
                 {s.counter && (
                   <> · Counter {s.counter.label || s.counter}</>
@@ -170,22 +170,18 @@ const StaffSubTab = () => {
               )}
             </div>
             <div className={styles.mgmtRowActions}>
-              {s.role !== "manager" && (
-                <button
-                  className={styles.mgmtLinkBtn}
-                  onClick={() => handleDeactivate(s._id)}
-                >
-                  Deactivate
-                </button>
-              )}
+              <button
+                className={styles.mgmtLinkBtn}
+                onClick={() => handleDeactivate(s._id)}
+              >
+                Deactivate
+              </button>
             </div>
           </div>
         );
       })}
 
-      <div className={styles.mgmtSubHeading}>
-        Add {isAdmin ? "staff or manager" : "staff"}
-      </div>
+      <div className={styles.mgmtSubHeading}>Add staff</div>
       <form onSubmit={handleCreate} className={styles.mgmtInlineForm}>
         <input
           required
@@ -208,31 +204,21 @@ const StaffSubTab = () => {
           onChange={handleChange("password")}
         />
         {isAdmin && (
-          <>
-            <select
-              value={form.role}
-              onChange={handleChange("role")}
-              className={styles.mgmtInlineSelect}
-            >
-              <option value="staff">Staff</option>
-              <option value="manager">Manager</option>
-            </select>
-            <select
-              required
-              value={form.branch}
-              onChange={handleChange("branch")}
-              className={styles.mgmtInlineSelect}
-            >
-              <option value="" disabled>
-                Assign branch…
+          <select
+            required
+            value={form.branch}
+            onChange={handleChange("branch")}
+            className={styles.mgmtInlineSelect}
+          >
+            <option value="" disabled>
+              Assign branch…
+            </option>
+            {branches.map((b) => (
+              <option key={b._id} value={b._id}>
+                {b.name}
               </option>
-              {branches.map((b) => (
-                <option key={b._id} value={b._id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </>
+            ))}
+          </select>
         )}
         {formError && <p className={styles.mgmtStatusError}>{formError}</p>}
         <button

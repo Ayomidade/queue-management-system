@@ -4,9 +4,18 @@ import { sendError } from "../utils/response.js";
 /**
  * Resolve Staff User Middleware
  *
- * After API key authentication, resolves the staff member making the request.
- * Uses X-Staff-Id header (from the bank's system) or the API key's defaultStaffId.
- * Sets req.user and req.role so controllers work unchanged.
+ * After API key authentication, resolves the staff member making the
+ * request. Used by bank integrations (and the demo frontend) that pass
+ * an explicit identity — the bank's system says WHO is acting.
+ *
+ * Identity sources (in order):
+ *   1. X-Staff-Id header (always a Staff id — managers/admins don't
+ *      call the integration API as themselves)
+ *   2. The API key's defaultStaffId (fallback for server-to-server)
+ *
+ * Sets req.user and req.role ("staff" — the Staff collection has no
+ * role field after the four-model split; the collection IS the role).
+ * Skipped entirely when protect() already set req.user (JWT path).
  */
 export const resolveStaffUser = async (req, res, next) => {
   try {
@@ -25,7 +34,7 @@ export const resolveStaffUser = async (req, res, next) => {
     }
 
     const account = await Staff.findById(userId).select("-password");
-    if (!account) {
+    if (!account || account.isActive === false) {
       return sendError(res, {
         statusCode: 401,
         message: "Staff member not found or inactive",
@@ -33,7 +42,9 @@ export const resolveStaffUser = async (req, res, next) => {
     }
 
     req.user = account;
-    req.role = account.role;
+    // Staff collection = staff role (no role field on the document).
+    req.role = "staff";
+    req.kind = "staff";
     next();
   } catch (error) {
     next(error);

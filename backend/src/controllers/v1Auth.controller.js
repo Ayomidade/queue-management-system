@@ -15,7 +15,8 @@ export const getme = async (req, res, next) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        role: req.user.role,
+        // role comes from resolveStaffUser ("staff" — no role field on Staff docs)
+        role: req.role,
         branch: req.user.branch,
         counter: req.user.counter,
         queues: req.user.queues || [],

@@ -1,18 +1,19 @@
 import jwt from "jsonwebtoken";
-import Staff from "../../models/staff.model.js";
+import Superadmin from "../../models/superadmin.model.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 
 /**
  * Platform auth controller — superadmin JWT login for /platform.
  *
- * Superadmin is the only persona who authenticates with email/password.
- * They never use the demo API-key user switcher.
+ * After the four-model split, superadmins live in their own collection
+ * (Superadmin), separate from bank Staff/Admin/Manager accounts.
+ * The platform login is the only way into that collection.
  */
 
 /**
  * POST /api/platform/login
  * Body: { email, password }
- * Issues a JWT only if the account exists, is active, and role is superadmin.
+ * Issues a JWT with kind="superadmin" if the account exists and is active.
  */
 export const loginSuperadmin = async (req, res, next) => {
   try {
@@ -25,30 +26,23 @@ export const loginSuperadmin = async (req, res, next) => {
       });
     }
 
-    const staff = await Staff.findOne({ email: email.toLowerCase() }).select(
-      "+password",
-    );
+    const superadmin = await Superadmin.findOne({
+      email: email.toLowerCase(),
+    }).select("+password");
 
     // Same generic error for missing account and bad password (no user enumeration).
-    if (!staff || !staff.isActive) {
+    if (!superadmin || !superadmin.isActive) {
       return sendError(res, { statusCode: 401, message: "Invalid credentials" });
     }
 
-    // Only the superadmin role may use the platform login.
-    if (staff.role !== "superadmin") {
-      return sendError(res, {
-        statusCode: 403,
-        message: "Access denied: superadmin only",
-      });
-    }
-
-    const isMatch = await staff.comparePassword(password);
+    const isMatch = await superadmin.comparePassword(password);
     if (!isMatch) {
       return sendError(res, { statusCode: 401, message: "Invalid credentials" });
     }
 
+    // kind tells `protect` which collection to load; role stays for authorize().
     const token = jwt.sign(
-      { id: staff._id, role: staff.role },
+      { id: superadmin._id, kind: "superadmin", role: "superadmin" },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" },
     );
@@ -58,10 +52,10 @@ export const loginSuperadmin = async (req, res, next) => {
       message: "Login successful",
       data: {
         staff: {
-          id: staff._id,
-          name: staff.name,
-          email: staff.email,
-          role: staff.role,
+          id: superadmin._id,
+          name: superadmin.name,
+          email: superadmin.email,
+          role: "superadmin",
         },
         token,
       },
@@ -84,7 +78,7 @@ export const getPlatformMe = async (req, res, next) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        role: req.user.role,
+        role: req.role || "superadmin",
       },
     });
   } catch (error) {

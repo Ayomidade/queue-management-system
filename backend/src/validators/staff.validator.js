@@ -22,11 +22,8 @@ export const createStaffValidator = [
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters"),
 
-  body("role")
-    .optional()
-    .isIn(["staff", "manager"])
-    .withMessage("Role must be either staff or manager"),
-
+  // role is not accepted — Staff collection holds only staff after the
+  // four-model split; managers are created via the Manager model (WP4).
   body("branch").optional().isMongoId().withMessage("Invalid branch ID"),
 ];
 

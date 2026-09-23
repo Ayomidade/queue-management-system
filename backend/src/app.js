@@ -23,6 +23,7 @@ import platformRouter from "./routes/platform/index.js";
 import demoRouter from "./routes/v1/demo.routes.js";
 import v1Router from "./routes/v1/index.js";
 import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
+import { tenantMatch } from "./middlewares/tenantMatch.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
 import helmet from "helmet";
@@ -107,8 +108,17 @@ import publicV1Router from "./routes/v1/public.routes.js";
 app.use("/api/v1", publicV1Router);
 
 // V1 authenticated routes — all require API key auth + rate limiting
-// The bankScope middleware inside v1Router handles tenant isolation
-app.use("/api/v1", authenticateApiKey, resolveStaffUser, apiKeyRateLimit, v1Router);
+// The bankScope middleware inside v1Router handles tenant isolation.
+// tenantMatch: if a bank admin JWT and an API key are both present,
+// admin.bank must equal key.bankName (403 otherwise).
+app.use(
+  "/api/v1",
+  authenticateApiKey,
+  resolveStaffUser,
+  tenantMatch,
+  apiKeyRateLimit,
+  v1Router,
+);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {

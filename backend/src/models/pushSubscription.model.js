@@ -10,7 +10,7 @@ const pushSubscriptionSchema = new mongoose.Schema(
     userModel: {
       type: String,
       required: true,
-      enum: ["User", "Staff"],
+      enum: ["Staff", "Admin", "Manager", "Superadmin"],
     },
     endpoint: {
       type: String,
