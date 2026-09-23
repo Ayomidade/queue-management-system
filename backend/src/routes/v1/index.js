@@ -6,6 +6,9 @@ import counterRouter from "./counter.routes.js";
 import ticketRouter from "./ticket.routes.js";
 import kioskRouter from "./kiosk.routes.js";
 import appointmentRouter from "./appointment.routes.js";
+import staffRouter from "./staff.routes.js";
+import adminRouter from "./admin.routes.js";
+import analyticsRouter from "./analytics.routes.js";
 import { bankScope } from "../../middlewares/bankScope.middleware.js";
 import { getme } from "../../controllers/v1Auth.controller.js";
 
@@ -27,6 +30,9 @@ import { getme } from "../../controllers/v1Auth.controller.js";
  *   /api/v1/tickets/*        → ticketRouter
  *   /api/v1/kiosk/*          → kioskRouter
  *   /api/v1/appointments/*   → appointmentRouter
+ *   /api/v1/staff/*          → staffRouter
+ *   /api/v1/admin/*          → adminRouter
+ *   /api/v1/analytics/*      → analyticsRouter
  */
 
 const v1Router = Router();
@@ -44,6 +50,9 @@ v1Router.use("/counters", counterRouter);
 v1Router.use("/tickets", ticketRouter);
 v1Router.use("/kiosk", kioskRouter);
 v1Router.use("/appointments", appointmentRouter);
-v1Router.get("/auth/me", getme)
+v1Router.use("/staff", staffRouter);
+v1Router.use("/admin", adminRouter);
+v1Router.use("/analytics", analyticsRouter);
+v1Router.get("/auth/me", getme);
 
 export default v1Router;

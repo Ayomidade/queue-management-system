@@ -98,10 +98,13 @@ app.use("/api/v1/api-keys", apiKeyRouter);
 // Demo helper routes (no auth required)
 app.use("/api/v1/demo", demoRouter);
 
-// V1 resource routes — all require API key auth + rate limiting
+// V1 public routes — guest ticket flow (no auth required)
+import publicV1Router from "./routes/v1/public.routes.js";
+app.use("/api/v1", publicV1Router);
+
+// V1 authenticated routes — all require API key auth + rate limiting
 // The bankScope middleware inside v1Router handles tenant isolation
-// V1 routes: authenticate API key → resolve staff identity → rate limit → bank scope
-app.use("/api/v1", authenticateApiKey, resolveStaffUser,apiKeyRateLimit, v1Router);
+app.use("/api/v1", authenticateApiKey, resolveStaffUser, apiKeyRateLimit, v1Router);
 
 // Swagger API docs
 app.get("/api/docs/openapi.json", (req, res) => {

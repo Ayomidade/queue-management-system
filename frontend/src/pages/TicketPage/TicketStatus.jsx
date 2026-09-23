@@ -26,7 +26,7 @@ const TicketStatus = ({ ticket: initialTicket, onCancel, onNewTicket }) => {
 
     const interval = setInterval(async () => {
       try {
-        const id = ticket.kioskId || ticket._id;
+        const id = ticket.ticketId || ticket._id;
         const res = await fetch(`${API_URL}/v1/tickets/public/${id}`);
         const data = await res.json();
         if (data.status === "success") {

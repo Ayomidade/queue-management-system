@@ -42,6 +42,13 @@ const staffSchema = new mongoose.Schema(
       default: null,
     },
 
+    queues: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Queue",
+      },
+    ],
+
     isEmailVerified: {
       type: Boolean,
       default: false,

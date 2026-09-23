@@ -14,7 +14,7 @@ dotenv.config();
  * -------------------------------------------------- */
 const SEED = {
   // Bank (used for multi-tenant isolation on branches + API keys)
-  bankName: process.env.SEED_BANK_NAME || "Cue Demo",
+  bankName: process.env.SEED_BANK_NAME,
 
   // Branch
   branchName: process.env.SEED_BRANCH_NAME || "Main Branch",

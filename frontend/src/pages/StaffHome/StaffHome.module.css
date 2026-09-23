@@ -428,4 +428,433 @@
     width: 100%;
     justify-content: space-between;
   }
+
+  .mgmtInlineForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mgmtInlineForm input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mgmtSubmitBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .mgmtTabContent {
+    padding: 1.25rem;
+    border-radius: 12px;
+  }
+
+  .ovStatRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .ovStatCard {
+    padding: 0.9rem;
+  }
+
+  .ovCounterGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .ovCounterStat {
+    padding: 0.75rem;
+  }
+}
+
+/* ── Top-level tabs (Console / Manage / History) ── */
+.topTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--paper-raised);
+  border-radius: 100px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+.topTab,
+.topTabActive {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.topTab {
+  color: var(--paper-soft);
+}
+.topTabActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ── Manage panel ────────────────────────────── */
+.mgmtPanel {
+  margin-top: 0.5rem;
+}
+
+.mgmtHeader {
+  margin-bottom: 0.5rem;
+}
+
+.mgmtEyebrow {
+  font-family: var(--font-mono);
+  color: var(--brand-accent);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.mgmtTabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--paper-raised);
+  border-radius: 100px;
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.mgmtTab,
+.mgmtTabActive {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.mgmtTab {
+  color: var(--paper-soft);
+}
+.mgmtTabActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.mgmtTabContent {
+  background: var(--paper-raised);
+  border-radius: 16px;
+  padding: 1.75rem;
+}
+
+.mgmtStatus {
+  color: var(--paper-soft);
+  font-size: 0.9rem;
+}
+
+.mgmtStatusError {
+  color: var(--brand-alert);
+  font-size: 0.85rem;
+  background: rgba(193, 67, 43, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.mgmtSubHeading {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-soft);
+  margin: 1.5rem 0 0.75rem;
+}
+
+.mgmtRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--paper);
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.mgmtRowTitle {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mgmtRowSub {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+}
+
+.mgmtRowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.mgmtLinkBtn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+}
+.mgmtLinkBtn:hover {
+  text-decoration: underline;
+}
+
+.mgmtBadgeOpen,
+.mgmtBadgeClosed {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+}
+.mgmtBadgeOpen {
+  background: var(--brand-primary);
+  color: var(--ink);
+}
+.mgmtBadgeClosed {
+  background: var(--paper);
+  color: var(--paper-soft);
+}
+
+.mgmtInlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.mgmtInlineForm input {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  flex: 1;
+  min-width: 160px;
+}
+.mgmtInlineForm input:focus {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 1px;
+}
+
+.mgmtInlineSelect {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+}
+
+.mgmtSubmitBtn {
+  padding: 0.7rem 1.25rem;
+  background: var(--brand-primary);
+  color: var(--ink);
+  border-radius: 100px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+.mgmtSubmitBtn:hover {
+  transform: translateY(-2px);
+}
+.mgmtSubmitBtn:disabled {
+  opacity: 0.6;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.mgmtQueueChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.mgmtQueueChip {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+  border: 1px solid var(--paper-soft);
+  color: var(--paper-soft);
+  background: transparent;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.mgmtQueueChip:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.mgmtQueueChipActive {
+  background: var(--brand-primary);
+  color: var(--ink);
+  border-color: var(--brand-primary);
+}
+.mgmtQueueChipActive:hover {
+  color: var(--ink);
+}
+
+/* ── Overview panels ─────────────────────────── */
+.ovStatRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.ovStatCard {
+  background: var(--paper-raised);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ovStatValue {
+  font-family: var(--font-mono);
+  font-size: var(--step-2);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ovStatLabel {
+  font-size: 0.8rem;
+  color: var(--paper-soft);
+}
+
+.ovSection {
+  margin-bottom: 2rem;
+}
+
+.ovBarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.ovBarLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ovBarValue {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.ovBarTrack {
+  height: 8px;
+  background: var(--paper);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ovBarFill {
+  height: 100%;
+  background: var(--brand-primary);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.ovQueueRow {
+  margin-bottom: 0.75rem;
+}
+
+.ovQueueInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.ovQueueName {
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.ovQueueCount {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ovCounterGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ovCounterStat {
+  background: var(--paper);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.ovCounterValue {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.ovCounterLabel {
+  font-size: 0.7rem;
+  color: var(--paper-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ovCounterList {
+  display: flex;
+  flex-direction: column;
+}
+
+.ovCounterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--paper);
+  font-size: 0.85rem;
+}
+
+.ovCounterName {
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 100px;
+}
+
+.ovStaffCount {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--brand-primary);
+  font-weight: 600;
 }

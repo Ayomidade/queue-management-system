@@ -1,4 +1,5 @@
 import Staff from "../models/staff.model.js";
+import Queue from "../models/queue.model.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/email.service.js";
 import { getBrandSync } from "../config/brand.config.js";
@@ -105,14 +106,20 @@ export const loginStaff = async (req, res, next) => {
 export const getAllStaff = async (req, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
-    const filter = { isActive: true };
+    const filter = {};
     if (req.role === "manager") {
       filter.branch = req.user.branch;
     }
+    filter.isActive = true;
 
     const [total, staffs] = await Promise.all([
       Staff.countDocuments(filter),
-      Staff.find(filter).populate("branch", "name location").skip(skip).limit(limit),
+      Staff.find(filter)
+        .populate("branch", "name location")
+        .populate("counter", "label isOpen")
+        .populate("queues", "serviceName")
+        .skip(skip)
+        .limit(limit),
     ]);
     return sendSuccess(res, {
       statusCode: 200,
@@ -183,6 +190,68 @@ export const deactivateStaff = async (req, res, next) => {
     return sendSuccess(res, {
       statusCode: 200,
       message: "Staff account deactivated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * PATCH /api/v1/staff/:staffId/queues
+ * Assign queues to a staff member. Pass `{ queues: [queueId, ...] }`.
+ * Managers can only assign queues within their own branch.
+ */
+export const assignQueuesToStaff = async (req, res, next) => {
+  try {
+    const { staffId } = req.params;
+    const { queues } = req.body;
+
+    if (!Array.isArray(queues)) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "queues must be an array of queue IDs",
+      });
+    }
+
+    const staff = await Staff.findById(staffId);
+    if (!staff) {
+      const error = new Error("Staff not found");
+      error.statusCode = 404;
+      return next(error);
+    }
+
+    if (req.role === "manager" && String(staff.branch) !== String(req.user.branch)) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "You can only manage staff in your own branch",
+      });
+    }
+
+    if (queues.length > 0) {
+      const validQueues = await Queue.find({
+        _id: { $in: queues },
+        branch: staff.branch,
+      });
+      if (validQueues.length !== queues.length) {
+        return sendError(res, {
+          statusCode: 400,
+          message: "One or more queue IDs are invalid or belong to a different branch",
+        });
+      }
+    }
+
+    staff.queues = queues;
+    await staff.save();
+    await staff.populate("queues", "serviceName");
+
+    return sendSuccess(res, {
+      statusCode: 200,
+      message: "Queues assigned to staff successfully",
+      data: {
+        id: staff._id,
+        name: staff.name,
+        queues: staff.queues,
+      },
     });
   } catch (error) {
     next(error);

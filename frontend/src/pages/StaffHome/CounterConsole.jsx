@@ -30,11 +30,21 @@ const CounterConsole = ({ counterState, onServed }) => {
   useEffect(() => {
     if (!auth.branch) return;
     fetchQueues(auth.apiKey)
-      .then((res) =>
-        setQueues(res.data.filter((q) => q.branch?._id === auth.branch)),
-      )
+      .then((res) => {
+        const branchQueues = res.data.filter(
+          (q) => q.branch?._id === auth.branch || q.branch === auth.branch,
+        );
+
+        // If staff has assigned queues, filter to only those
+        const assignedIds = (auth.queues || []).map((q) => q._id || q);
+        if (assignedIds.length > 0) {
+          setQueues(branchQueues.filter((q) => assignedIds.includes(q._id)));
+        } else {
+          setQueues(branchQueues);
+        }
+      })
       .catch(() => {});
-  }, [auth.apiKey, auth.branch]);
+  }, [auth.apiKey, auth.branch, auth.queues]);
 
   if (!auth.branch) {
     return (

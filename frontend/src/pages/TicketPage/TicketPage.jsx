@@ -49,7 +49,7 @@ const TicketPage = () => {
 
   const handleCreated = (newTicket) => {
     setTicket(newTicket);
-    const storeId = newTicket.kioskId || newTicket.ticketId;
+    const storeId =newTicket.ticketId;
     localStorage.setItem(TICKET_STORAGE_KEY, storeId);
   };
 

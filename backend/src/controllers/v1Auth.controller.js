@@ -18,6 +18,7 @@ export const getme = async (req, res, next) => {
         role: req.user.role,
         branch: req.user.branch,
         counter: req.user.counter,
+        queues: req.user.queues || [],
       },
     });
   } catch (error) {

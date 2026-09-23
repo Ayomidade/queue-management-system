@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createTicket,
+  getPublicTicket,
   // getMyTicket,
   callNextTicket,
   callTicket,
@@ -49,6 +50,9 @@ const ticketRouter = Router();
 
 // POST /api/v1/tickets — Create a ticket for a customer
 ticketRouter.post("/", createTicketValidator, validate, createTicket);
+
+// GET /api/v1/tickets/public/:id — Look up a ticket by ID or kioskId
+ticketRouter.get("/public/:id", ticketIdParamValidator, validate, getPublicTicket);
 
 // GET /api/v1/tickets/my-ticket — Get active ticket (requires user context)
 // NOTE: In v1, this endpoint requires the bank to pass a userId query param

@@ -21,8 +21,8 @@ import ApiKey from "../models/apiKey.model.js";
 dotenv.config();
 
 const run = async () => {
-  const bankName = process.env.SEED_API_KEY_BANK_NAME || "System Admin";
-  const label = process.env.SEED_API_KEY_LABEL || "System Admin Key";
+  const bankName = process.env.SEED_API_KEY_BANK_NAME ;
+  const label = process.env.SEED_API_KEY_LABEL;
   const rateLimit = parseInt(process.env.SEED_API_KEY_RATE_LIMIT, 10) || 1000;
 
   await connectDB();

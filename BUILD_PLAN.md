@@ -46,6 +46,8 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 | Frontend: automated tests (8 tests)                        | ✅ Done            |
 | CI: GitHub Actions pipeline                                | ✅ Done            |
 | Customer accounts removed — guest-based tickets            | ✅ Done            |
+| Staff management (staff/counter/queue assignment)         | ✅ Done (Phase 8c) |
+| Role-based dashboards (admin/manager overview)            | ✅ Done (Phase 8c) |
 
 ---
 
@@ -292,6 +294,36 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 
 ---
 
+## Phase 8c — Staff Management & Role-Based Dashboards ✅
+
+**Goal:** Managers can manage staff, counters, and queue assignments; admins and managers get role-appropriate overview dashboards.
+
+**Ships:**
+
+- [x] Staff model: added `queues[]` field (ObjectId refs to Queue)
+- [x] `assignQueuesToStaff` controller: validates queues belong to same branch
+- [x] `getAllStaff` populates `counter` + `queues`
+- [x] Legacy route: `PATCH /:staffId/queues`
+- [x] New `routes/v1/staff.routes.js` (GET /, POST /, PATCH /:staffId/queues, DELETE /:staffId — admin + manager only)
+- [x] `v1Auth.controller.js`: `/me` returns `queues` array
+- [x] `features/staff/manageApi.js`: fetchStaffList, createStaff, assignQueuesToStaff, deactivateStaffApi, fetchBranchCounters, createCounter, assign/unassignStaffToCounter, fetchBranchQueues
+- [x] `ManagePanel.jsx`, `StaffSubTab.jsx`, `CounterSubTab.jsx` created
+- [x] `CounterConsole.jsx`: filters queue dropdown to assigned queues (fallback to all)
+- [x] V1 counter assign/unassign routes verified
+- [x] `admin.controller.js`: `getAdminOverview` (branches, managers with staff counts, summary) — **bank-scoping fix pending (Phase 12 / Option B)**
+- [x] `routes/v1/admin.routes.js` (admin-only), `routes/v1/analytics.routes.js` (admin + manager, `validateBranchOwnership`)
+- [x] Both mounted in `routes/v1/index.js`
+- [x] `features/staff/adminApi.js`: fetchAdminOverview, fetchBranchAnalytics, fetchBranchStaffPerformance, createBranch
+- [x] `AdminOverview.jsx`: cross-branch dashboard, summary cards, branch list, manager list with staff counts, create branch/manager forms
+- [x] `ManagerOverview.jsx`: branch analytics — tickets, completion rate, queue lengths, counter status, staff performance
+- [x] `StaffHome.jsx` tabs: Admin = Overview + Manage; Manager = Overview + Manage (**no Console**); Staff = Console + History
+- [x] `ManagePanel.jsx`: Admin = Staff sub-tab only; Manager = Staff + Counters sub-tabs
+- [x] `StaffSubTab.jsx`: admin can create managers (role + branch selectors), shows branch name per staff
+- [x] Public v1 routes fix: `routes/v1/public.routes.js` mounted before `authenticateApiKey` in `app.js`
+- [x] All 45 backend + 8 frontend tests pass, `vite build` passes
+
+---
+
 ## Phase 9 — Webhook Enhancement
 
 **Goal:** Make webhooks a first-class citizen for bank integrations.
@@ -333,6 +365,126 @@ Controllers check `req.bankName` — if set (v1), filter by bank. If not (legacy
 - [ ] Update CI pipeline for new structure
 - [ ] Update frontend tests for removed features
 - [ ] Run full test suite, fix any regressions
+
+---
+
+## Phase 12 — Platform Superadmin Console & Bank-Scoped Admin
+
+**Goal:** Split platform operations (superadmin) from bank operations (bank-scoped admin). Superadmin monitors API usage and exclusively owns API key lifecycle; bank admin requests keys for their own bank. Everything bank-facing becomes bank-scoped.
+
+**Decisions (locked):**
+
+| Topic | Decision |
+|---|---|
+| Superadmin auth | JWT-only login at `/platform`; only persona who must log in; excluded from demo user switcher |
+| Dashboard | New `/platform` route: Overview / API Keys / Key Requests |
+| Usage tracking | Daily buckets (`ApiKeyUsage`) + `ApiKey.requestCount` total |
+| Key ownership | Superadmin only creates/revokes/suspends/rotates; bank admin only **requests** |
+| Bank admin UI | Visible **"Request API key"** button + request-status list on AdminOverview |
+| Request form | Multi-select scopes: `branches:read`, `tickets:read`, `tickets:write`, `staff:read`, `analytics:read`, `webhooks:manage` (`admin` scope reserved for superadmin-created keys) |
+| Raw-key delivery | **Encrypted one-time store**: on approve, AES-256-GCM-encrypt raw key onto `ApiKeyRequest`; shown once to superadmin immediately; bank admin's first GET of approved request returns raw key once then ciphertext is permanently deleted |
+| Rotation reveal | **Approval only** — rotated keys shown once to superadmin; bank admin does not get rotation reveals |
+| Platform scope v1 | **Keys + usage only** (no bank/branch health, no other platform actions yet) |
+| Bank scoping (Option B) | Fix `getAdminOverview` + `canAccessBranch`; audit remaining admin routes |
+
+**Architecture after this phase:**
+
+```
+Superadmin (platform operator)
+  └─ JWT login at POST /api/platform/login
+  └─ Dashboard at /platform  (Overview | API Keys | Key Requests)
+  └─ Owns: key CRUD, usage monitoring, key-request approval
+  └─ NOT in demo user switcher, NOT bank-scoped, no API key needed
+
+Bank Admin / Manager / Staff (bank personas)
+  └─ Demo API-key + X-Staff-Id switcher (unchanged)
+  └─ /staff dashboard (admin now bank-scoped)
+  └─ Bank admin: POST /api/v1/api-key-requests to request a key
+  └─ Superadmin approves → key created → raw key shown once to superadmin,
+     staged encrypted for bank admin's one-time reveal from request status
+```
+
+**Route security split:**
+
+```
+/api/platform/*            → protect (JWT) + authorize("superadmin")  ← no bankScope
+/api/v1/api-keys/*         → REMOVED (multi-tenancy hole: any admin saw all keys)
+/api/v1/api-key-requests/* → API-key auth + authorize("admin") + bankScope
+```
+
+**Work packages (execution order):**
+
+### WP1 — Superadmin role foundation
+- [ ] `staff.model.js`: add `"superadmin"` to role enum
+- [ ] `seedSuperadmin.js` (new) + `seed:superadmin` npm script + `.env.example` vars (`SEED_SUPERADMIN_EMAIL`, `SEED_SUPERADMIN_PASSWORD`)
+- [ ] `demo.controller.js`: exclude `role: "superadmin"` from `getDemoUsers`
+
+### WP2 — Platform routes (JWT, outside `/api/v1`)
+- [ ] New `routes/platform/*` + `controllers/platform/*`
+- [ ] Endpoints:
+  ```
+  POST   /api/platform/login
+  GET    /api/platform/me
+  GET    /api/platform/overview
+  GET    /api/platform/api-keys
+  POST   /api/platform/api-keys
+  DELETE /api/platform/api-keys/:id
+  PATCH  /api/platform/api-keys/:id/toggle
+  POST   /api/platform/api-keys/:id/rotate
+  GET    /api/platform/usage?days=7
+  GET    /api/platform/key-requests?status=
+  PATCH  /api/platform/key-requests/:id     → approve | reject
+  ```
+- [ ] Mount in `app.js` before v1; `protect` + `authorize("superadmin")` at router level (login route open)
+- [ ] Reuse/adapt existing `apiKey.controller.js` logic; new `usage.controller.js`, `keyRequest.controller.js`
+
+### WP3 — Usage tracking (daily buckets + total)
+- [ ] New `apiKeyUsage.model.js` (`{apiKey, date:"YYYY-MM-DD", count}`, unique compound index)
+- [ ] `apiKey.model.js`: add `requestCount` (default 0)
+- [ ] `apiKey.middleware.js`: fire-and-forget `$inc` upsert on UsageLog + `requestCount` alongside existing `lastUsedAt` write
+
+### WP4 — Bank-admin key request flow + dual reveal
+- [ ] New `apiKeyRequest.model.js`: `bankName`, `requestedBy` (Staff ref), `label`, `scopes[]`, `rateLimit`, `status: pending/approved/rejected`, `reviewedBy`, `reviewNote`, `apiKey` ref, **`encryptedRawKey`** (iv+tag+payload), **`rawKeyStagedAt`**, `bankKeyRevealedAt`, timestamps
+- [ ] New v1 routes `apiKeyRequest.routes.js`:
+  - `POST /` (bankName from `req.bankName`, requestedBy from `req.user`)
+  - `GET /` (own bank's requests)
+  - `GET /:id` one-time reveal: if approved + not yet revealed → decrypt, return raw key, wipe ciphertext, set `bankKeyRevealedAt`
+- [ ] Platform approve: generate key → create ApiKey → link request → encrypt raw key onto request → return raw key once to superadmin
+- [ ] Crypto helper: AES-256-GCM with key derived from `KEY_WRAP_SECRET` (fallback `JWT_SECRET`)
+- [ ] Mount in `routes/v1/index.js` with `authorize("admin")`
+
+### WP5 — Remove multi-tenancy hole
+- [ ] Remove `app.use("/api/v1/api-keys", apiKeyRouter)` from `app.js`
+- [ ] Delete/move `routes/apiKey.routes.js` into platform (grep frontend first — currently no consumers)
+
+### WP6 — Bank-scoping fixes (Option B)
+- [ ] `admin.controller.js` `getAdminOverview`: filter branches by `req.bankName`; managers by `branch ∈ req.bankBranchIds`
+- [ ] `analytics.controller.js` `canAccessBranch`: admin with `req.bankName` must match `branch.bank`; legacy JWT admin keeps permissive behavior
+- [ ] Audit other `authorize("admin")` routes reachable from demo admin UI (export, staffImport, advancedAnalytics); scope unscoped cross-bank queries
+
+### WP7 — Frontend `/platform` console + bank admin request UI
+- [ ] `pages/Platform/PlatformLogin.jsx` + `PlatformDashboard.jsx` + CSS (Verdant Trust; adapt deferred AdminLogin styling)
+- [ ] Dashboard tabs: **Overview** (keys, active keys, requests today/7d bars, pending count), **API Keys** (table + create/suspend/revoke/rotate, raw key modal once), **Key Requests** (pending, approve→show raw key once, reject)
+- [ ] `AuthContext`: dual mode — `apiKey` (demo staff, existing) vs `token` (superadmin, calls `/api/platform/me`); add `loginPlatform()`
+- [ ] `App.jsx`: `/platform/login`, `/platform` (ProtectedRoute `["superadmin"]`)
+- [ ] `Navbar`: superadmin sees Platform link, no user switcher; add `superadmin` role badge
+- [ ] `AdminOverview.jsx`: **"Request API key"** button (label + rateLimit + multi-select scopes) + request status list (pending/approved/rejected; approved unrevealed shows **"Reveal key"** button hitting one-time GET)
+- [ ] New `features/platform/platformApi.js`; new `features/staff/apiKeyRequestApi.js` (or extend `adminApi.js`)
+- [ ] Fix unused `motion` import in `ManagePanel.jsx:2`
+
+### WP8 — Tests
+- [ ] `authorize` with superadmin role
+- [ ] One-time reveal helper (decrypt/wipe) unit tests
+- [ ] UsageLog date-bucket helper tests
+- [ ] Existing 45 backend + 8 frontend tests must pass; `node --check` new files; `vite build`
+
+### WP9 — Docs & plan bookkeeping
+- [ ] `.env.example`: superadmin seed vars + `KEY_WRAP_SECRET`
+- [ ] Understandable comments on all new code
+- [ ] Update this file's Phase 12 checkboxes as each WP ships
+- [ ] Run full test suite + lint
+
+**Not in scope for Phase 12:** webhooks/docs phases (9–11), pre-existing lint debt in untouched files, platform bank/branch management, OpenAPI updates for platform routes (deferred to Phase 10).
 
 ---
 

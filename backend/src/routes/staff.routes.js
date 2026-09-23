@@ -5,6 +5,7 @@ import {
   getAllStaff,
   assignStaffToBranch,
   deactivateStaff,
+  assignQueuesToStaff,
 } from "../controllers/staff.controller.js";
 import {
   createStaffValidator,
@@ -31,6 +32,7 @@ router.patch(
   validate,
   assignStaffToBranch,
 );
+router.patch("/:staffId/queues", assignQueuesToStaff);
 router.delete("/:staffId", deactivateStaff);
 
 export default router;

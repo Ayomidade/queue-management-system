@@ -87,6 +87,8 @@ export const validateBranchOwnership = async (req, res, next) => {
       isActive: true,
     });
 
+    // console.log(req)
+
     if (!branch) {
       // Return 404, not 403, to avoid leaking other banks' branch IDs
       return sendError(res, {
