@@ -9,20 +9,26 @@ import styles from "./TicketPage.module.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 const TICKET_STORAGE_KEY = "cue_ticket";
+const TICKET_TOKEN_STORAGE_KEY = "cue_ticket_token";
 
 const TicketPage = () => {
   const { ticketId: urlTicketId } = useParams();
   const { brand } = useBrand();
   const [ticket, setTicket] = useState(null);
+  const [publicToken, setPublicToken] = useState(() =>
+    localStorage.getItem(TICKET_TOKEN_STORAGE_KEY),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTicket = useCallback(async (id) => {
+  const fetchTicket = useCallback(async (id, token) => {
     setLoading(true);
     setError(null);
     try {
-      // Public v1 route — guest lookup, no auth.
-      const res = await fetch(`${API_URL}/v1/tickets/public/${id}`);
+      const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : "";
+      const res = await fetch(
+        `${API_URL}/v1/tickets/public/${id}${tokenQuery}`,
+      );
       const data = await res.json();
       if (data.status === "success") {
         setTicket(data.data);
@@ -41,8 +47,9 @@ const TicketPage = () => {
 
   useEffect(() => {
     const id = urlTicketId || localStorage.getItem(TICKET_STORAGE_KEY);
-    if (id) {
-      fetchTicket(id);
+    const token = localStorage.getItem(TICKET_TOKEN_STORAGE_KEY);
+    if (id && token) {
+      fetchTicket(id, token);
     } else {
       setLoading(false);
     }
@@ -50,8 +57,12 @@ const TicketPage = () => {
 
   const handleCreated = (newTicket) => {
     setTicket(newTicket);
-    const storeId =newTicket.ticketId;
+    const storeId = newTicket.ticketId;
     localStorage.setItem(TICKET_STORAGE_KEY, storeId);
+    if (newTicket.publicToken) {
+      localStorage.setItem(TICKET_TOKEN_STORAGE_KEY, newTicket.publicToken);
+      setPublicToken(newTicket.publicToken);
+    }
   };
 
   const handleCancel = async () => {
@@ -60,8 +71,11 @@ const TicketPage = () => {
       // Public v1 cancel — same guest flow as create/status.
       await fetch(`${API_URL}/v1/tickets/${ticket._id}/cancel`, {
         method: "PATCH",
+        headers: publicToken ? { "X-Ticket-Token": publicToken } : {},
       });
       localStorage.removeItem(TICKET_STORAGE_KEY);
+      localStorage.removeItem(TICKET_TOKEN_STORAGE_KEY);
+      setPublicToken(null);
       setTicket(null);
     } catch {
       // Silently fail — ticket may already be cancelled
@@ -70,6 +84,8 @@ const TicketPage = () => {
 
   const handleNewTicket = () => {
     localStorage.removeItem(TICKET_STORAGE_KEY);
+    localStorage.removeItem(TICKET_TOKEN_STORAGE_KEY);
+    setPublicToken(null);
     setTicket(null);
   };
 
@@ -120,6 +136,7 @@ const TicketPage = () => {
         {ticket && (
           <TicketStatus
             ticket={ticket}
+            publicToken={publicToken}
             onCancel={handleCancel}
             onNewTicket={handleNewTicket}
           />

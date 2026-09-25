@@ -25,6 +25,7 @@ import adminOverviewRouter from "./routes/admin.overview.routes.js";
 import adminKeyRequestRouter from "./routes/adminApiKeyRequest.routes.js";
 import v1Router from "./routes/v1/index.js";
 import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
+import { apiKeyAuthLimiter } from "./middlewares/rateLimiter.js";
 import { tenantMatch } from "./middlewares/tenantMatch.js";
 import { sendSuccess } from "./utils/response.js";
 import cors from "cors";
@@ -78,7 +79,12 @@ const testConnectionHandler = async (req, res) => {
   }
 };
 
-app.use("/api/test-connection", authenticateApiKey, testConnectionHandler);
+app.use(
+  "/api/test-connection",
+  apiKeyAuthLimiter,
+  authenticateApiKey,
+  testConnectionHandler,
+);
 
 // Body parser middleware
 app.use(express.json({ limit: "1mb" }));
@@ -150,6 +156,7 @@ app.use("/api/v1", publicV1Router);
 // admin.bank must equal key.bankName (403 otherwise).
 app.use(
   "/api/v1",
+  apiKeyAuthLimiter,
   authenticateApiKey,
   resolveStaffUser,
   tenantMatch,

@@ -22,7 +22,7 @@ const TICKET_EVENTS = [
  * Lookup and cancellation use the public v1 guest routes without auth.
  * Socket auth uses the JWT when present, otherwise nothing.
  */
-export const useMyTicket = (ticketId) => {
+export const useMyTicket = (ticketId, ticketToken) => {
   const { auth } = useAuth();
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,12 @@ export const useMyTicket = (ticketId) => {
     }
     try {
       // Public v1 route — no Bearer needed for read.
-      const response = await apiClient.get(`/v1/tickets/public/${ticketId}`);
+      const tokenQuery = ticketToken
+        ? `?token=${encodeURIComponent(ticketToken)}`
+        : "";
+      const response = await apiClient.get(
+        `/v1/tickets/public/${ticketId}${tokenQuery}`,
+      );
       setTicket(response.data);
       setError(null);
     } catch (err) {
@@ -53,7 +58,7 @@ export const useMyTicket = (ticketId) => {
     } finally {
       setLoading(false);
     }
-  }, [ticketId]);
+  }, [ticketId, ticketToken]);
 
   const scheduleRefetch = useCallback(() => {
     clearTimeout(refetchTimer.current);
@@ -94,9 +99,11 @@ export const useMyTicket = (ticketId) => {
 
   const cancelTicket = useCallback(async () => {
     if (!ticket) return;
-    await apiClient.patch(`/v1/tickets/${ticket._id}/cancel`);
+    await apiClient.patch(`/v1/tickets/${ticket._id}/cancel`, {}, {
+      headers: ticketToken ? { "X-Ticket-Token": ticketToken } : {},
+    });
     await fetchTicket();
-  }, [ticket, fetchTicket]);
+  }, [ticket, ticketToken, fetchTicket]);
 
   return { ticket, loading, error, cancelTicket, refetch: fetchTicket };
 };

@@ -28,6 +28,7 @@ const Kiosk = () => {
   const [guestPhone, setGuestPhone] = useState("");
   const [step, setStep] = useState("pick"); // pick | ticket | error
   const [ticket, setTicket] = useState(null);
+  const [publicToken, setPublicToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const refetchTimer = useRef(null);
@@ -45,15 +46,15 @@ const Kiosk = () => {
     load();
   }, [branchId]);
 
-  const handleTrackKiosk = useCallback(async (kioskId) => {
+  const handleTrackKiosk = useCallback(async (kioskId, token = publicToken) => {
     try {
-      const res = await getKioskTicket(kioskId);
+      const res = await getKioskTicket(kioskId, token);
       setTicket(res.data);
       setStep("ticket");
     } catch {
       setError("Ticket not found");
     }
-  }, []);
+  }, [publicToken]);
 
   useEffect(() => {
     if (step !== "ticket" || !ticket?.kioskId || !branchId) return;
@@ -89,6 +90,7 @@ const Kiosk = () => {
         guestPhone: guestPhone || undefined,
       });
       setTicket(res.data);
+      setPublicToken(res.data.publicToken || null);
       setStep("ticket");
     } catch (err) {
       setError(err.message || "Failed to create ticket");
@@ -100,9 +102,10 @@ const Kiosk = () => {
   const handleCancel = async () => {
     if (!ticket?.kioskId) return;
     try {
-      await cancelKioskTicket(ticket.kioskId);
+      await cancelKioskTicket(ticket.kioskId, publicToken);
       setStep("pick");
       setTicket(null);
+      setPublicToken(null);
       setSelectedQueue("");
     } catch (err) {
       setError(err.message || "Failed to cancel");

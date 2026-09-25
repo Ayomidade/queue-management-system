@@ -66,7 +66,7 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 - Manager fields: name, email, password, branch, bank, isActive, mustChangePassword — no queues/counter, cannot serve tickets
 - Admin has `bank` (informational + tenantMatch) but runtime scoping still from API key; **403 if admin.bank ≠ key.bankName**
 - Dashboard: JWT-only; v1: API-key-only for external bank systems
-- Seeds: **superadmin only** (admins self-register public; managers/staff via temp-password + invite links — both mechanisms)
+- Seeds: **superadmin only** (admins onboard with a server-configured registration secret; managers/staff via temp-password + invite links — both mechanisms)
 - Demo switcher / `/v1/demo/*` / `VITE_DEMO_API_KEY` fully removed (WP7)
 - Open admin registration: instant, `bankName` required, rate-limited
 - Manager keeps oversight (overview, analytics, staff create, counters open/close/assign others, close/open day) but **cannot serve tickets**
@@ -93,7 +93,7 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 
 ### WP3 — Four login endpoints + admin public registration + invites ✅
 - [x] `POST /api/auth/login/{staff,manager,admin}` — kind JWT `{ id, kind, role }`, generic 401 (no enumeration)
-- [x] `POST /api/auth/register/admin` — public, instant, `bankName` required, `registerLimiter` (5/15min)
+- [x] `POST /api/auth/register/admin` — onboarding-secret protected, `bankName` required, `registerLimiter` (5/15min)
 - [x] `invite.model.js` — SHA-256 at rest, kind manager|staff, bank/branch scope, 7d TTL, single-use `usedAt`
 - [x] `POST /api/auth/invites/manager` (admin, bank from JWT) / `invites/staff` (admin|manager, branch-in-bank check)
 - [x] `POST /api/auth/register/{manager,staff}` — redeem token, path/kind must match, invitee sets own password

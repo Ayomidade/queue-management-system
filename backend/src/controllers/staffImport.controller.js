@@ -1,4 +1,5 @@
 import Staff from "../models/staff.model.js";
+import Branch from "../models/branch.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
 const parseCSV = (text) => {
@@ -31,8 +32,16 @@ export const bulkImportStaff = async (req, res, next) => {
       });
     }
 
+    if (req.file.buffer.length > 2 * 1024 * 1024) {
+      return sendError(res, { statusCode: 413, message: "CSV file exceeds 2 MB" });
+    }
+
     const csv = req.file.buffer.toString("utf-8");
     const rows = parseCSV(csv);
+
+    if (rows.length > 1000) {
+      return sendError(res, { statusCode: 413, message: "CSV contains too many rows" });
+    }
 
     if (!rows.length) {
       return sendError(res, {
@@ -61,12 +70,24 @@ export const bulkImportStaff = async (req, res, next) => {
       }
 
       try {
+        const branchId = req.role === "manager" ? req.user.branch : row.branch;
+        if (req.role === "admin" && req.user?.bank) {
+          const branch = await Branch.findOne({ _id: branchId, bank: req.user.bank });
+          if (!branch) throw new Error("Branch does not belong to your bank");
+        }
+        if (req.bankName) {
+          const allowed = (req.bankBranchIds || []).some(
+            (branch) => String(branch._id || branch) === String(branchId),
+          );
+          if (!allowed) throw new Error("Branch does not belong to the API key bank");
+        }
+
         // Staff collection only — managers/admins are not importable via CSV.
         await Staff.create({
           name: row.name,
           email: row.email.toLowerCase(),
           password: row.password,
-          branch: req.role === "manager" ? req.user.branch : row.branch || null,
+          branch: branchId || null,
           isEmailVerified: false,
         });
         results.created++;

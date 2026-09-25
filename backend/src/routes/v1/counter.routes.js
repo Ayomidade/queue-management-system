@@ -24,32 +24,32 @@ const counterRouter = Router();
 
 counterRouter.get(
   "/:branchId",
-  requireScope("branches:read"),
+  requireScope("counters:read"),
   getCounterById,
 );
 counterRouter.post(
   "/",
-  requireScope("branches:read"),
+  requireScope("counters:write"),
   createCounterValidator,
   validate,
   createCounter,
 );
 counterRouter.patch(
   "/:counterId/assign-staff",
-  requireScope("branches:read"),
+  requireScope("counters:write"),
   assignStaffToCounterValidator,
   validate,
   assignStaffToCounter,
 );
 counterRouter.patch(
   "/:counterId/unassign-staff",
-  requireScope("branches:read"),
+  requireScope("counters:write"),
   unassignStaffFromCounter,
 );
 counterRouter.patch("/:counterId/open", requireScope("branches:read"), openCounter);
 counterRouter.patch(
   "/:counterId/close",
-  requireScope("branches:read"),
+  requireScope("counters:write"),
   closeCounter,
 );
 

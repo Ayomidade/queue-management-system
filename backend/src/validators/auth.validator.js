@@ -24,7 +24,7 @@ export const loginAdminValidator = emailPasswordRules;
 export const loginValidator = emailPasswordRules;
 
 /**
- * POST /api/auth/register/admin — public bank-admin self-registration.
+ * POST /api/auth/register/admin — onboarding-secret protected bank-admin onboarding.
  * Instant, no invite; bankName is required and becomes Admin.bank.
  */
 export const registerAdminValidator = [

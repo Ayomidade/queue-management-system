@@ -61,7 +61,7 @@ JWTs contain `{ id, kind, role }`. `kind` selects the identity model: `staff`, `
 | Bank admin | `POST /api/auth/login/admin`   | `/staff` and `/integration`    |
 | Superadmin | `POST /api/platform/login`     | `/platform`                    |
 
-Bank admins self-register at `POST /api/auth/register/admin`. Managers and staff are provisioned with invites or server-generated temporary passwords.
+Bank admins onboard through `POST /api/auth/register/admin` using the server-configured `X-Admin-Registration-Secret`; the bank name must be the verified onboarding tenant. Managers and staff are provisioned with invites or server-generated temporary passwords.
 
 ### Public guest API
 
@@ -74,7 +74,7 @@ GET   /api/v1/tickets/public/:id
 PATCH /api/v1/tickets/:id/cancel
 ```
 
-The public v1 router is mounted before the authenticated v1 router, so the guest flow is the effective handler for these paths.
+Public ticket creation returns a one-time `publicToken`. Send it as `X-Ticket-Token` or the `token` query parameter for public status lookup and cancellation. Ticket IDs alone are not sufficient for public cancellation.
 
 ### Authenticated integration API
 
@@ -99,13 +99,19 @@ Available scopes:
 
 | Scope             | Access                                                              |
 | ----------------- | ------------------------------------------------------------------- |
-| `branches:read`   | Branches, queues, counters, boards, and branch mutations            |
-| `tickets:read`    | Ticket status, branch tickets, staff history, and ticket reads      |
-| `tickets:write`   | Ticket creation, cancellation, calling, completion, and day control |
-| `staff:read`      | Staff listing and provisioning                                      |
-| `analytics:read`  | Analytics and staff-performance reports                             |
-| `webhooks:manage` | Webhook operations                                                  |
-| `admin`           | Full access; reserved for superadmin-created keys                   |
+| `branches:read` | Read branches and boards |
+| `branches:write` | Create, update, and delete branches |
+| `tickets:read` | Ticket status, branch tickets, and ticket reads |
+| `tickets:write` | Ticket creation, cancellation, calling, completion, and day control |
+| `staff:read` | Staff listing |
+| `staff:write` | Staff provisioning, queue assignment, and deactivation |
+| `queues:read` | Queue reads |
+| `queues:write` | Queue creation, updates, and deletion |
+| `counters:read` | Counter reads |
+| `counters:write` | Counter creation, assignment, opening, and closing |
+| `analytics:read` | Analytics and staff-performance reports |
+| `webhooks:manage` | Webhook operations |
+| `admin` | Full access; reserved for superadmin-created keys |
 
 ### API key test connection
 
@@ -148,7 +154,7 @@ src/
   middlewares/  JWT, API-key, tenant, validation, rate limiting, audit, errors
   models/       Staff, Manager, Admin, Superadmin, branches, queues, tickets, keys
   routes/       legacy, dashboard, platform, and v1 routers
-  scripts/      superadmin/admin/API-key seeds and migrations
+  scripts/      superadmin, single-admin, full development fixture, API-key seeds, migrations
   services/     webhooks and supporting services
   utils/        responses, pagination, key encryption, validation helpers
   validators/   express-validator rule sets
@@ -181,7 +187,27 @@ Set at least `MONGO_URI` and `JWT_SECRET`. Set `KEY_WRAP_SECRET` independently i
 npm run seed:superadmin
 ```
 
-The superadmin is the only account intended to be seeded in production. Bank admins self-register; managers and staff are provisioned at runtime.
+The superadmin is the only account intended to be seeded in production. Bank admins onboard through the protected registration endpoint; managers and staff are provisioned at runtime.
+
+### Seed the full local test graph
+
+For a realistic two-bank development environment:
+
+```bash
+npm run seed:dev
+```
+
+This idempotently creates:
+
+- One superadmin
+- Two bank admins: `Wema Bank` and `Demo Trust Bank`
+- Three branches for each bank
+- Two queues per branch: `Teller` and `Customer Service`
+- One manager per bank
+- Four staff accounts per bank
+- Three counters per bank, assigned to staff across the branches
+
+The script uses `SEED_DEFAULT_PASSWORD` for seeded accounts. It prints all generated login emails and the shared password once. It does not create API keys; use the superadmin console or `npm run seed:apikey` for API-key testing.
 
 ### Run
 
@@ -197,7 +223,7 @@ npm test
 npm run test:watch
 ```
 
-The backend currently has 137 passing tests across 17 test files.
+The backend currently has 144 passing tests across 18 test files.
 
 ## Environment variables
 
@@ -210,11 +236,13 @@ See [`.env.example`](./.env.example) for the complete template.
 | `JWT_EXPIRES_IN`         |         No | JWT lifetime, default `1d`                                             |
 | `PORT`                   |         No | HTTP port, default `3000`                                              |
 | `CORS_ORIGIN`            |         No | Allowed frontend origin                                                |
-| `KEY_WRAP_SECRET`        | Production | AES-256-GCM secret for one-time key reveal; falls back to `JWT_SECRET` |
+| `KEY_WRAP_SECRET` | Production | AES-256-GCM secret for one-time key reveal; falls back to `JWT_SECRET` |
+| `ADMIN_REGISTRATION_SECRET` | Yes for admin onboarding | Secret required in `X-Admin-Registration-Secret` when registering a bank admin |
 | `TICKET_NO_SHOW_MINUTES` |         No | No-show timeout, default `5`                                           |
 | `RESEND_API_KEY`         |   Optional | Email delivery                                                         |
 | `RESEND_FROM`            |   Optional | Email sender                                                           |
 | `SEED_SUPERADMIN_*`      |    Seeding | Superadmin bootstrap values                                            |
+| `SEED_DEFAULT_PASSWORD`  |  Local dev | Shared password for the `seed:dev` fixture                            |
 | `SEED_ADMIN_*`           |  Local dev | Optional legacy admin seed values                                      |
 | `SEED_API_KEY_*`         |  Local dev | Optional local API-key seed values                                     |
 | `BRAND_*`                |         No | Environment-only brand configuration                                   |

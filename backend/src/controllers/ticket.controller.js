@@ -7,6 +7,11 @@ import mongoose from "mongoose";
 import Branch from "../models/branch.model.js";
 import { parsePagination, paginatedResponse } from "../utils/pagination.js";
 import { dispatchWebhook } from "../services/webhook.service.js";
+import {
+  createPublicToken,
+  hashPublicToken,
+  publicTicket,
+} from "../utils/security.js";
 
 const generateKioskId = () => {
   return "K" + crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -36,11 +41,37 @@ export const createTicket = async (req, res, next) => {
     const { queueId, branchId, guestName, guestPhone, guestEmail, purpose } =
       req.body;
 
+    const branch = await Branch.findById(branchId);
+    if (!branch || branch.isActive === false) {
+      return sendError(res, { statusCode: 404, message: "Branch not found" });
+    }
+
+    const selectedQueue = await Queue.findOne({
+      _id: queueId,
+      branch: branchId,
+      isActive: true,
+    });
+    if (!selectedQueue) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Queue does not belong to the selected branch",
+      });
+    }
+
+    if (req.bankName && branch.bank !== req.bankName) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "Branch does not belong to the API key bank",
+      });
+    }
+
+    const publicToken = createPublicToken();
+
     let ticket;
     let kioskId;
     for (let attempt = 0; attempt < 3; attempt++) {
       const queue = await Queue.findByIdAndUpdate(
-        queueId,
+        { _id: queueId, branch: branchId, isActive: true },
         { $inc: { lastTicketNumber: 1 } },
         { returnDocument: "after" },
       );
@@ -57,6 +88,7 @@ export const createTicket = async (req, res, next) => {
           kioskId,
           queue: queueId,
           branch: branchId,
+          publicTokenHash: hashPublicToken(publicToken),
           ticketNumber: queue.lastTicketNumber,
           guestName: guestName.trim(),
           guestPhone: guestPhone || null,
@@ -106,6 +138,7 @@ export const createTicket = async (req, res, next) => {
       data: {
         ticketId: ticket._id,
         kioskId: ticket.kioskId,
+        publicToken,
         ticketNumber: ticket.ticketNumber,
         guestName: ticket.guestName,
         queue: queueId,
@@ -121,8 +154,17 @@ export const getPublicTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    const publicToken = req.query.token || req.headers["x-ticket-token"];
+    if (!publicToken) {
+      return sendError(res, {
+        statusCode: 401,
+        message: "Ticket capability token is required",
+      });
+    }
+
+    const tokenHash = hashPublicToken(publicToken);
     const ticket = await Ticket.findOne({
-      $or: [{ _id: id }, { kioskId: id }],
+      publicTokenHash: tokenHash,
     })
       .populate("queue", "serviceName")
       .populate("branch", "name location")
@@ -151,7 +193,7 @@ export const getPublicTicket = async (req, res, next) => {
     return sendSuccess(res, {
       statusCode: 200,
       message: "Ticket fetched successfully",
-      data: { ...ticket.toObject(), position, estimatedWaitMinutes },
+      data: publicTicket(ticket, { position, estimatedWaitMinutes }),
     });
   } catch (error) {
     next(error);
@@ -210,6 +252,10 @@ const findTicketInBranchScope = async (id, req) => {
   const isBranchScoped = req.role === "staff" || req.role === "manager";
   if (isBranchScoped && String(ticket.branch) !== String(req.user.branch)) {
     return { ticket: null, forbidden: true };
+  }
+  if (req.role === "admin" && req.user?.bank) {
+    const branch = await Branch.findOne({ _id: ticket.branch, bank: req.user.bank });
+    if (!branch) return { ticket: null, forbidden: true };
   }
   return { ticket, forbidden: false };
 };
@@ -408,7 +454,18 @@ export const skipTicket = async (req, res, next) => {
 
 export const cancelTicket = async (req, res, next) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    const publicToken = req.query.token || req.headers["x-ticket-token"];
+    if (!publicToken) {
+      return sendError(res, {
+        statusCode: 401,
+        message: "Ticket capability token is required",
+      });
+    }
+
+    const ticket = await Ticket.findOne({
+      _id: req.params.id,
+      publicTokenHash: hashPublicToken(publicToken),
+    });
 
     if (!ticket) {
       const error = new Error("Ticket not found");
@@ -437,7 +494,7 @@ export const cancelTicket = async (req, res, next) => {
     return sendSuccess(res, {
       statusCode: 200,
       message: "Ticket cancelled successfully",
-      data: ticket,
+      data: publicTicket(ticket),
     });
   } catch (error) {
     next(error);
@@ -665,11 +722,23 @@ export const getBranchTickets = async (req, res, next) => {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
 
-    if (req.role === "manager" && String(req.user.branch) !== branchId) {
+    if (req.bankName) {
+      const allowed = (req.bankBranchIds || []).some(
+        (branch) => String(branch._id || branch) === String(branchId),
+      );
+      if (!allowed) {
+        return sendError(res, { statusCode: 404, message: "Branch not found" });
+      }
+    } else if (req.role === "manager" && String(req.user.branch) !== branchId) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only view tickets for your own branch",
       });
+    } else if (req.role === "admin" && req.user?.bank) {
+      const branch = await Branch.findOne({ _id: branchId, bank: req.user.bank });
+      if (!branch) {
+        return sendError(res, { statusCode: 404, message: "Branch not found" });
+      }
     }
 
     const filter = { branch: branchId };

@@ -51,6 +51,12 @@ const ticketSchema = new mongoose.Schema(
       default: null,
     },
 
+    publicTokenHash: {
+      type: String,
+      default: null,
+      index: true,
+    },
+
     guestName: {
       type: String,
       trim: true,

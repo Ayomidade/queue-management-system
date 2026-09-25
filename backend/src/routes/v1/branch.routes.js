@@ -32,18 +32,18 @@ branchRouter.get(
 branchRouter.get("/:id", requireScope("branches:read"), getSingleBranch);
 branchRouter.post(
   "/",
-  requireScope("branches:read"),
+  requireScope("branches:write"),
   createBranchValidator,
   validate,
   createBranch,
 );
 branchRouter.put(
   "/:id",
-  requireScope("branches:read"),
+  requireScope("branches:write"),
   updateBranchValidator,
   validate,
   updateBranch,
 );
-branchRouter.delete("/:id", requireScope("branches:read"), deleteBranch);
+branchRouter.delete("/:id", requireScope("branches:write"), deleteBranch);
 
 export default branchRouter;

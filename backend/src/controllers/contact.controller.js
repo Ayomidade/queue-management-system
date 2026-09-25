@@ -1,5 +1,6 @@
 import { sendSuccess } from "../utils/response.js";
 import { sendEmail } from "../services/email.service.js";
+import { escapeHtml } from "../utils/security.js";
 import { getBrandSync } from "../config/brand.config.js";
 
 export const submitContact = async (req, res, next) => {
@@ -8,11 +9,11 @@ export const submitContact = async (req, res, next) => {
 
     const html = `
       <h2>New Demo Request</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Organization:</strong> ${organization}</p>
-      <p><strong>Branches:</strong> ${branches}</p>
-      ${message ? `<p><strong>Message:</strong> ${message}</p>` : ""}
+      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p><strong>Organization:</strong> ${escapeHtml(organization)}</p>
+      <p><strong>Branches:</strong> ${escapeHtml(branches)}</p>
+      ${message ? `<p><strong>Message:</strong> ${escapeHtml(message)}</p>` : ""}
     `;
 
     sendEmail({

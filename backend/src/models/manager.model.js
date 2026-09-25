@@ -65,6 +65,11 @@ const managerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );

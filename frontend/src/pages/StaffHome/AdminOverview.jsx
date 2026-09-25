@@ -16,9 +16,15 @@ import styles from "./StaffHome.module.css";
 // Scopes a bank admin may request (admin scope is superadmin-only).
 const REQUESTABLE_SCOPES = [
   "branches:read",
+  "branches:write",
   "tickets:read",
   "tickets:write",
   "staff:read",
+  "staff:write",
+  "queues:read",
+  "queues:write",
+  "counters:read",
+  "counters:write",
   "analytics:read",
   "webhooks:manage",
 ];

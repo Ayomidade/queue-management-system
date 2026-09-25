@@ -30,7 +30,7 @@ export const getAvailableSlots = async (req, res, next) => {
     }
 
     // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
-    const branchFilter = { _id: branchId };
+    const branchFilter = { _id: branchId, isActive: true };
     if (req.bankName) {
       branchFilter.bank = req.bankName;
     }
@@ -38,6 +38,18 @@ export const getAvailableSlots = async (req, res, next) => {
     const branch = await Branch.findOne(branchFilter);
     if (!branch) {
       return sendError(res, { statusCode: 404, message: "Branch not found" });
+    }
+
+    const queue = await Queue.findOne({
+      _id: serviceId,
+      branch: branchId,
+      isActive: true,
+    });
+    if (!queue) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Service does not belong to the selected branch",
+      });
     }
 
     const dayOfWeek = new Date(date).toLocaleDateString("en-US", {
@@ -118,7 +130,7 @@ export const createAppointment = async (req, res, next) => {
     }
 
     // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
-    const branchFilter = { _id: branchId };
+    const branchFilter = { _id: branchId, isActive: true };
     if (req.bankName) {
       branchFilter.bank = req.bankName;
     }
@@ -126,6 +138,18 @@ export const createAppointment = async (req, res, next) => {
     const branch = await Branch.findOne(branchFilter);
     if (!branch) {
       return sendError(res, { statusCode: 404, message: "Branch not found" });
+    }
+
+    const selectedQueue = await Queue.findOne({
+      _id: queueId,
+      branch: branchId,
+      isActive: true,
+    });
+    if (!selectedQueue) {
+      return sendError(res, {
+        statusCode: 400,
+        message: "Queue does not belong to the selected branch",
+      });
     }
 
     const dayOfWeek = scheduledDate.toLocaleDateString("en-US", {
@@ -169,7 +193,7 @@ export const createAppointment = async (req, res, next) => {
     let ticket;
     for (let attempt = 0; attempt < 3; attempt++) {
       const queue = await Queue.findByIdAndUpdate(
-        queueId,
+        { _id: queueId, branch: branchId, isActive: true },
         { $inc: { lastTicketNumber: 1 } },
         { returnDocument: "after" },
       );

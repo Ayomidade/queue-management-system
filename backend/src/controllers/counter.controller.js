@@ -3,10 +3,18 @@ import Branch from "../models/branch.model.js";
 import Staff from "../models/staff.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
-const canManageBranchCounter = (req, counter) => {
-  if (req.role === "admin") return true;
-  if (req.role === "manager")
+const canManageBranchCounter = async (req, counter) => {
+  if (req.bankName) {
+    return (req.bankBranchIds || []).some(
+      (branch) => String(branch._id || branch) === String(counter.branch),
+    );
+  }
+  if (req.role === "manager") {
     return String(counter.branch) === String(req.user.branch);
+  }
+  if (req.role === "admin" && req.user?.bank) {
+    return Boolean(await Branch.exists({ _id: counter.branch, bank: req.user.bank }));
+  }
   return false;
 };
 
@@ -25,6 +33,9 @@ export const createCounter = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
+    if (!(await canManageBranchCounter(req, { branch }))) {
+      return sendError(res, { statusCode: 403, message: "Branch is outside your tenant" });
+    }
 
     const counter = await Counter.create({ label, branch });
     return sendSuccess(res, {
@@ -41,11 +52,8 @@ export const getCounterById = async (req, res, next) => {
   try {
     const { branchId } = req.params;
 
-    if (req.role === "manager" && String(req.user.branch) !== branchId) {
-      return sendError(res, {
-        statusCode: 403,
-        message: "You can only view counters in your own branch",
-      });
+    if (!(await canManageBranchCounter(req, { branch: branchId }))) {
+      return sendError(res, { statusCode: 403, message: "Access denied" });
     }
 
     const counters = await Counter.find({ branch: branchId }).populate(
@@ -82,9 +90,9 @@ export const assignStaffToCounter = async (req, res, next) => {
     }
 
     const managerCanTouchStaff =
-      req.role !== "manager" ||
-      String(staffMember.branch) === String(req.user.branch);
-    if (!canManageBranchCounter(req, counter) || !managerCanTouchStaff) {
+      String(staffMember.branch) === String(counter.branch) &&
+      (req.role !== "manager" || String(req.user.branch) === String(staffMember.branch));
+    if (!(await canManageBranchCounter(req, counter)) || !managerCanTouchStaff) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only manage counters and staff in your own branch",
@@ -128,7 +136,7 @@ export const unassignStaffFromCounter = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
-    if (!canManageBranchCounter(req, counter)) {
+    if (!(await canManageBranchCounter(req, counter))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only manage counters in your own branch",
@@ -165,7 +173,7 @@ export const closeCounter = async (req, res, next) => {
     const isOwnCounter =
       req.role === "staff" &&
       String(req.user.counter) === String(req.params.counterId);
-    if (!isOwnCounter && !canManageBranchCounter(req, counter)) {
+    if (!isOwnCounter && !(await canManageBranchCounter(req, counter))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only close your own assigned counter",
@@ -201,7 +209,7 @@ export const openCounter = async (req, res, next) => {
     const isOwnCounter =
       req.role === "staff" &&
       String(req.user.counter) === String(req.params.counterId);
-    if (!isOwnCounter && !canManageBranchCounter(req, counter)) {
+    if (!isOwnCounter && !(await canManageBranchCounter(req, counter))) {
       return sendError(res, {
         statusCode: 403,
         message: "You can only open your own assigned counter",

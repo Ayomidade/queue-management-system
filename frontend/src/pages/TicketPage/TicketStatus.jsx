@@ -17,7 +17,7 @@ const FlipDigit = ({ char }) => (
   <span className={styles.flipDigit}>{char}</span>
 );
 
-const TicketStatus = ({ ticket: initialTicket, onCancel, onNewTicket }) => {
+const TicketStatus = ({ ticket: initialTicket, publicToken, onCancel, onNewTicket }) => {
   const [ticket, setTicket] = useState(initialTicket);
 
   // Poll for status updates every 10 seconds
@@ -27,8 +27,12 @@ const TicketStatus = ({ ticket: initialTicket, onCancel, onNewTicket }) => {
     const interval = setInterval(async () => {
       try {
         const id = ticket.ticketId || ticket._id;
-        // Public v1 route — poll status without auth.
-        const res = await fetch(`${API_URL}/v1/tickets/public/${id}`);
+        const tokenQuery = publicToken
+          ? `?token=${encodeURIComponent(publicToken)}`
+          : "";
+        const res = await fetch(
+          `${API_URL}/v1/tickets/public/${id}${tokenQuery}`,
+        );
         const data = await res.json();
         if (data.status === "success") {
           setTicket(data.data);
@@ -39,7 +43,7 @@ const TicketStatus = ({ ticket: initialTicket, onCancel, onNewTicket }) => {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [ticket?.kioskId, ticket?._id]);
+  }, [ticket?.kioskId, ticket?._id, publicToken]);
 
   const ticketNumber = String(ticket.ticketNumber).padStart(4, "0");
   const isWaiting = ticket.status === "waiting";

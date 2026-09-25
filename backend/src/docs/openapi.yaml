@@ -112,7 +112,12 @@ paths:
     post:
       tags: [Auth]
       summary: Register a bank admin
-      description: Public self-registration. The bank name is required and the endpoint is rate-limited.
+      description: Public admin onboarding. Requires the `X-Admin-Registration-Secret` header to match `ADMIN_REGISTRATION_SECRET`; the bank name must correspond to the verified onboarding tenant.
+      parameters:
+        - in: header
+          name: X-Admin-Registration-Secret
+          required: true
+          schema: { type: string, format: password }
       security: []
       responses:
         '201': { $ref: '#/components/responses/Created' }
@@ -702,6 +707,7 @@ paths:
     post:
       tags: [Kiosk]
       summary: Create a kiosk ticket
+      description: Returns a one-time public capability token for later kiosk tracking and cancellation.
       security: []
       responses:
         '201': { $ref: '#/components/responses/Created' }
@@ -709,14 +715,18 @@ paths:
     get:
       tags: [Kiosk]
       summary: Track a kiosk ticket
-      security: []
+      description: Requires the public capability token as `X-Ticket-Token` or `token`.
+      security:
+        - ticketToken: []
       responses:
         '200': { $ref: '#/components/responses/Success' }
   /api/kiosk/tickets/{kioskId}/cancel:
     patch:
       tags: [Kiosk]
       summary: Cancel a kiosk ticket
-      security: []
+      description: Requires the public capability token as `X-Ticket-Token` or `token`.
+      security:
+        - ticketToken: []
       responses:
         '200': { $ref: '#/components/responses/Success' }
   /api/appointments/slots:
@@ -979,7 +989,7 @@ paths:
     get:
       tags: [Public V1]
       summary: List public queues for the guest flow
-      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      description: The public v1 router is mounted first, so this operation is handled without an API key.
       x-auth: public
       security: []
       responses:
@@ -988,7 +998,7 @@ paths:
     post:
       tags: [Public V1]
       summary: Create a guest ticket
-      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      description: The public v1 router is mounted first, so this operation is handled without an API key. The response returns a one-time `publicToken`; send it as `X-Ticket-Token` or the `token` query parameter for later lookup/cancellation.
       x-auth: public
       security: []
       responses:
@@ -998,9 +1008,10 @@ paths:
     get:
       tags: [Public V1]
       summary: Look up a guest ticket
-      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
-      x-auth: public
-      security: []
+      description: The public v1 router is mounted first, so this operation is handled without an API key. The response returns a one-time `publicToken`; send it as `X-Ticket-Token` or the `token` query parameter for later lookup/cancellation.
+      x-auth: ticket capability
+      security:
+        - ticketToken: []
       responses:
         '200': { $ref: '#/components/responses/Success' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -1008,9 +1019,10 @@ paths:
     patch:
       tags: [Public V1]
       summary: Cancel a guest ticket
-      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
-      x-auth: public
-      security: []
+      description: The public v1 router is mounted first, so this operation is handled without an API key. The response returns a one-time `publicToken`; send it as `X-Ticket-Token` or the `token` query parameter for later lookup/cancellation.
+      x-auth: ticket capability
+      security:
+        - ticketToken: []
       responses:
         '200': { $ref: '#/components/responses/Success' }
   /api/v1/auth/me:
@@ -1430,6 +1442,11 @@ components:
       in: header
       name: X-API-Key
       description: Scoped bank integration key. Authenticated v1 routes also resolve a Staff identity using X-Staff-Id or the key's defaultStaffId.
+    ticketToken:
+      type: apiKey
+      in: header
+      name: X-Ticket-Token
+      description: One-time public ticket capability token returned when a guest ticket is created.
   responses:
     Success:
       description: Request succeeded
@@ -1499,7 +1516,7 @@ components:
           type: array
           items:
             type: string
-            enum: [branches:read, tickets:read, tickets:write, staff:read, analytics:read, webhooks:manage, admin]
+            enum: [branches:read, branches:write, tickets:read, tickets:write, staff:read, staff:write, queues:read, queues:write, counters:read, counters:write, analytics:read, webhooks:manage, admin]
         rateLimit: { type: integer, example: 100 }
         isActive: { type: boolean }
         expiresAt: { type: string, format: date-time, nullable: true }
@@ -1522,6 +1539,7 @@ components:
       properties:
         ticketId: { type: string }
         kioskId: { type: string }
+        publicToken: { type: string, description: Returned once when a ticket is created; required for public lookup/cancellation }
         ticketNumber: { type: integer }
         status: { type: string, enum: [waiting, called, completed, skipped, cancelled] }
         guestName: { type: string }

@@ -33,11 +33,20 @@ export const resolveStaffUser = async (req, res, next) => {
       });
     }
 
-    const account = await Staff.findById(userId).select("-password");
+    const account = await Staff.findById(userId)
+      .populate("branch", "bank")
+      .select("-password");
     if (!account || account.isActive === false) {
       return sendError(res, {
         statusCode: 401,
         message: "Staff member not found or inactive",
+      });
+    }
+
+    if (req.apiKey?.bankName && String(account.branch?.bank) !== String(req.apiKey.bankName)) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "Staff identity does not belong to the API key bank",
       });
     }
 

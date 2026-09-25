@@ -20,9 +20,15 @@ import bcrypt from "bcryptjs";
 // A key can have multiple scopes depending on what the bank needs.
 const VALID_SCOPES = [
   "branches:read", // Read branch info, queues, counters, board data
+  "branches:write", // Create, update, and delete branches
   "tickets:write", // Create/cancel tickets (kiosk, appointment, customer)
   "tickets:read", // Read ticket status, position, ETA
   "staff:read", // Read staff list
+  "staff:write", // Create, update, and deactivate staff
+  "queues:read", // Read queues
+  "queues:write", // Create, update, and delete queues
+  "counters:read", // Read counters
+  "counters:write", // Create, assign, open, and close counters
   "analytics:read", // Read analytics, reports
   "webhooks:manage", // Create/delete/toggle webhooks
   "admin", // Full access (system management)
@@ -51,6 +57,17 @@ const apiKeySchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+
+    previousKeyHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    previousKeyExpiresAt: {
+      type: Date,
+      default: null,
     },
 
     // The last 8 characters of the raw key, stored in plaintext.
@@ -160,14 +177,22 @@ apiKeySchema.statics.generateKey = async function () {
 apiKeySchema.statics.verifyKey = async function (rawKey) {
   // Find all potentially valid keys (active, or in grace period)
   const candidates = await this.find({
-    $or: [{ isActive: true }, { gracePeriodEndsAt: { $gt: new Date() } }],
-  }).select("+keyHash");
+    $or: [
+      { isActive: true },
+      { previousKeyExpiresAt: { $gt: new Date() } },
+    ],
+  }).select("+keyHash +previousKeyHash");
 
-  // Check each candidate until we find a match
   for (const candidate of candidates) {
-    const isMatch = await bcrypt.compare(rawKey, candidate.keyHash);
-    if (isMatch) {
-      return candidate;
+    if (await bcrypt.compare(rawKey, candidate.keyHash)) {
+      return { ...candidate.toObject(), _previousCredential: false };
+    }
+    if (
+      candidate.previousKeyHash &&
+      candidate.previousKeyExpiresAt > new Date() &&
+      (await bcrypt.compare(rawKey, candidate.previousKeyHash))
+    ) {
+      return { ...candidate.toObject(), _previousCredential: true };
     }
   }
 

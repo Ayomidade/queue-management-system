@@ -38,12 +38,16 @@ Each API key carries a set of scopes that gate which endpoints it can call. Requ
 
 | Scope | Grants Access To |
 |-------|------------------|
-| \`branches:read\` | Branch info, queues, counters, public boards |
-| \`tickets:read\` | Ticket status, position, ETA |
+| \`branches:read\` | Read branch info, queues, counters, public boards |
+| \`branches:write\` | Create, update, and delete branches |
+| \`tickets:read\` | Read ticket status, position, ETA |
 | \`tickets:write\` | Create/cancel tickets (kiosk, appointments) |
-| \`staff:read\` | Staff list for this bank |
+| \`staff:read\` | Read staff for this bank |
+| \`staff:write\` | Provision and deactivate staff |
+| \`queues:read\` / \`queues:write\` | Read or manage queues |
+| \`counters:read\` / \`counters:write\` | Read or manage counters |
 | \`analytics:read\` | Analytics, reports, daily summaries |
-| \`webhooks:manage\` | Create/delete/toggle webhooks |
+| \`webhooks:manage\` | Create/delete/toggle tenant webhooks |
 | \`admin\` | **Superadmin only** — full access, cannot be requested by bank admins |
 
 Endpoints enforce scopes via the \`requireScope\` middleware. The \`admin\` scope bypasses all checks.

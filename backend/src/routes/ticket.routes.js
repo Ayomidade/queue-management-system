@@ -29,13 +29,26 @@ import {
   branchIdParamValidator,
 } from "../validators/ticket.validator.js";
 import { auditLog } from "../middlewares/audit.middleware.js";
+import { publicReadLimiter, publicWriteLimiter } from "../middlewares/rateLimiter.js";
 
 const ticketRouter = Router();
 
 // Public routes — no auth required
-ticketRouter.post("/", createTicketValidator, validate, createTicket);
-ticketRouter.get("/public/:id", getPublicTicket);
-ticketRouter.patch("/:id/cancel", ticketIdParamValidator, validate, cancelTicket);
+ticketRouter.post(
+  "/",
+  publicWriteLimiter,
+  createTicketValidator,
+  validate,
+  createTicket,
+);
+ticketRouter.get("/public/:id", publicReadLimiter, getPublicTicket);
+ticketRouter.patch(
+  "/:id/cancel",
+  publicWriteLimiter,
+  ticketIdParamValidator,
+  validate,
+  cancelTicket,
+);
 
 // Everything below requires a JWT (staff/manager/admin).
 ticketRouter.use(protect);

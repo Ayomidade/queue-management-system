@@ -57,14 +57,6 @@ export const authenticateApiKey = async (req, res, next) => {
       });
     }
 
-    // Check if we're in the grace period (key was rotated, old key still valid temporarily)
-    if (keyDoc.gracePeriodEndsAt && keyDoc.gracePeriodEndsAt < new Date()) {
-      return sendError(res, {
-        statusCode: 401,
-        message: "API key has expired due to rotation. Use the new key.",
-      });
-    }
-
     // Attach key info to request for downstream use
     req.apiKey = keyDoc;
     req.bankName = keyDoc.bankName;

@@ -6,7 +6,7 @@ import { ApiError } from "../../lib/apiClient";
 import styles from "./ChangePassword.module.css";
 
 const ChangePassword = () => {
-  const { auth, clearMustChangePassword } = useAuth();
+  const { auth, clearMustChangePassword, replaceToken } = useAuth();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -44,14 +44,14 @@ const ChangePassword = () => {
 
     setSubmitting(true);
     try {
-      await changePassword(
+      const result = await changePassword(
         {
           currentPassword: form.currentPassword,
           newPassword: form.newPassword,
         },
         auth.token,
       );
-      // Server clears mustChangePassword — mirror it so the force prompt dismisses.
+      if (result.data?.token) replaceToken(result.data.token);
       clearMustChangePassword?.();
       setSuccess(true);
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });

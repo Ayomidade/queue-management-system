@@ -32,7 +32,7 @@ import validate from "../middlewares/validate.js";
  *
  * Public:
  *   POST /api/auth/login/{staff,manager,admin}
- *   POST /api/auth/register/admin          (instant bank-admin signup)
+ *   POST /api/auth/register/admin          (onboarding-secret protected)
  *   POST /api/auth/register/{manager,staff} (redeem invite token)
  *
  * Protected:

@@ -62,6 +62,25 @@ export const protect = async (req, res, next) => {
       });
     }
 
+    if (decoded.ver !== undefined && decoded.ver !== (account.tokenVersion || 0)) {
+      return sendError(res, {
+        statusCode: 401,
+        message: "Session has been revoked",
+      });
+    }
+
+    const passwordChangeAllowed = [
+      "/api/auth/me",
+      "/api/auth/change-password",
+    ].some((path) => req.originalUrl === path || req.originalUrl.startsWith(`${path}?`));
+    if (account.mustChangePassword && !passwordChangeAllowed) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "Password change required before using this account",
+        errors: ["PASSWORD_CHANGE_REQUIRED"],
+      });
+    }
+
     req.user = account;
     // role comes from the signed token (kind === role for our JWTs).
     req.role = decoded.role || decoded.kind;

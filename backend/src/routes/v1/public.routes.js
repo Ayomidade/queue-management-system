@@ -10,6 +10,7 @@ import {
   ticketIdParamValidator,
 } from "../../validators/ticket.validator.js";
 import validate from "../../middlewares/validate.js";
+import { publicReadLimiter, publicWriteLimiter } from "../../middlewares/rateLimiter.js";
 
 /**
  * Public V1 Routes
@@ -22,10 +23,11 @@ import validate from "../../middlewares/validate.js";
  */
 const publicRouter = Router();
 
-publicRouter.get("/queues", getBranchQueues);
+publicRouter.get("/queues", publicReadLimiter, getBranchQueues);
 
 publicRouter.post(
   "/tickets",
+  publicWriteLimiter,
   createTicketValidator,
   validate,
   createTicket,
@@ -33,6 +35,7 @@ publicRouter.post(
 
 publicRouter.get(
   "/tickets/public/:id",
+  publicReadLimiter,
   ticketIdParamValidator,
   validate,
   getPublicTicket,
@@ -40,6 +43,7 @@ publicRouter.get(
 
 publicRouter.patch(
   "/tickets/:id/cancel",
+  publicWriteLimiter,
   ticketIdParamValidator,
   validate,
   cancelTicket,

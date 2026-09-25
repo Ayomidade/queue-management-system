@@ -42,7 +42,12 @@ export const loginSuperadmin = async (req, res, next) => {
 
     // kind tells `protect` which collection to load; role stays for authorize().
     const token = jwt.sign(
-      { id: superadmin._id, kind: "superadmin", role: "superadmin" },
+      {
+        id: superadmin._id,
+        kind: "superadmin",
+        role: "superadmin",
+        ver: superadmin.tokenVersion || 0,
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" },
     );

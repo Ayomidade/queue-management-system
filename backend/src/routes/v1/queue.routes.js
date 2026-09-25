@@ -23,18 +23,18 @@ const queueRouter = Router();
 queueRouter.get("/", requireScope("branches:read"), getBranchQueues);
 queueRouter.post(
   "/",
-  requireScope("branches:read"),
+  requireScope("queues:read"),
   createQueueValidator,
   validate,
   createQueue,
 );
 queueRouter.put(
   "/:id",
-  requireScope("branches:read"),
+  requireScope("queues:write"),
   updateQueueValidator,
   validate,
   updateQueue,
 );
-queueRouter.delete("/:id", requireScope("branches:read"), deleteQueue);
+queueRouter.delete("/:id", requireScope("queues:write"), deleteQueue);
 
 export default queueRouter;

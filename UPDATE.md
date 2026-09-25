@@ -25,7 +25,7 @@ The core problem and solution remain the same. Customers wait too long in bank b
   - `PATCH /api/v1/tickets/:id/cancel`
 - **Authenticated, API key required:** branch listings, staff actions such as call-next/complete/skip, analytics, and administrative operations. These endpoints are permission-scoped and rate-limited per key.
 
-The public guest ticket flow is mounted before the authenticated v1 router, so customers never need to hold an API key. Bank integrations call these same public paths from their own customer-facing applications.
+The public guest ticket flow is mounted before the authenticated v1 router, so customers never need to hold an API key. Ticket creation returns a one-time capability token used for later status lookup and cancellation. Bank integrations call these same public paths from their own customer-facing applications.
 
 **API key lifecycle:** a bank admin requests a key, a platform superadmin reviews and approves it, the raw key is AES-256-GCM encrypted for a one-time bank-admin reveal, and the raw key is never stored in plaintext. Keys support scopes, expiry, suspension, revocation, and rotation with a grace period.
 

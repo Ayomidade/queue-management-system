@@ -5,6 +5,19 @@ import Staff from "../models/staff.model.js";
 import Branch from "../models/branch.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 
+const branchAllowed = async (req, branchId) => {
+  if (req.bankName) {
+    return (req.bankBranchIds || []).some(
+      (branch) => String(branch._id || branch) === String(branchId),
+    );
+  }
+  if (req.role === "manager") return String(req.user.branch) === String(branchId);
+  if (req.role === "admin" && req.user?.bank) {
+    return Boolean(await Branch.exists({ _id: branchId, bank: req.user.bank }));
+  }
+  return true;
+};
+
 export const getPeakHours = async (req, res, next) => {
   try {
     const { branchId } = req.params;
@@ -14,7 +27,7 @@ export const getPeakHours = async (req, res, next) => {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
 
-    if (req.role === "manager" && String(req.user.branch) !== branchId) {
+    if (!(await branchAllowed(req, branchId))) {
       return sendError(res, { statusCode: 403, message: "Access denied" });
     }
 
@@ -99,7 +112,7 @@ export const getStaffLeaderboard = async (req, res, next) => {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
 
-    if (req.role === "manager" && String(req.user.branch) !== branchId) {
+    if (!(await branchAllowed(req, branchId))) {
       return sendError(res, { statusCode: 403, message: "Access denied" });
     }
 
@@ -271,7 +284,7 @@ export const updateServiceWaitTargets = async (req, res, next) => {
       return sendError(res, { statusCode: 400, message: "Invalid branch ID" });
     }
 
-    if (req.role === "manager" && String(req.user.branch) !== branchId) {
+    if (!(await branchAllowed(req, branchId))) {
       return sendError(res, { statusCode: 403, message: "Access denied" });
     }
 

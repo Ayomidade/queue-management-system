@@ -3,6 +3,7 @@ import Ticket from "../models/ticket.model.js";
 import Queue from "../models/queue.model.js";
 import Branch from "../models/branch.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { createPublicToken, hashPublicToken, publicTicket } from "../utils/security.js";
 import { emitToBranch } from "../socket.js";
 
 const generateKioskId = () => {
@@ -20,24 +21,29 @@ export const createKioskTicket = async (req, res, next) => {
       });
     }
 
-    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
-    if (req.bankName) {
-      const branch = await Branch.findOne({ _id: branchId, bank: req.bankName, isActive: true });
-      if (!branch) {
-        return sendError(res, { statusCode: 404, message: "Branch not found" });
-      }
-      // Also validate queue belongs to this branch
-      const queueExists = await Queue.findOne({ _id: queueId, branch: branchId });
-      if (!queueExists) {
-        return sendError(res, { statusCode: 404, message: "Queue not found" });
-      }
+    const branch = await Branch.findOne({ _id: branchId, isActive: true });
+    if (!branch) {
+      return sendError(res, { statusCode: 404, message: "Branch not found" });
     }
+    if (req.bankName && branch.bank !== req.bankName) {
+      return sendError(res, { statusCode: 404, message: "Branch not found" });
+    }
+    const queueExists = await Queue.findOne({
+      _id: queueId,
+      branch: branchId,
+      isActive: true,
+    });
+    if (!queueExists) {
+      return sendError(res, { statusCode: 404, message: "Queue not found" });
+    }
+
+    const publicToken = createPublicToken();
 
     let ticket;
     let kioskId;
     for (let attempt = 0; attempt < 3; attempt++) {
       const queue = await Queue.findByIdAndUpdate(
-        queueId,
+        { _id: queueId, branch: branchId, isActive: true },
         { $inc: { lastTicketNumber: 1 } },
         { returnDocument: "after" },
       );
@@ -52,6 +58,7 @@ export const createKioskTicket = async (req, res, next) => {
           kioskId,
           queue: queueId,
           branch: branchId,
+          publicTokenHash: hashPublicToken(publicToken),
           ticketNumber: queue.lastTicketNumber,
           guestName: guestName || null,
           guestPhone: guestPhone || null,
@@ -74,6 +81,7 @@ export const createKioskTicket = async (req, res, next) => {
       data: {
         ticketId: ticket._id,
         kioskId: ticket.kioskId,
+        publicToken,
         ticketNumber: ticket.ticketNumber,
         queue: queue.serviceName,
         branch: branchId,
@@ -95,7 +103,15 @@ export const getKioskTicket = async (req, res, next) => {
       });
     }
 
-    const ticket = await Ticket.findOne({ kioskId })
+    const publicToken = req.query.token || req.headers["x-ticket-token"];
+    if (!publicToken) {
+      return sendError(res, { statusCode: 401, message: "Ticket capability token is required" });
+    }
+
+    const ticket = await Ticket.findOne({
+      kioskId,
+      publicTokenHash: hashPublicToken(publicToken),
+    })
       .populate("queue", "serviceName")
       .populate("branch", "name location bank");
 
@@ -153,8 +169,15 @@ export const getKioskTicket = async (req, res, next) => {
 export const cancelKioskTicket = async (req, res, next) => {
   try {
     const { kioskId } = req.params;
+    const publicToken = req.query.token || req.headers["x-ticket-token"];
+    if (!publicToken) {
+      return sendError(res, { statusCode: 401, message: "Ticket capability token is required" });
+    }
 
-    const ticket = await Ticket.findOne({ kioskId }).populate("branch", "bank");
+    const ticket = await Ticket.findOne({
+      kioskId,
+      publicTokenHash: hashPublicToken(publicToken),
+    }).populate("branch", "bank");
     if (!ticket) {
       return sendError(res, {
         statusCode: 404,

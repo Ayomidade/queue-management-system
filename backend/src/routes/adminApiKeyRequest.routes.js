@@ -26,9 +26,15 @@ const router = Router();
 
 const BANK_REQUESTABLE_SCOPES = [
   "branches:read",
+  "branches:write",
   "tickets:read",
   "tickets:write",
   "staff:read",
+  "staff:write",
+  "queues:read",
+  "queues:write",
+  "counters:read",
+  "counters:write",
   "analytics:read",
   "webhooks:manage",
   // "admin" is reserved for superadmin-created keys only.
@@ -262,24 +268,30 @@ router.get(
 
       if (request.status === "approved" && !request.bankKeyRevealedAt) {
         if (request.encryptedRawKey) {
-          try {
-            rawKey = decryptKey(request.encryptedRawKey);
-            // Wipe ciphertext permanently after successful decrypt.
-            await ApiKeyRequest.updateOne(
-              { _id: request._id },
-              {
-                $set: { bankKeyRevealedAt: new Date() },
-                $unset: { encryptedRawKey: 1 },
-              },
-            );
-            justRevealed = true;
-            // In-memory wipe so the response mapper can't leak ciphertext.
-            request.encryptedRawKey = null;
-            request.bankKeyRevealedAt = new Date();
-          } catch {
-            // Decryption failed (wrong secret / corruption) — don't leak internals.
-            rawKey = null;
+          const claimed = await ApiKeyRequest.findOneAndUpdate(
+            {
+              _id: request._id,
+              bankName,
+              status: "approved",
+              bankKeyRevealedAt: null,
+              encryptedRawKey: { $exists: true, $ne: null },
+            },
+            {
+              $set: { bankKeyRevealedAt: new Date() },
+              $unset: { encryptedRawKey: 1 },
+            },
+            { returnDocument: "before" },
+          );
+          if (claimed) {
+            try {
+              rawKey = decryptKey(claimed.encryptedRawKey);
+              justRevealed = true;
+            } catch {
+              rawKey = null;
+            }
           }
+          request.encryptedRawKey = null;
+          request.bankKeyRevealedAt = new Date();
         }
       }
 

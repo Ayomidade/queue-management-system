@@ -12,8 +12,8 @@ dotenv.config();
  * at /platform (JWT with kind="superadmin"). They manage API keys and
  * usage monitoring across all banks — they are not bank-scoped.
  *
- * After the four-model split, bank admins register themselves via
- * POST /api/auth/register/admin — they are NOT seeded.
+ * After the four-model split, bank admins onboard through the protected
+ * registration endpoint; they are NOT created by this script.
  *
  * Required env vars:
  *   SEED_SUPERADMIN_EMAIL

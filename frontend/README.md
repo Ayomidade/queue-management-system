@@ -72,7 +72,7 @@ GET   /api/v1/tickets/public/:id
 PATCH /api/v1/tickets/:id/cancel
 ```
 
-Ticket status refreshes through polling and Socket.io events. The ticket identifier is stored in local storage so a customer can return to the status page.
+Ticket creation returns a one-time public capability token. The demo stores it with the ticket ID and sends it as `X-Ticket-Token` for status polling and cancellation. Ticket status refreshes through polling and Socket.io events. The ticket identifier is stored in local storage so a customer can return to the status page.
 
 ## Operations console
 

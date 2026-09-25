@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import Webhook from "../models/webhook.model.js";
+import { validateWebhookUrl } from "../utils/security.js";
 
 const SIGNATURE_HEADER = "x-cue-signature";
 const TIMEOUT_MS = 10000;
@@ -35,15 +36,21 @@ export const dispatchWebhook = async (event, payload, branchId = null) => {
         const sig = signPayload(body, hook.secret);
         if (sig) headers[SIGNATURE_HEADER] = sig;
 
+        const validation = await validateWebhookUrl(hook.url);
+        if (!validation.valid) {
+          return { hookId: hook._id, status: "error", error: validation.message };
+        }
+
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
         try {
-          const res = await fetch(hook.url, {
+          const res = await fetch(validation.url, {
             method: "POST",
             headers,
             body: JSON.stringify(body),
             signal: controller.signal,
+            redirect: "manual",
           });
 
           clearTimeout(timer);

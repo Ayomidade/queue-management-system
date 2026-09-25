@@ -147,6 +147,12 @@ export const AuthProvider = ({ children }) => {
     );
   }, []);
 
+  const replaceToken = useCallback((token) => {
+    setAuth((prev) =>
+      prev ? toAuth(token, { ...prev, mustChangePassword: false }) : prev,
+    );
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -155,6 +161,7 @@ export const AuthProvider = ({ children }) => {
         loginPlatform: loginPlatformCreds,
         logout,
         clearMustChangePassword,
+        replaceToken,
       }}
     >
       {children}

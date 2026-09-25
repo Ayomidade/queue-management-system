@@ -47,3 +47,14 @@ export const publicWriteLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const apiKeyAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  message: {
+    status: "error",
+    message: "Too many API authentication attempts, please try again later",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

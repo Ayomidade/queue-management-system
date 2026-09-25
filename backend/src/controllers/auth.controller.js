@@ -7,12 +7,14 @@ import Invite from "../models/invite.model.js";
 import Branch from "../models/branch.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { validationResult } from "express-validator";
+import { safeEqual } from "../utils/security.js";
 
 /**
  * Auth controller — Phase 13 WP3.
  *
- * One login endpoint per collection (kind), public admin self-registration,
- * invite issue/redeem for managers and staff, /me, and change-password.
+ * One login endpoint per collection (kind), onboarding-secret protected
+ * bank-admin registration, invite issue/redeem for managers and staff, /me,
+ * and change-password.
  *
  * JWT payload (all kinds): { id, kind, role } where kind === role.
  * Superadmin login stays at POST /api/platform/login.
@@ -22,7 +24,12 @@ const JWT_EXPIRES = () => process.env.JWT_EXPIRES_IN || "1d";
 
 const issueToken = (doc, kind) =>
   jwt.sign(
-    { id: doc._id, kind, role: kind },
+    {
+      id: doc._id,
+      kind,
+      role: kind,
+      ver: doc.tokenVersion || 0,
+    },
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRES() },
   );
@@ -120,6 +127,22 @@ export const loginAdmin = (req, res, next) =>
 export const registerAdmin = async (req, res, next) => {
   try {
     if (!runValidation(req, res)) return;
+
+    const registrationSecret = process.env.ADMIN_REGISTRATION_SECRET;
+    if (!registrationSecret) {
+      return sendError(res, {
+        statusCode: 503,
+        message: "Admin registration is disabled until an onboarding secret is configured",
+      });
+    }
+
+    const providedSecret = req.headers["x-admin-registration-secret"];
+    if (!safeEqual(providedSecret, registrationSecret)) {
+      return sendError(res, {
+        statusCode: 403,
+        message: "Admin registration invitation is invalid",
+      });
+    }
 
     const { name, email, password, bankName } = req.body;
 
@@ -427,11 +450,13 @@ export const changePassword = async (req, res, next) => {
 
     account.password = newPassword;
     account.mustChangePassword = false;
+    account.tokenVersion = (account.tokenVersion || 0) + 1;
     await account.save();
 
     return sendSuccess(res, {
       statusCode: 200,
       message: "Password changed successfully",
+      data: { token: issueToken(account, kind) },
     });
   } catch (error) {
     next(error);

@@ -30,16 +30,20 @@ const staffRouter = Router();
 staffRouter.get("/", requireScope("staff:read"), getAllStaff);
 staffRouter.post(
   "/",
-  requireScope("staff:read"),
+  requireScope("staff:write"),
   createStaffValidator,
   validate,
   createStaff,
 );
 staffRouter.patch(
   "/:staffId/queues",
-  requireScope("staff:read"),
+  requireScope("staff:write"),
   assignQueuesToStaff,
 );
-staffRouter.delete("/:staffId", requireScope("staff:read"), deactivateStaff);
+staffRouter.delete(
+  "/:staffId",
+  requireScope("staff:write"),
+  deactivateStaff,
+);
 
 export default staffRouter;

@@ -63,6 +63,7 @@ export const changePassword = async (req, res, next) => {
 
     account.password = newPassword;
     account.mustChangePassword = false;
+    account.tokenVersion = (account.tokenVersion || 0) + 1;
     await account.save();
 
     return sendSuccess(res, {

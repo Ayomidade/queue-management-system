@@ -24,7 +24,7 @@ The frontend customer experience is a proof-of-concept. Production bank customer
 
 ### Public guest API
 
-These routes do not require an API key:
+Public guest ticket operations return a one-time capability token for later status polling and cancellation. The demo stores that token locally; bank integrations should store it in the customer's session or secure receipt flow. These routes do not require an API key:
 
 ```text
 GET   /api/v1/queues
@@ -43,10 +43,11 @@ X-API-Key: cue_<key>
 
 They are restricted to the API key's bank, rate-limited per key, and checked against the key's scopes:
 
-- `branches:read`
-- `tickets:read`
-- `tickets:write`
-- `staff:read`
+- `branches:read`, `branches:write`
+- `tickets:read`, `tickets:write`
+- `staff:read`, `staff:write`
+- `queues:read`, `queues:write`
+- `counters:read`, `counters:write`
 - `analytics:read`
 - `webhooks:manage`
 - `admin` — superadmin-created keys only
@@ -92,9 +93,11 @@ Start MongoDB, then run the backend and frontend:
 cd backend
 cp .env.example .env
 npm install
-npm run seed:superadmin
+npm run seed:dev
 npm run dev
 ```
+
+`seed:dev` creates two banks with three branches, queues, managers, staff, and counters for local end-to-end testing. Set `SEED_DEFAULT_PASSWORD` in `backend/.env` first.
 
 In another terminal:
 
@@ -106,6 +109,8 @@ npm run dev
 ```
 
 Default frontend API URL: `http://localhost:3000/api`.
+
+Admin onboarding requires `ADMIN_REGISTRATION_SECRET` in the backend environment and the matching `X-Admin-Registration-Secret` header.
 
 ## Documentation
 

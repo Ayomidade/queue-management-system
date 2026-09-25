@@ -58,11 +58,32 @@ const resolveBranchForCreate = async (req, res) => {
     return null;
   }
 
+  if (
+    req.bankName &&
+    !(req.bankBranchIds || []).some(
+      (allowedBranch) =>
+        String(allowedBranch._id || allowedBranch) === String(branch._id),
+    )
+  ) {
+    sendError(res, {
+      statusCode: 403,
+      message: "Branch does not belong to the API key bank",
+    });
+    return null;
+  }
+
   return { branchId: branch._id };
 };
 
 /** Bank filter for list/read ops. Returns null when no scoping applies. */
 const bankBranchFilter = async (req) => {
+  if (req.bankName) {
+    return {
+      branch: {
+        $in: (req.bankBranchIds || []).map((id) => id._id || id),
+      },
+    };
+  }
   if (req.role === "manager") {
     return req.user.branch ? { branch: req.user.branch } : { branch: null };
   }
@@ -170,7 +191,12 @@ export const loginStaff = async (req, res, next) => {
 
     // kind tells `protect` which collection to load for this token.
     const token = jwt.sign(
-      { id: staff._id, kind: "staff", role: "staff" },
+      {
+        id: staff._id,
+        kind: "staff",
+        role: "staff",
+        ver: staff.tokenVersion || 0,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
@@ -336,6 +362,15 @@ export const deactivateStaff = async (req, res, next) => {
       return sendError(res, { statusCode: 404, message: "Staff not found" });
     }
 
+    if (req.bankName) {
+      const allowed = (req.bankBranchIds || []).some(
+        (branch) => String(branch._id || branch) === String(target.branch?._id || target.branch),
+      );
+      if (!allowed) {
+        return sendError(res, { statusCode: 404, message: "Staff not found" });
+      }
+    }
+
     // Manager: own branch only.
     if (req.role === "manager") {
       if (String(target.branch) !== String(req.user.branch)) {
@@ -390,6 +425,15 @@ export const assignQueuesToStaff = async (req, res, next) => {
     const staff = await Staff.findById(staffId);
     if (!staff) {
       return sendError(res, { statusCode: 404, message: "Staff not found" });
+    }
+
+    if (req.bankName) {
+      const allowed = (req.bankBranchIds || []).some(
+        (branch) => String(branch._id || branch) === String(staff.branch?._id || staff.branch),
+      );
+      if (!allowed) {
+        return sendError(res, { statusCode: 404, message: "Staff not found" });
+      }
     }
 
     if (req.role === "manager" && String(staff.branch) !== String(req.user.branch)) {

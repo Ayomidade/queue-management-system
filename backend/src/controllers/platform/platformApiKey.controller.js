@@ -154,9 +154,11 @@ export const rotateApiKey = async (req, res, next) => {
 
     const { rawKey, keyHash, keyPrefix } = await ApiKey.generateKey();
 
+    oldKey.previousKeyHash = oldKey.keyHash;
+    oldKey.previousKeyExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     oldKey.keyHash = keyHash;
     oldKey.keyPrefix = keyPrefix;
-    oldKey.gracePeriodEndsAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    oldKey.gracePeriodEndsAt = null;
     await oldKey.save();
 
     return sendSuccess(res, {

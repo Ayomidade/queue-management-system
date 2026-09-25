@@ -1,11 +1,9 @@
-import { config } from "dotenv";
+import "dotenv/config";
 import http from "http";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { initSocket } from "./socket.js";
 import { startNoShowSweeper } from "./jobs/noShowSweeper.js";
-
-config();
 
 const PORT = process.env.PORT || 3000;
 
