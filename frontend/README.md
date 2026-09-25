@@ -1,177 +1,199 @@
 # Cue — Frontend
 
-The customer-and-branch-facing interface for the Smart Queue Management System. Built with React and Vite, on a design system grounded in the physical world of bank ledgers and queue tickets rather than generic SaaS conventions.
+Cue's frontend has two roles:
 
-## Tech Stack
+1. A public/demo customer experience for queue tickets, boards, kiosks, appointments, and branch discovery.
+2. Cue's internal JWT operations console for staff, managers, bank admins, and superadmins.
 
-| Tool                  | Role                                                                                   |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| React 19 + Vite 8    | App shell, dev server, build, code splitting                                           |
-| React Router 7        | Client-side routing                                                                    |
-| Framer Motion         | Declarative component reveals (fades, mount transitions, mobile nav)                   |
-| GSAP + ScrollTrigger  | Scroll-driven and timeline animation (kinetic type, marquee, scroll-scrubbed progress) |
-| Socket.io Client      | Real-time queue updates                                                                |
-| CSS Modules           | Scoped component styling                                                               |
-| CSS custom properties | Design tokens (color, type, spacing)                                                   |
-| Vitest + Testing Library | Component and utility tests                                                         |
+Production bank customers use the bank's own application and call Cue's public `/api/v1` guest endpoints. The public pages in this frontend are a proof-of-concept and integration demonstration, not a required customer account system.
 
-**Why two animation libraries:** Framer Motion handles per-component declarative reveals well. GSAP's ScrollTrigger and timeline control handle the more choreographed pieces more cleanly. Each is used where it's the better tool.
+## Tech stack
 
-## Design System
+| Tool                     | Role                                 |
+| ------------------------ | ------------------------------------ |
+| React 19 + Vite 8        | App shell, build, and code splitting |
+| React Router 7           | Client-side routing                  |
+| Framer Motion            | Declarative UI transitions           |
+| GSAP                     | Board and landing-page animation     |
+| Socket.io Client         | Live queue and ticket events         |
+| CSS Modules              | Component-scoped styles              |
+| Vitest + Testing Library | Frontend tests                       |
 
-**Palette**, grounded in old bank ledgers and vault fixtures:
+## Routes
 
-| Token            | Hex       | Role                                                      |
-| ---------------- | --------- | --------------------------------------------------------- |
-| `--ink`          | `#101F17` | Near-black forest green, dark sections                    |
-| `--ink-raised`   | `#1B3324` | Lifted surface on dark                                    |
-| `--paper`        | `#EFE6CF` | Aged ledger paper, light sections                         |
-| `--paper-raised` | `#E2D3A8` | Card surface on light                                     |
-| `--verdigris`    | `#4FA37B` | Primary interactive accent, oxidized copper               |
-| `--brass`        | `#C9A227` | Fine-detail accent, gold-leaf lettering                   |
-| `--signal`       | `#C1432B` | Alert/live states only, used sparingly                    |
+### Public and demo routes
 
-**Type:**
+| Route                    | Page            | Purpose                                        |
+| ------------------------ | --------------- | ---------------------------------------------- |
+| `/`                      | `Landing`       | Product landing page                           |
+| `/contact`               | `Contact`       | Contact/support form                           |
+| `/ticket`                | `TicketPage`    | Pull a guest ticket and view its live status   |
+| `/ticket/:ticketId`      | `TicketPage`    | Open a guest ticket by ID                      |
+| `/boards`                | `Boards`        | Network-wide live board hub                    |
+| `/board/:branchId`       | `Board`         | Real-time branch board and now-serving display |
+| `/branch/:branchId`      | `Branch`        | Public branch information and queue status     |
+| `/kiosk/:branchId`       | `Kiosk`         | Walk-in kiosk ticket creation and tracking     |
+| `/appointment/:branchId` | `Appointment`   | Appointment slot booking and tracking          |
+| `/find-nearby`           | `NearestBranch` | Geolocation-based branch finder                |
+| `*`                      | `NotFound`      | Custom 404 page                                |
 
-- **Fraunces** — display and headlines, editorial character
-- **IBM Plex Sans** — body copy
-- **IBM Plex Mono** — ticket numbers, stats, terminal-style readouts
+### Authentication routes
 
-## Features
+| Route             | Page                | Purpose                              |
+| ----------------- | ------------------- | ------------------------------------ |
+| `/login`          | Redirect            | Redirects to `/login/staff`          |
+| `/login/staff`    | `LoginPage`         | Staff JWT login                      |
+| `/login/manager`  | `LoginPage`         | Manager JWT login                    |
+| `/login/admin`    | `LoginPage`         | Bank-admin JWT login                 |
+| `/platform/login` | `PlatformLogin`     | Superadmin platform login            |
+| `/platform`       | `PlatformDashboard` | Superadmin API-key and usage console |
 
-- **Code splitting** — all 18 page components lazy-loaded via `React.lazy()`, main bundle ~240KB
-- **Dark/light theming** — toggle with localStorage persistence, auto-detects system preference
-- **AI Assistant** — floating chat widget on customer and staff dashboards, powered by Groq API
-- **Live queue boards** — real-time Socket.io updates for branch boards
-- **Kiosk check-in** — anonymous ticket creation with animated display
-- **Appointment booking** — date/time slot picker with availability counts
-- **Nearest branch finder** — browser Geolocation API with sorted branch cards
-- **Email verification** — complete flow with resend support
-- **Password reset** — forgot/reset flow with token expiry
-- **Contact form** — validated submission to backend
-- **Staff dashboard** — counter console, ticket history, day control
-- **Manager panel** — overview, branch, staff, counters, tickets, analytics tabs
-- **Admin dashboard** — branch management, staff management, inline editing
-- **Error boundary** — catches runtime errors with fallback UI
-- **Responsive** — mobile-first across all pages
-- **Accessibility** — `prefers-reduced-motion` respected for all animations
+### Protected operations routes
 
-## Pages
+| Route          | Page               | Access                | Purpose                                 |
+| -------------- | ------------------ | --------------------- | --------------------------------------- |
+| `/staff`       | `StaffHome`        | Staff, Manager, Admin | Role-specific operations dashboard      |
+| `/integration` | `IntegrationGuide` | Admin                 | Bank API integration guide and snippets |
 
-| Route                | Component      | Access              | Description                          |
-| -------------------- | -------------- | ------------------- | ------------------------------------ |
-| `/`                  | Landing        | Public              | Marketing landing page               |
-| `/login`             | Login          | Public              | Customer login                       |
-| `/admin-login`       | AdminLogin     | Public              | Admin login                          |
-| `/register`          | Register       | Public              | Customer registration                |
-| `/boards`            | Boards         | Public              | All-branches live board hub          |
-| `/board/:branchId`   | Board          | Public              | Per-branch live board                |
-| `/branch/:branchId`  | Branch         | Public              | Branch info + queue status           |
-| `/kiosk/:branchId`   | Kiosk          | Public              | Kiosk check-in                       |
-| `/appointment/:bid`  | Appointment    | Public              | Appointment booking                  |
-| `/find-nearby`       | NearestBranch  | Public              | Geolocation branch finder            |
-| `/contact`           | Contact        | Public              | Contact form                         |
-| `/account`           | CustomerHome   | Customer            | Dashboard, active ticket, join queue |
-| `/staff`             | StaffHome      | Staff, Manager, Admin | Counter console, management panels |
-| `/settings`          | Settings       | Any authenticated   | Profile, verification, password      |
-| `/forgot-password`   | ForgotPassword | Public              | Request password reset               |
-| `/reset-password`    | ResetPassword  | Public              | Reset password with token            |
-| `/verify-email`      | VerifyEmail    | Public              | Email verification                   |
+`/staff` changes its tabs by identity:
 
-## Folder Structure
+- **Staff:** Console and ticket history
+- **Manager:** Branch overview and management
+- **Admin:** Bank overview and management
 
+## Public ticket flow
+
+The guest ticket pages use the public API directly and never attach a JWT or API key:
+
+```text
+GET   /api/v1/queues
+POST  /api/v1/tickets
+GET   /api/v1/tickets/public/:id
+PATCH /api/v1/tickets/:id/cancel
 ```
+
+Ticket status refreshes through polling and Socket.io events. The ticket identifier is stored in local storage so a customer can return to the status page.
+
+## Operations console
+
+The operations console uses JWT Bearer tokens from `AuthContext`.
+
+### Staff
+
+- View assigned counter and served-ticket stats
+- Call the next ticket
+- Call, complete, or skip a specific ticket
+- View ticket history
+
+Managers cannot serve tickets. They can oversee branch operations, manage staff and counters, control the branch day, and review analytics.
+
+### Managers
+
+- View branch analytics and queue status
+- Manage staff and counter assignments
+- Recall and prioritize tickets
+- Open and close the branch day
+
+### Bank admins
+
+- View all branches in their bank
+- Create branches
+- Provision managers and staff
+- View managers and staff counts
+- Request API keys
+- Reveal an approved key once
+- View key health: active, suspended, or revoked
+- Use integration snippets and test a revealed key
+
+The admin integration surface includes cURL, JavaScript, Python, and Node examples. See `/integration` for the full guide.
+
+### Superadmin
+
+- Review and approve/reject bank API-key requests
+- Create, suspend, revoke, and rotate API keys
+- Inspect API usage and platform statistics
+
+## Design system
+
+Cue uses a Verdant Trust visual system:
+
+| Token             | Value             | Use                               |
+| ----------------- | ----------------- | --------------------------------- |
+| `--brand-primary` | `#0d7c66`         | Primary actions and active states |
+| `--brand-accent`  | `#c9a227`         | Secondary emphasis                |
+| `--brand-alert`   | `#dc2626`         | Errors and destructive states     |
+| `--paper`         | Light surface     | Cards and content surfaces        |
+| `--ink`           | Dark text/surface | High-contrast text and dark UI    |
+
+Theme and branding are environment-driven. The frontend supports light and dark themes and respects `prefers-reduced-motion`.
+
+## Project structure
+
+```text
 src/
-  components/
-    AgentChat/         # AI assistant floating chat widget
-    AdvancedAnalytics/ # Peak hours heatmap, leaderboard, wait targets, webhooks
-    ErrorBoundary/     # React error boundary
-    Footer/
-    MotionBackground/
-    Navbar/
+  components/       Shared navigation, footer, error boundary, animation, password UI
   features/
-    agent/             # AI agent API functions
-    auth/              # AuthContext, ProtectedRoute, authApi
-    manager/           # Manager API functions
-    staff/             # Staff hooks (useMyCounter, useMyStats)
-    theme/             # ThemeContext (dark/light)
-    tickets/           # useMyTicket hook with Socket.io
-    admin/             # Admin API functions
-  lib/
-    apiClient.js       # HTTP client with auth interceptor
+    auth/           AuthContext, ProtectedRoute, auth API
+    board/          Live board hooks
+    brand/          Environment-driven brand context
+    kiosk/          Kiosk API
+    staff/          Staff, manager, counter, analytics, and API-key API modules
+    theme/          Light/dark theme context
+    tickets/        Ticket API and guest ticket hook
+  lib/              API client and error types
   pages/
     Landing/
+    Contact/
     Login/
-    Register/
-    CustomerHome/
-    StaffHome/
-      CounterConsole.jsx
-      TicketHistory.jsx
-      admin/           # AdminPanel, BranchesTab, StaffTab
-      manager/         # ManagerPanel, OverviewTab, AnalyticsTab, etc.
-    Board/
+    Platform/
+    TicketPage/
     Boards/
+    Board/
     Branch/
     Kiosk/
     Appointment/
     NearestBranch/
-    Contact/
-    Settings/
-    ForgotPassword/
-    ResetPassword/
-    VerifyEmail/
-    AdminLogin/
+    StaffHome/
     NotFound/
-  styles/
-    global.css         # design tokens + base styles
-  App.jsx              # Routes + lazy loading + ErrorBoundary
+  App.jsx           Routes, providers, lazy loading, and error boundary
   main.jsx
 ```
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
 - Node.js 18+
-- Backend API running (see `../backend/README.md`)
+- Backend API running; see [`../backend/README.md`](../backend/README.md)
 
-### Installation
+### Install and run
 
 ```bash
 cd frontend
 npm install
+cp .env.example .env
+npm run dev
 ```
 
-### Environment Variables
+Default API URL:
 
-Create a `.env` file in the frontend root:
+```text
+VITE_API_URL=http://localhost:3000/api
+```
 
-| Variable     | Required | Default                      | Description           |
-| ------------ | -------- | ---------------------------- | --------------------- |
-| `VITE_API_URL`| No      | `http://localhost:3000/api`  | Backend API base URL  |
-
-### Running
+### Build and test
 
 ```bash
-npm run dev     # development server
-npm run build   # production build
-npm run preview # preview production build
+npm run build
+npm test
+npm run lint
 ```
 
-### Testing
+The current frontend suite has 8 passing tests. The production build is generated in `dist/`.
 
-```bash
-npm test        # single run
-npm run test:watch  # watch mode
-```
+## Code splitting
 
-## Code Splitting
-
-All 18 page components are lazy-loaded via `React.lazy()` with a `<Suspense>` fallback. This reduces the main bundle from ~670KB to ~240KB, with each page loading as a separate chunk on demand.
-
-## Accessibility
-
-CSS-based motion respects `prefers-reduced-motion` globally. GSAP animations are guarded through `src/utils/prefersReducedMotion.js`.
+Route pages are lazy-loaded with `React.lazy()` and a shared `Suspense` fallback. The main bundle stays separate from route chunks such as the staff console, platform console, ticket page, and integration guide.
 
 ## License
 

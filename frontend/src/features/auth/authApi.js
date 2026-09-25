@@ -1,12 +1,27 @@
-/**
- * Auth API — minimal for the demo frontend.
- *
- * The demo uses API key auth via VITE_DEMO_API_KEY.
- * Login/register endpoints are kept in the backend for bank integrations
- * but are not used by the demo frontend.
- */
-
 import { apiClient } from "../../lib/apiClient";
 
-export const changePassword = (data, apiKey) =>
-  apiClient.patch("/users/change-password", data, { apiKey });
+/**
+ * Auth API — JWT logins for all four kinds (Phase 13 WP6/WP7).
+ *
+ * - staff/manager/admin → POST /auth/login/:kind  (bank dashboard)
+ * - superadmin          → POST /platform/login    (platform console)
+ * - change-password     → POST /auth/change-password (any kind, Bearer)
+ * - me                  → GET  /auth/me
+ */
+
+export const loginStaff = (credentials) =>
+  apiClient.post("/auth/login/staff", credentials);
+
+export const loginManager = (credentials) =>
+  apiClient.post("/auth/login/manager", credentials);
+
+export const loginAdmin = (credentials) =>
+  apiClient.post("/auth/login/admin", credentials);
+
+export const loginPlatform = (credentials) =>
+  apiClient.post("/platform/login", credentials);
+
+export const getAuthMe = (token) => apiClient.get("/auth/me", { token });
+
+export const changePassword = (data, token) =>
+  apiClient.post("/auth/change-password", data, { token });

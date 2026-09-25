@@ -11,8 +11,8 @@ import styles from "./Platform.module.css";
 /**
  * PlatformLogin — superadmin JWT login for the /platform console.
  *
- * Superadmin is the ONLY persona who authenticates with email/password.
- * Bank personas use the demo API-key user switcher at /staff instead.
+ * Superadmin uses the dedicated POST /platform/login endpoint.
+ * Bank staff/manager/admin use /login/{kind} (WP7).
  */
 const PlatformLogin = () => {
   const { brand } = useBrand();
@@ -122,7 +122,8 @@ const PlatformLogin = () => {
           </form>
 
           <p className={styles.switchLine}>
-            Bank staff use the <Link to="/staff">staff console</Link> instead.
+            Bank staff use the{" "}
+            <Link to="/login/staff">staff console</Link> instead.
           </p>
         </motion.div>
       </div>

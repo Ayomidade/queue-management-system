@@ -15,7 +15,11 @@ import {
   closeDay,
   openDay,
 } from "../controllers/ticket.controller.js";
-import { protect, authorize } from "../middlewares/auth.middleware.js";
+import {
+  protect,
+  authorize,
+  requireStaffServing,
+} from "../middlewares/auth.middleware.js";
 import validate from "../middlewares/validate.js";
 import {
   createTicketValidator,
@@ -33,18 +37,18 @@ ticketRouter.post("/", createTicketValidator, validate, createTicket);
 ticketRouter.get("/public/:id", getPublicTicket);
 ticketRouter.patch("/:id/cancel", ticketIdParamValidator, validate, cancelTicket);
 
-// Protected staff routes
+// Everything below requires a JWT (staff/manager/admin).
 ticketRouter.use(protect);
 
-ticketRouter.get(
-  "/my-stats",
-  authorize("staff", "manager", "admin"),
-  getMyStats,
-);
+// ── Serving actions — STAFF ONLY (WP5) ─────────────────────────
+// Managers oversee the branch but do not serve; admins do not serve either.
+// Ticket.servedBy stays ref:"Staff". Recall/priority/close-day stay below
+// (manager/admin overrides are not serving).
+ticketRouter.get("/my-stats", requireStaffServing, getMyStats);
 
 ticketRouter.post(
   "/call-next",
-  authorize("staff", "manager", "admin"),
+  requireStaffServing,
   callNextValidator,
   validate,
   auditLog({ action: "call-next", resource: "ticket" }),
@@ -52,7 +56,7 @@ ticketRouter.post(
 );
 ticketRouter.patch(
   "/:id/call",
-  authorize("staff", "manager", "admin"),
+  requireStaffServing,
   ticketIdParamValidator,
   validate,
   auditLog({ action: "call-ticket", resource: "ticket" }),
@@ -60,7 +64,7 @@ ticketRouter.patch(
 );
 ticketRouter.patch(
   "/:id/complete",
-  authorize("staff", "manager", "admin"),
+  requireStaffServing,
   ticketIdParamValidator,
   validate,
   auditLog({ action: "complete-ticket", resource: "ticket" }),
@@ -68,14 +72,14 @@ ticketRouter.patch(
 );
 ticketRouter.patch(
   "/:id/skip",
-  authorize("staff", "manager", "admin"),
+  requireStaffServing,
   ticketIdParamValidator,
   validate,
   auditLog({ action: "skip-ticket", resource: "ticket" }),
   skipTicket,
 );
 
-// Manager/admin branch tickets
+// Manager/admin branch tickets (oversight — not serving)
 ticketRouter.get(
   "/branch/:branchId",
   authorize("manager", "admin"),
@@ -84,7 +88,7 @@ ticketRouter.get(
   getBranchTickets,
 );
 
-// Staff/manager/admin recall a skipped ticket
+// Staff/manager/admin recall a skipped ticket (manager override is not serving)
 ticketRouter.patch(
   "/:id/recall",
   authorize("staff", "manager", "admin"),
@@ -93,11 +97,9 @@ ticketRouter.patch(
   recallTicket,
 );
 
-ticketRouter.get(
-  "/my-history",
-  authorize("staff", "manager", "admin"),
-  getMyRecentTickets,
-);
+ticketRouter.get("/my-history", requireStaffServing, getMyRecentTickets);
+
+// Priority + day open/close are manager/admin oversight — never staff serve.
 ticketRouter.patch(
   "/:id/priority",
   authorize("manager", "admin"),
@@ -106,15 +108,7 @@ ticketRouter.patch(
   setTicketPriority,
 );
 
-ticketRouter.post(
-  "/close-day",
-  authorize("manager"),
-  closeDay,
-);
-ticketRouter.post(
-  "/open-day",
-  authorize("manager"),
-  openDay,
-);
+ticketRouter.post("/close-day", authorize("manager"), closeDay);
+ticketRouter.post("/open-day", authorize("manager"), openDay);
 
 export default ticketRouter;

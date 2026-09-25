@@ -9,11 +9,11 @@ export const createBranch = async (req, res, next) => {
   try {
     const { name, location, address, phone, email, coordinates, operatingHours } = req.body;
 
-    // In v1 mode (API key auth), auto-set the bank from the API key.
-    // In legacy mode (JWT auth), the bank field is not required.
+    // Bank scope: API-key path uses key.bankName; JWT dashboard uses Admin.bank.
+    const bank = req.bankName || (req.role === "admin" ? req.user?.bank : null);
     const branchData = { name, location, address, phone, email, coordinates, operatingHours };
-    if (req.bankName) {
-      branchData.bank = req.bankName;
+    if (bank) {
+      branchData.bank = bank;
     }
 
     const branch = await Branch.create(branchData);
@@ -32,10 +32,10 @@ export const getAllBranches = async (req, res, next) => {
     const { page, limit, skip } = parsePagination(req.query);
     const filter = { isActive: true };
 
-    // Optional bank-scoping: if req.bankName is set (v1 API key auth),
-    // only show branches belonging to that bank.
-    if (req.bankName) {
-      filter.bank = req.bankName;
+    // Bank scope: API-key (req.bankName) or JWT admin (Admin.bank).
+    const bank = req.bankName || (req.role === "admin" ? req.user?.bank : null);
+    if (bank) {
+      filter.bank = bank;
     }
 
     const [total, branches] = await Promise.all([
@@ -56,8 +56,12 @@ export const getSingleBranch = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Optional bank-scoping: validate branch belongs to this bank if in v1 mode
+    // Bank scope: API-key or JWT admin (Admin.bank).
+    const bank = req.bankName || (req.role === "admin" ? req.user?.bank : null);
     const filter = { _id: id };
+    if (bank) {
+      filter.bank = bank;
+    }
     if (req.bankName) {
       filter.bank = req.bankName;
     }
@@ -107,10 +111,11 @@ export const updateBranch = async (req, res, next) => {
       return next(error);
     }
 
-    // Optional bank-scoping: only update branches belonging to this bank
+    // Bank scope: API-key or JWT admin (Admin.bank).
+    const bank = req.bankName || (req.role === "admin" ? req.user?.bank : null);
     const filter = { _id: id };
-    if (req.bankName) {
-      filter.bank = req.bankName;
+    if (bank) {
+      filter.bank = bank;
     }
 
     const branch = await Branch.findOneAndUpdate(filter, updates, {
@@ -138,10 +143,10 @@ export const deleteBranch = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Optional bank-scoping: only delete branches belonging to this bank
+    const bank = req.bankName || (req.role === "admin" ? req.user?.bank : null);
     const filter = { _id: id, isActive: true };
-    if (req.bankName) {
-      filter.bank = req.bankName;
+    if (bank) {
+      filter.bank = bank;
     }
 
     const branch = await Branch.findOneAndUpdate(filter, { isActive: false });

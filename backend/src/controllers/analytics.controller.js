@@ -15,14 +15,15 @@ import { sendSuccess, sendError } from "../utils/response.js";
  */
 const canAccessBranch = async (req, branchId) => {
   if (req.role === "admin") {
-    // Bank-scoped admin: verify the target branch belongs to their bank.
-    if (req.bankName) {
+    // Bank scope: API-key path uses key.bankName; JWT dashboard uses Admin.bank.
+    const bank = req.bankName || req.user?.bank;
+    if (bank) {
       const Branch = (await import("../models/branch.model.js")).default;
       const branch = await Branch.findById(branchId).select("bank").lean();
       if (!branch) return false;
-      return branch.bank === req.bankName;
+      return branch.bank === bank;
     }
-    // Legacy JWT admin (no API-key bank context) — permissive.
+    // Admin with no bank field (shouldn't happen post-WP1) — permissive.
     return true;
   }
   return String(req.user.branch) === branchId;

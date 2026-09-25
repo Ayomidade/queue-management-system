@@ -21,6 +21,7 @@ const TicketPage = () => {
     setLoading(true);
     setError(null);
     try {
+      // Public v1 route — guest lookup, no auth.
       const res = await fetch(`${API_URL}/v1/tickets/public/${id}`);
       const data = await res.json();
       if (data.status === "success") {
@@ -56,6 +57,7 @@ const TicketPage = () => {
   const handleCancel = async () => {
     if (!ticket) return;
     try {
+      // Public v1 cancel — same guest flow as create/status.
       await fetch(`${API_URL}/v1/tickets/${ticket._id}/cancel`, {
         method: "PATCH",
       });

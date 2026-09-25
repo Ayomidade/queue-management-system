@@ -449,6 +449,17 @@
     border-radius: 12px;
   }
 
+  .keyModalBackdrop {
+    align-items: flex-start;
+    padding: 0.75rem;
+  }
+
+  .keyModal {
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
   .ovStatRow {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
@@ -911,10 +922,15 @@
   border-radius: 16px;
   padding: 1.75rem;
   max-width: 560px;
+  max-height: calc(100dvh - 3rem);
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .keyModal h4 {
@@ -939,4 +955,344 @@
   font-size: 0.75rem;
   word-break: break-all;
   color: var(--ink);
+}
+
+/* ── Integration snippets & test connection ── */
+.snippetSection {
+  border-top: 1px solid var(--paper);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.snippetSection h5 {
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.snippetNote {
+  font-size: 0.75rem;
+  color: var(--paper-soft);
+  margin: 0 0 0.75rem;
+}
+.snippetNote code {
+  font-family: var(--font-mono);
+  background: var(--paper);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+.snippetCard {
+  background: var(--paper);
+  border: 1px solid var(--paper-soft);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.snippetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--paper-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.snippetCopyBtn {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--paper-soft);
+  background: var(--paper);
+  color: var(--paper-soft);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.snippetCopyBtn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.snippetCode {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.5;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.6rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.testConnectionBox {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--paper);
+}
+
+.testConnectionBtn {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--brand-accent);
+  background: transparent;
+  color: var(--brand-accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.testConnectionBtn:hover:not(:disabled) {
+  background: var(--brand-accent);
+  color: var(--ink);
+}
+.testConnectionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.testSuccess,
+.testError {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+.testSuccess {
+  background: rgba(13, 124, 102, 0.15);
+  color: var(--brand-primary);
+}
+.testError {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--brand-alert);
+}
+
+.snippetRowPanel {
+  margin: 0.75rem 0 0;
+  padding: 1rem;
+  background: var(--paper);
+  border: 1px solid var(--paper-soft);
+  border-radius: 10px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Integration Guide page ── */
+.integrationGuide {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.guideHeader {
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+}
+
+.guideHeader h1 {
+  font-size: var(--step-3);
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+
+.guideSubtitle {
+  color: var(--paper-soft);
+  margin: 0 0 0.75rem;
+}
+
+.guideMeta {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+}
+.guideMeta code {
+  font-family: var(--font-mono);
+  background: var(--paper);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.guideSidebar {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding-right: 1rem;
+  border-right: 1px solid var(--paper);
+}
+
+.guideSidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.guideLink,
+.guideLinkActive {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--paper-soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.guideLink:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+.guideLinkActive {
+  background: var(--brand-primary);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guideSidebarFooter {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--paper);
+}
+
+.guideExternalLink {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+.guideExternalLink:hover {
+  text-decoration: underline;
+}
+
+.guideContent {
+  padding: 0.5rem 0 2rem;
+}
+
+.guideSection {
+  margin-bottom: 2.5rem;
+}
+
+.guideSection h2 {
+  font-size: var(--step-1);
+  color: var(--ink);
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--paper);
+}
+
+.guideMarkdown {
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.guideMarkdown p {
+  margin: 0 0 0.75rem;
+}
+
+.guideMarkdown h3 {
+  font-size: 0.95rem;
+  color: var(--ink);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.guideMarkdown ul {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+}
+
+.guideMarkdown li {
+  margin: 0.25rem 0;
+}
+
+.guideInlineCode {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--paper);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+.guideCodeBlock {
+  margin: 0.75rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ink);
+}
+.guideCodeBlock code {
+  display: block;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--paper);
+  overflow-x: auto;
+}
+
+.guideTableWrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.guideTableWrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.guideTableWrapper th,
+.guideTableWrapper td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--paper-soft);
+  text-align: left;
+}
+.guideTableWrapper th {
+  background: var(--paper-raised);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Mobile responsive */
+@media (max-width: 860px) {
+  .integrationGuide {
+    grid-template-columns: 1fr;
+  }
+  .guideSidebar {
+    position: static;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--paper);
+    padding: 0 0 1rem;
+    margin-bottom: 1rem;
+  }
+  .guideSidebar ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .guideLink,
+  .guideLinkActive {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
 }

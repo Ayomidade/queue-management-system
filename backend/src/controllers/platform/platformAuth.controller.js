@@ -47,15 +47,19 @@ export const loginSuperadmin = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || "1d" },
     );
 
+    // Same identity key as bank logins (`user`) so AuthContext.toAuth
+    // and GET /auth/me share one shape. Superadmin has no bank/branch.
     return sendSuccess(res, {
       statusCode: 200,
       message: "Login successful",
       data: {
-        staff: {
+        user: {
           id: superadmin._id,
           name: superadmin.name,
           email: superadmin.email,
           role: "superadmin",
+          kind: "superadmin",
+          mustChangePassword: !!superadmin.mustChangePassword,
         },
         token,
       },

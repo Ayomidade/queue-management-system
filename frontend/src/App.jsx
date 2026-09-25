@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { ThemeProvider } from "./features/theme/ThemeContext";
 import { BrandProvider } from "./features/brand/BrandContext";
@@ -11,6 +11,7 @@ import Footer from "./components/Footer/Footer";
 const Landing = lazy(() => import("./pages/Landing/Landing"));
 const Contact = lazy(() => import("./pages/Contact/Contact"));
 const StaffHome = lazy(() => import("./pages/StaffHome/StaffHome"));
+const LoginPage = lazy(() => import("./pages/Login/LoginPage"));
 const PlatformLogin = lazy(() => import("./pages/Platform/PlatformLogin"));
 const PlatformDashboard = lazy(() => import("./pages/Platform/PlatformDashboard"));
 const Board = lazy(() => import("./pages/Board/Board"));
@@ -21,6 +22,7 @@ const NearestBranch = lazy(() => import("./pages/NearestBranch/NearestBranch"));
 const Branch = lazy(() => import("./pages/Branch/Branch"));
 const TicketPage = lazy(() => import("./pages/TicketPage/TicketPage"));
 const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
+const IntegrationGuide = lazy(() => import("./pages/StaffHome/IntegrationGuide"));
 
 const PageSpinner = () => (
   <div
@@ -97,6 +99,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/integration"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <>
+                <Navbar />
+                <IntegrationGuide />
+                <Footer />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        {/* Bank JWT logins — Phase 13 WP7 (one page per kind) */}
+        <Route
+          path="/login"
+          element={<Navigate to="/login/staff" replace />}
+        />
+        <Route path="/login/:kind" element={<LoginPage />} />
         {/* Superadmin platform console — JWT login only, not bank-scoped */}
         <Route
           path="/platform/login"

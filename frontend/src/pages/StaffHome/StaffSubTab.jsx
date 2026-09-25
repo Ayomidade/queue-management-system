@@ -8,7 +8,7 @@ import {
   fetchBranchQueues,
   assignQueuesToStaff,
 } from "../../features/staff/manageApi";
-import { v1Api } from "../../lib/apiClient";
+import { fetchBranches } from "../../features/staff/adminApi";
 import { ApiError } from "../../lib/apiClient";
 import styles from "./StaffHome.module.css";
 
@@ -17,13 +17,17 @@ import styles from "./StaffHome.module.css";
  * Used inside ManagePanel for manager/admin.
  *
  * After the four-model split this form creates Staff only — managers
- * have their own collection and creation flow (WP4).
- * Admin: picks a branch via dropdown.
+ * are created under Manage → Managers (POST /managers, ManagerSubTab).
+ * Admin: picks a branch via dropdown (bank-scoped by Admin.bank).
  * Manager: auto-assigns to own branch.
+ *
+ * All calls use JWT Bearer (WP6) — bank/branch scoping is server-side.
+ * Password optional; blank → server temp password (Cue-XXXXXX-XXXXXX).
  */
 const StaffSubTab = () => {
   const { auth } = useAuth();
   const isAdmin = auth.role === "admin";
+  const token = auth.token;
 
   const [staffList, setStaffList] = useState([]);
   const [queues, setQueues] = useState([]);
@@ -39,15 +43,17 @@ const StaffSubTab = () => {
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [assigningQueue, setAssigningQueue] = useState(null);
+  // One-time display when the server generated a temp password.
+  const [tempCreated, setTempCreated] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const promises = [
-        fetchStaffList(auth.apiKey),
-        fetchBranchQueues(auth.apiKey),
+        fetchStaffList(token),
+        fetchBranchQueues(token),
       ];
       if (isAdmin) {
-        promises.push(v1Api.get("/branches", { apiKey: auth.apiKey }));
+        promises.push(fetchBranches(token));
       }
       const results = await Promise.all(promises);
       setStaffList(results[0].data);
@@ -65,7 +71,7 @@ const StaffSubTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [auth.apiKey, auth.branch, isAdmin]);
+  }, [token, auth.branch, isAdmin]);
 
   useEffect(() => {
     load();
@@ -83,7 +89,17 @@ const StaffSubTab = () => {
       if (!isAdmin) {
         payload.branch = auth.branch;
       }
-      await createStaff(payload, auth.apiKey);
+      // Password optional — blank means server generates a temp password.
+      if (!payload.password) delete payload.password;
+      const res = await createStaff(payload, token);
+      const created = res.data || {};
+      if (created.tempPassword) {
+        setTempCreated({
+          name: created.name,
+          email: created.email,
+          tempPassword: created.tempPassword,
+        });
+      }
       setForm({ name: "", email: "", password: "", branch: "" });
       await load();
     } catch (err) {
@@ -98,7 +114,7 @@ const StaffSubTab = () => {
   };
 
   const handleDeactivate = async (staffId) => {
-    await deactivateStaffApi(staffId, auth.apiKey);
+    await deactivateStaffApi(staffId, token);
     await load();
   };
 
@@ -111,7 +127,7 @@ const StaffSubTab = () => {
       : [...current, queueId];
     setAssigningQueue(staffId);
     try {
-      await assignQueuesToStaff(staffId, next, auth.apiKey);
+      await assignQueuesToStaff(staffId, next, token);
       await load();
     } catch (err) {
       setError(
@@ -197,11 +213,11 @@ const StaffSubTab = () => {
           onChange={handleChange("email")}
         />
         <input
-          required
           type="password"
-          placeholder="Temporary password"
+          placeholder="Password (optional — blank = temp)"
           value={form.password}
           onChange={handleChange("password")}
+          autoComplete="new-password"
         />
         {isAdmin && (
           <select
@@ -229,6 +245,44 @@ const StaffSubTab = () => {
           {submitting ? "Adding…" : "Add"}
         </button>
       </form>
+
+      {/* One-time temp password — only when the server generated it. */}
+      {tempCreated && (
+        <div className={styles.keyModalBackdrop} role="dialog" aria-modal="true">
+          <div className={styles.keyModal}>
+            <h4>Staff created — temporary password</h4>
+            <p className={styles.mgmtRowSub}>
+              {tempCreated.name} · {tempCreated.email}
+            </p>
+            <div className={styles.rawKeyBox}>
+              <code>{tempCreated.tempPassword}</code>
+              <button
+                type="button"
+                className={styles.scopeChip}
+                onClick={() =>
+                  navigator.clipboard?.writeText(tempCreated.tempPassword)
+                }
+              >
+                Copy
+              </button>
+            </div>
+            <p
+              className={styles.mgmtStatusError}
+              style={{ background: "none", padding: 0 }}
+            >
+              This is the only time this password will be shown. Share it once
+              — they must change it on first sign-in.
+            </p>
+            <button
+              type="button"
+              className={styles.mgmtSubmitBtn}
+              onClick={() => setTempCreated(null)}
+            >
+              I&apos;ve saved it
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

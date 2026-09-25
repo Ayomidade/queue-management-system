@@ -20,7 +20,9 @@ import exportRouter from "./routes/export.routes.js";
 import advancedAnalyticsRouter from "./routes/advancedAnalytics.routes.js";
 import brandRouter from "./routes/brand.routes.js";
 import platformRouter from "./routes/platform/index.js";
-import demoRouter from "./routes/v1/demo.routes.js";
+import managerRouter from "./routes/manager.routes.js";
+import adminOverviewRouter from "./routes/admin.overview.routes.js";
+import adminKeyRequestRouter from "./routes/adminApiKeyRequest.routes.js";
 import v1Router from "./routes/v1/index.js";
 import { authenticateApiKey, apiKeyRateLimit } from "./middlewares/apiKey.middleware.js";
 import { tenantMatch } from "./middlewares/tenantMatch.js";
@@ -49,6 +51,35 @@ app.use(
   }),
 );
 
+// ── Test connection — validate an API key (no rate limit, no bank scoping)
+const testConnectionHandler = async (req, res) => {
+  try {
+    // authenticateApiKey already attached req.apiKey and either resolved
+    // the key (200) or sent 401/403. If we reach here the key is valid.
+    const key = req.apiKey;
+    return res.json({
+      statusCode: 200,
+      message: "API key is valid",
+      data: {
+        bankName: key.bankName,
+        keyPrefix: key.keyPrefix,
+        scopes: key.scopes,
+        rateLimit: key.rateLimit,
+        isActive: key.isActive,
+        createdAt: key.createdAt,
+      },
+    });
+  } catch (error) {
+    // authenticateApiKey sends its own error; this is a safety net.
+    return res.status(500).json({
+      statusCode: 500,
+      message: "Internal error during key validation",
+    });
+  }
+};
+
+app.use("/api/test-connection", authenticateApiKey, testConnectionHandler);
+
 // Body parser middleware
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
@@ -72,6 +103,13 @@ app.use("/api/auth", auth_router);
 app.use("/api/branches/", branch_router);
 app.use("/api/users", userRouter);
 app.use("/api/staff", staff_router);
+// Manager provisioning (Phase 13 WP4) — JWT admin only, bank-scoped in controller.
+app.use("/api/managers", managerRouter);
+// JWT admin overview (Phase 13 WP6) — dashboard reads Admin.bank, not API key.
+app.use("/api/admin", adminOverviewRouter);
+// Bank-admin API key requests via JWT (Phase 13 WP4) — parallel to the
+// legacy v1 API-key version until WP6 migrates the dashboard fully.
+app.use("/api/admin/api-key-requests", adminKeyRequestRouter);
 app.use("/api/queues", queue_router);
 app.use("/api/counters", counter_router);
 app.use("/api/tickets", ticketRouter);
@@ -100,8 +138,7 @@ import { resolveStaffUser } from "./middlewares/resolveStaffUser.js";
 // Mounted BEFORE the v1 API-key pipeline so JWT auth is independent.
 app.use("/api/platform", platformRouter);
 
-// Demo helper routes (no auth required)
-app.use("/api/v1/demo", demoRouter);
+// Demo helper routes removed (Phase 13 WP7) — dashboard is JWT-only.
 
 // V1 public routes — guest ticket flow (no auth required)
 import publicV1Router from "./routes/v1/public.routes.js";

@@ -1,46 +1,60 @@
-import { v1Api } from "../../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 /**
- * Staff Management API
+ * Staff management API — JWT `/api/*` surface (Phase 13 WP6).
  *
- * Functions for manager/admin to manage staff and counters.
- * All functions use API key auth (v1 routes).
+ * All functions take a Bearer `token` from AuthContext.
+ * Branch scoping (admin bank / manager branch) is enforced server-side.
  */
 
-/** Fetch all staff members (admin sees all, manager sees own branch) */
-export const fetchStaffList = (apiKey) => v1Api.get("/staff", { apiKey });
+/** Fetch staff (admin: bank-scoped; manager: own branch) */
+export const fetchStaffList = (token) =>
+  apiClient.get("/staff", { token });
 
-/** Create a new staff member */
-export const createStaff = (data, apiKey) =>
-  v1Api.post("/staff", data, { apiKey });
+/** Create staff — password optional (server may return tempPassword) */
+export const createStaff = (data, token) =>
+  apiClient.post("/staff", data, { token });
+
+/** Fetch managers (admin only, bank-scoped) */
+export const fetchManagers = (token) =>
+  apiClient.get("/managers", { token });
+
+/**
+ * Create a manager (admin only) — POST /managers.
+ * Body: { name, email, branch, password? }. Omit password → server
+ * generates Cue-XXXXXX-XXXXXX and returns it once as tempPassword.
+ */
+export const createManager = (data, token) =>
+  apiClient.post("/managers", data, { token });
+
+/** Soft-deactivate a manager (admin only) */
+export const deactivateManagerApi = (managerId, token) =>
+  apiClient.delete(`/managers/${managerId}`, { token });
 
 /** Assign queues to a staff member */
-export const assignQueuesToStaff = (staffId, queueIds, apiKey) =>
-  v1Api.patch(`/staff/${staffId}/queues`, { queues: queueIds }, { apiKey });
+export const assignQueuesToStaff = (staffId, queueIds, token) =>
+  apiClient.patch(`/staff/${staffId}/queues`, { queues: queueIds }, { token });
 
-/** Deactivate a staff member */
-export const deactivateStaffApi = (staffId, apiKey) =>
-  v1Api.delete(`/staff/${staffId}`, { apiKey });
+/** Soft-deactivate a staff member */
+export const deactivateStaffApi = (staffId, token) =>
+  apiClient.delete(`/staff/${staffId}`, { token });
 
 /** Fetch counters for a branch */
-export const fetchBranchCounters = (branchId, apiKey) =>
-  v1Api.get(`/counters/${branchId}`, { apiKey });
+export const fetchBranchCounters = (branchId, token) =>
+  apiClient.get(`/counters/${branchId}`, { token });
 
 /** Create a new counter */
-export const createCounter = (data, apiKey) =>
-  v1Api.post("/counters", data, { apiKey });
+export const createCounter = (data, token) =>
+  apiClient.post("/counters", data, { token });
 
 /** Assign a staff member to a counter */
-export const assignStaffToCounter = (counterId, staffId, apiKey) =>
-  v1Api.patch(
-    `/counters/${counterId}/assign-staff`,
-    { staffId },
-    { apiKey },
-  );
+export const assignStaffToCounter = (counterId, staffId, token) =>
+  apiClient.patch(`/counters/${counterId}/assign-staff`, { staffId }, { token });
 
 /** Unassign staff from a counter */
-export const unassignStaffFromCounter = (counterId, apiKey) =>
-  v1Api.patch(`/counters/${counterId}/unassign-staff`, {}, { apiKey });
+export const unassignStaffFromCounter = (counterId, token) =>
+  apiClient.patch(`/counters/${counterId}/unassign-staff`, {}, { token });
 
-/** Fetch queues for a branch (to populate queue assignment selects) */
-export const fetchBranchQueues = (apiKey) => v1Api.get("/queues", { apiKey });
+/** Fetch queues for the signed-in identity's scope */
+export const fetchBranchQueues = (token) =>
+  apiClient.get("/queues", { token });

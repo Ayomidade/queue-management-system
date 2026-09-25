@@ -6,7 +6,7 @@ import { ApiError } from "../../lib/apiClient";
 import styles from "./ChangePassword.module.css";
 
 const ChangePassword = () => {
-  const { auth } = useAuth();
+  const { auth, clearMustChangePassword } = useAuth();
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -51,6 +51,8 @@ const ChangePassword = () => {
         },
         auth.token,
       );
+      // Server clears mustChangePassword — mirror it so the force prompt dismisses.
+      clearMustChangePassword?.();
       setSuccess(true);
       setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {

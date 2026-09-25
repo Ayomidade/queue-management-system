@@ -43,7 +43,7 @@ counterRouter.patch(
 );
 counterRouter.patch(
   "/:counterId/open",
-  authorize("admin", "manager"),
+  authorize("admin", "manager", "staff"),
   openCounter,
 );
 counterRouter.patch(

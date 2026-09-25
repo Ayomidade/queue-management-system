@@ -12,6 +12,18 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Stricter limiter for public self-registration (open admin signup abuse control).
+export const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    status: "error",
+    message: "Too many registration attempts, please try again later",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Lighter limiter for public read endpoints (branch info, board data)
 export const publicReadLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,

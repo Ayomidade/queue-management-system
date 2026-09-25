@@ -1,26 +1,25 @@
 import { Router } from "express";
-import { body, param } from "express-validator";
-import { validationResult } from "express-validator";
-import ApiKeyRequest from "../../models/apiKeyRequest.model.js";
-import { sendSuccess, sendError } from "../../utils/response.js";
-import { parsePagination, paginatedResponse } from "../../utils/pagination.js";
-import { decryptKey } from "../../utils/keyWrap.js";
-import { authorize } from "../../middlewares/auth.middleware.js";
+import { body, param, validationResult } from "express-validator";
+import ApiKeyRequest from "../models/apiKeyRequest.model.js";
+import ApiKey from "../models/apiKey.model.js";
+import { sendSuccess, sendError } from "../utils/response.js";
+import { parsePagination, paginatedResponse } from "../utils/pagination.js";
+import { decryptKey } from "../utils/keyWrap.js";
+import { protect, authorize } from "../middlewares/auth.middleware.js";
 
 /**
- * Bank admin API key request routes (v1, API-key authenticated).
+ * Bank-admin API key request routes — JWT-authenticated (Phase 13 WP4).
  *
- * Bank admins cannot create/list/revoke keys directly (that's superadmin-
- * only on /api/platform). Instead they submit a request for their own bank;
- * the superadmin approves or rejects it on the platform dashboard.
+ * Same behavior as the v1 API-key version, but identity comes from the
+ * admin's JWT (`req.user`) instead of the API key header. This is the
+ * path the dashboard will use once WP6 moves it off v1.
  *
- * bankName is ALWAYS taken from the authenticated API key (req.bankName),
- * never from the request body — a bank cannot request keys for another bank.
+ * bankName is ALWAYS forced from Admin.bank (never from the body).
  *
  * One-time reveal:
- *   GET /api/v1/api-key-requests/:id
+ *   GET /api/admin/api-key-requests/:id
  *   If status=approved and bankKeyRevealedAt is null, returns the raw key
- *   (decrypted from the staged ciphertext), wipes the ciphertext, and sets
+ *   (decrypted from the staged ciphertext), wipes ciphertext, and sets
  *   bankKeyRevealedAt. Subsequent GETs return metadata only (no raw key).
  */
 const router = Router();
@@ -35,13 +34,49 @@ const BANK_REQUESTABLE_SCOPES = [
   // "admin" is reserved for superadmin-created keys only.
 ];
 
-// Only bank admins may request keys for their bank.
-router.use(authorize("admin"));
+/**
+ * Live health of the linked ApiKey for the bank admin's status list.
+ * - not approved yet → null
+ * - approved but ApiKey missing/deleted → "revoked" (superadmin revoke)
+ * - ApiKey.isActive false → "suspended"
+ * - else → "active"
+ */
+export const resolveKeyStatus = (request, keyDoc) => {
+  if (request.status !== "approved") return null;
+  if (!request.apiKey || !keyDoc) return "revoked";
+  return keyDoc.isActive ? "active" : "suspended";
+};
 
 /**
- * POST /api/v1/api-key-requests
+ * Safe list/detail item — ciphertext is never included in JSON.
+ * canRevealKey needs encryptedRawKey present on the in-memory doc
+ * (do NOT select it out before this call).
+ */
+export const mapBankKeyRequest = (r, keyDoc = null) => ({
+  id: r._id,
+  bankName: r.bankName,
+  label: r.label,
+  scopes: r.scopes,
+  rateLimit: r.rateLimit,
+  status: r.status,
+  reviewNote: r.reviewNote,
+  apiKey: r.apiKey,
+  canRevealKey:
+    r.status === "approved" &&
+    !!r.encryptedRawKey &&
+    !r.bankKeyRevealedAt,
+  revealedAt: r.bankKeyRevealedAt,
+  keyStatus: resolveKeyStatus(r, keyDoc),
+  keyPrefix: keyDoc?.keyPrefix || null,
+  createdAt: r.createdAt,
+});
+
+// Only bank admins may request keys for their bank.
+router.use(protect, authorize("admin"));
+
+/**
+ * POST /api/admin/api-key-requests
  * Body: { label?, scopes?, rateLimit? }
- * Creates a pending request scoped to the API key's bank.
  */
 router.post(
   "/",
@@ -78,16 +113,18 @@ router.post(
         });
       }
 
-      if (!req.bankName) {
+      // Bank scope always comes from the JWT identity (Admin.bank).
+      const bankName = req.user.bank;
+      if (!bankName) {
         return sendError(res, {
           statusCode: 400,
-          message: "Bank context missing — API key has no bankName",
+          message: "Admin has no bank — cannot request API keys",
         });
       }
 
       // Prevent duplicate pending requests for the same bank.
       const existingPending = await ApiKeyRequest.findOne({
-        bankName: req.bankName,
+        bankName,
         status: "pending",
       });
       if (existingPending) {
@@ -100,8 +137,9 @@ router.post(
       const { label, scopes, rateLimit } = req.body;
 
       const request = await ApiKeyRequest.create({
-        bankName: req.bankName,
-        requestedBy: req.user?._id || req.user?.id,
+        bankName,
+        // Admin collection ref (WP1 changed requestedBy → Admin).
+        requestedBy: req.user._id,
         label: label || "",
         scopes: scopes?.length
           ? scopes
@@ -130,47 +168,46 @@ router.post(
 );
 
 /**
- * GET /api/v1/api-key-requests
- * List this bank's requests (metadata only; ciphertext never included).
+ * GET /api/admin/api-key-requests
+ * List this admin's bank requests (metadata only; ciphertext never included).
+ *
+ * Loads encryptedRawKey only so canRevealKey can be computed, then strips
+ * it from the JSON payload. Also joins ApiKey for keyStatus (active /
+ * suspended / revoked) so revoke/suspend shows up for the bank admin.
  */
 router.get("/", async (req, res, next) => {
   try {
-    if (!req.bankName) {
+    const bankName = req.user.bank;
+    if (!bankName) {
       return sendError(res, {
         statusCode: 400,
-        message: "Bank context missing — API key has no bankName",
+        message: "Admin has no bank — cannot list API key requests",
       });
     }
 
     const { page, limit, skip } = parsePagination(req.query);
-    const filter = { bankName: req.bankName };
+    const filter = { bankName };
 
     const [requests, total] = await Promise.all([
       ApiKeyRequest.find(filter)
-        .select("-encryptedRawKey")
         .sort("-createdAt")
         .skip(skip)
         .limit(limit),
       ApiKeyRequest.countDocuments(filter),
     ]);
 
-    // Surface whether a reveal is still available (approved but not yet shown).
-    const data = requests.map((r) => ({
-      id: r._id,
-      bankName: r.bankName,
-      label: r.label,
-      scopes: r.scopes,
-      rateLimit: r.rateLimit,
-      status: r.status,
-      reviewNote: r.reviewNote,
-      apiKey: r.apiKey,
-      canRevealKey:
-        r.status === "approved" &&
-        !!r.encryptedRawKey &&
-        !r.bankKeyRevealedAt,
-      revealedAt: r.bankKeyRevealedAt,
-      createdAt: r.createdAt,
-    }));
+    // Batch-load linked keys (missing doc → revoked after superadmin delete).
+    const keyIds = requests.map((r) => r.apiKey).filter(Boolean);
+    const keys = keyIds.length
+      ? await ApiKey.find({ _id: { $in: keyIds } })
+          .select("keyPrefix isActive")
+          .lean()
+      : [];
+    const keyById = new Map(keys.map((k) => [String(k._id), k]));
+
+    const data = requests.map((r) =>
+      mapBankKeyRequest(r, r.apiKey ? keyById.get(String(r.apiKey)) : null),
+    );
 
     return sendSuccess(res, {
       statusCode: 200,
@@ -183,13 +220,8 @@ router.get("/", async (req, res, next) => {
 });
 
 /**
- * GET /api/v1/api-key-requests/:id
- * One-time raw-key reveal for an approved request.
- *
- * First call (approved + ciphertext present + not yet revealed):
- *   → decrypts, returns raw key, wipes ciphertext, sets bankKeyRevealedAt
- * Subsequent calls:
- *   → returns metadata only (rawKey: null)
+ * GET /api/admin/api-key-requests/:id
+ * One-time raw-key reveal for an approved request (bank-scoped by JWT).
  */
 router.get(
   "/:id",
@@ -205,18 +237,21 @@ router.get(
         });
       }
 
-      if (!req.bankName) {
+      const bankName = req.user.bank;
+      if (!bankName) {
         return sendError(res, {
           statusCode: 400,
-          message: "Bank context missing — API key has no bankName",
+          message: "Admin has no bank — cannot fetch API key requests",
         });
       }
 
       // Always scope the lookup to this bank — never leak another bank's request.
+      // Keep encryptedRawKey on the doc only long enough to attempt reveal;
+      // it is stripped from the response payload via mapBankKeyRequest.
       const request = await ApiKeyRequest.findOne({
         _id: req.params.id,
-        bankName: req.bankName,
-      }).select("-encryptedRawKey");
+        bankName,
+      });
 
       if (!request) {
         return sendError(res, { statusCode: 404, message: "Request not found" });
@@ -225,17 +260,10 @@ router.get(
       let rawKey = null;
       let justRevealed = false;
 
-      // Fetch ciphertext separately only if we might reveal it.
-      if (
-        request.status === "approved" &&
-        !request.bankKeyRevealedAt
-      ) {
-        const full = await ApiKeyRequest.findById(request._id).select(
-          "encryptedRawKey",
-        );
-        if (full?.encryptedRawKey) {
+      if (request.status === "approved" && !request.bankKeyRevealedAt) {
+        if (request.encryptedRawKey) {
           try {
-            rawKey = decryptKey(full.encryptedRawKey);
+            rawKey = decryptKey(request.encryptedRawKey);
             // Wipe ciphertext permanently after successful decrypt.
             await ApiKeyRequest.updateOne(
               { _id: request._id },
@@ -245,6 +273,9 @@ router.get(
               },
             );
             justRevealed = true;
+            // In-memory wipe so the response mapper can't leak ciphertext.
+            request.encryptedRawKey = null;
+            request.bankKeyRevealedAt = new Date();
           } catch {
             // Decryption failed (wrong secret / corruption) — don't leak internals.
             rawKey = null;
@@ -252,21 +283,22 @@ router.get(
         }
       }
 
+      let keyDoc = null;
+      if (request.apiKey) {
+        keyDoc = await ApiKey.findById(request.apiKey)
+          .select("keyPrefix isActive")
+          .lean();
+      }
+
+      const mapped = mapBankKeyRequest(request, keyDoc);
+
       return sendSuccess(res, {
         statusCode: 200,
         message: justRevealed
           ? "API key revealed — copy it now, it won't be shown again"
           : "API key request fetched",
         data: {
-          id: request._id,
-          bankName: request.bankName,
-          label: request.label,
-          scopes: request.scopes,
-          rateLimit: request.rateLimit,
-          status: request.status,
-          reviewNote: request.reviewNote,
-          apiKey: request.apiKey,
-          revealedAt: request.bankKeyRevealedAt,
+          ...mapped,
           // Raw key only on the one-time reveal; null afterwards.
           key: rawKey,
         },

@@ -1,26 +1,24 @@
-import { v1Api } from "../../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 /**
- * Bank admin API key request API (v1, API-key auth).
+ * Bank admin API key request API — JWT `/api/admin/api-key-requests` (WP6).
  *
- * Bank admins cannot manage keys directly — they submit requests for
- * their own bank; the superadmin reviews them on /platform.
- *
- * One-time reveal: GET /api-key-requests/:id returns { key } on the
- * first call after approval, then key is null forever after.
+ * bankName is always taken from Admin.bank server-side (never from body).
+ * One-time reveal: GET /:id returns { key } on the first call after
+ * approval, then key is null forever after.
  */
 
-/** POST /api-key-requests — submit a pending request for this bank */
-export const requestApiKey = (data, apiKey) =>
-  v1Api.post("/api-key-requests", data, { apiKey });
+/** POST — submit a pending request for this admin's bank */
+export const requestApiKey = (data, token) =>
+  apiClient.post("/admin/api-key-requests", data, { token });
 
-/** GET /api-key-requests — list this bank's requests (status view) */
-export const fetchApiKeyRequests = (apiKey) =>
-  v1Api.get("/api-key-requests", { apiKey });
+/** GET — list this bank's requests (status view) */
+export const fetchApiKeyRequests = (token) =>
+  apiClient.get("/admin/api-key-requests", { token });
 
 /**
- * GET /api-key-requests/:id — one-time raw-key reveal for an approved request.
+ * GET /:id — one-time raw-key reveal for an approved request.
  * Returns { ...meta, key: "cue_..." } first time; key: null afterwards.
  */
-export const revealApiKeyRequest = (id, apiKey) =>
-  v1Api.get(`/api-key-requests/${id}`, { apiKey });
+export const revealApiKeyRequest = (id, token) =>
+  apiClient.get(`/admin/api-key-requests/${id}`, { token });

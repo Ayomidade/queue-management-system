@@ -1,4 +1,5 @@
 import ApiKey from "../../models/apiKey.model.js";
+import ApiKeyRequest from "../../models/apiKeyRequest.model.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { parsePagination, paginatedResponse } from "../../utils/pagination.js";
 import { validationResult } from "express-validator";
@@ -10,7 +11,8 @@ import { validationResult } from "express-validator";
  * let ANY bank admin see ALL banks' keys — a multi-tenancy hole.
  *
  * The raw API key is only returned ONCE — at creation or rotation.
- * Bank admins never call these endpoints; they submit ApiKeyRequests instead.
+ * Bank admins never call these endpoints; they submit ApiKeyRequests on
+ * JWT /api/admin/api-key-requests instead.
  */
 
 const handleValidation = (req, res) => {
@@ -107,6 +109,9 @@ export const listApiKeys = async (req, res, next) => {
 /**
  * DELETE /api/platform/api-keys/:id
  * Permanently revoke (delete) a key.
+ * Also wipes any staged reveal ciphertext on linked ApiKeyRequests so a
+ * bank admin can't reveal a key that no longer exists; the list endpoint
+ * then reports keyStatus: "revoked" (ApiKey doc is gone).
  */
 export const deleteApiKey = async (req, res, next) => {
   try {
@@ -116,6 +121,12 @@ export const deleteApiKey = async (req, res, next) => {
     if (!key) {
       return sendError(res, { statusCode: 404, message: "API key not found" });
     }
+
+    // Clear dual-reveal ciphertext staged at approval time.
+    await ApiKeyRequest.updateMany(
+      { apiKey: key._id },
+      { $unset: { encryptedRawKey: 1, rawKeyStagedAt: 1 } },
+    );
 
     return sendSuccess(res, {
       statusCode: 200,

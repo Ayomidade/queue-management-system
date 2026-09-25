@@ -86,3 +86,31 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+/**
+ * Staff-only serving guard (Phase 13 / WP5).
+ *
+ * Locked decision: only Staff may serve tickets. Managers oversee the
+ * branch (create staff, counters, close/open day) but do NOT serve;
+ * admins are bank-scoped operators and also do not serve.
+ * `Ticket.servedBy` stays `ref: "Staff"` for the same reason.
+ *
+ * Use on every serve action (call-next, call, complete, skip) so a
+ * manager/admin JWT gets a clear 403 even if a route mis-wires authorize().
+ */
+export const requireStaffServing = (req, res, next) => {
+  const kind = req.kind || req.role;
+  if (kind === "staff") {
+    return next();
+  }
+  if (kind === "manager") {
+    return sendError(res, {
+      statusCode: 403,
+      message: "Managers cannot serve tickets",
+    });
+  }
+  return sendError(res, {
+    statusCode: 403,
+    message: "Only staff can serve tickets",
+  });
+};

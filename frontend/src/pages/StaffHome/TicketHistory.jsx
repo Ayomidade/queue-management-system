@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useAuth } from "../../features/auth/AuthContext";
 import { useTicketHistory } from "../../features/staff/useTicketHistory";
 import styles from "./StaffHome.module.css";
 
@@ -9,8 +8,8 @@ const STATUS_STYLE = {
 };
 
 const TicketHistory = () => {
-  const { auth } = useAuth();
-  const { tickets, loading, error, recall } = useTicketHistory(auth.apiKey);
+  // Token comes from AuthContext inside useTicketHistory (WP6).
+  const { tickets, loading, error, recall } = useTicketHistory();
 
   if (loading) return <p className={styles.status}>Loading history…</p>;
   if (error) return <p className={styles.statusError}>{error}</p>;

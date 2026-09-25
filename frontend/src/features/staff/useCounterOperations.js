@@ -1,7 +1,11 @@
 import { useCallback, useState } from "react";
-import { apiClient, ApiError, v1Api } from "../../lib/apiClient";
+import { ApiError, apiClient } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
+/**
+ * Counter serve operations — JWT `/api/tickets/*` (WP6).
+ * Only staff may call these (requireStaffServing on the backend).
+ */
 export const useCounterOperations = ({ onServed } = {}) => {
   const { auth } = useAuth();
   const [currentTicket, setCurrentTicket] = useState(null);
@@ -9,16 +13,18 @@ export const useCounterOperations = ({ onServed } = {}) => {
   const [error, setError] = useState(null);
   const [empty, setEmpty] = useState(false);
 
+  const token = auth?.token;
+
   const callNext = useCallback(
     async (queueId) => {
       setBusy(true);
       setError(null);
       setEmpty(false);
       try {
-        const response = await v1Api.post(
+        const response = await apiClient.post(
           "/tickets/call-next",
           { queueId },
-          { apiKey: auth.apiKey },
+          { token },
         );
         setCurrentTicket(response.data);
       } catch (err) {
@@ -33,7 +39,7 @@ export const useCounterOperations = ({ onServed } = {}) => {
         setBusy(false);
       }
     },
-    [auth.apiKey],
+    [token],
   );
 
   const resolveTicket = useCallback(
@@ -42,10 +48,10 @@ export const useCounterOperations = ({ onServed } = {}) => {
       setBusy(true);
       setError(null);
       try {
-        await v1Api.patch(
+        await apiClient.patch(
           `/tickets/${currentTicket._id}/${action}`,
           {},
-          { apiKey: auth.apiKey },
+          { token },
         );
         setCurrentTicket(null);
         onServed?.();
@@ -59,7 +65,7 @@ export const useCounterOperations = ({ onServed } = {}) => {
         setBusy(false);
       }
     },
-    [currentTicket, auth.apiKey, onServed],
+    [currentTicket, token, onServed],
   );
 
   return {

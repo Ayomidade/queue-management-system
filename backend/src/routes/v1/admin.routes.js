@@ -1,19 +1,19 @@
 import { Router } from "express";
 import { getAdminOverview } from "../../controllers/admin.controller.js";
-import { authorize } from "../../middlewares/auth.middleware.js";
+import { requireScope } from "../../middlewares/apiKey.middleware.js";
 
 /**
- * V1 Admin Routes
+ * V1 Admin Routes — API-key only (bank-scoped overview).
  *
- * Admin-only endpoints for cross-branch oversight.
- * The bankScope middleware (applied at v1Router level) provides
- * req.bankBranchIds for tenant isolation.
+ * Scope wiring (WP5): analytics:read gates the cross-branch summary.
+ * Role authorize() removed — resolveStaffUser always sets role "staff",
+ * so authorize("admin") would 403 every API-key request. The controller
+ * accepts either role "admin" (JWT path) or an authenticated API key
+ * (integration path); bank isolation still comes from req.bankName.
  */
 
 const adminRouter = Router();
 
-adminRouter.use(authorize("admin"));
-
-adminRouter.get("/", getAdminOverview);
+adminRouter.get("/", requireScope("analytics:read"), getAdminOverview);
 
 export default adminRouter;

@@ -20,40 +20,56 @@ import { sendSuccess } from "../utils/response.js";
  */
 export const getAdminOverview = async (req, res, next) => {
   try {
-    // Only admins can access this endpoint
-    if (req.role !== "admin") {
+    // JWT path: only admins. API-key path (v1): the key itself is the
+    // bank identity — requireScope("analytics:read") already gated access,
+    // and resolveStaffUser always sets role "staff" (not "admin").
+    const isApiKeyIntegration = !!req.apiKey;
+    if (!isApiKeyIntegration && req.role !== "admin") {
       const error = new Error("Access denied: admin only");
       error.statusCode = 403;
       return next(error);
     }
 
-    // Bank scoping: when the request carries a bank context (v1 API key),
-    // only return that bank's branches and managers.
+    // Bank scope: API-key path uses key.bankName; JWT dashboard uses Admin.bank.
+    const bank = req.bankName || req.user?.bank || null;
+
     const branchFilter = { isActive: true };
-    if (req.bankName) {
-      branchFilter.bank = req.bankName;
+    if (bank) {
+      branchFilter.bank = bank;
     }
 
     let managerFilter = { isActive: true };
-    // If bankScope populated bankBranchIds, restrict managers to those branches.
-    if (req.bankName && Array.isArray(req.bankBranchIds)) {
-      managerFilter = {
-        ...managerFilter,
-        branch: { $in: req.bankBranchIds },
-      };
+    if (bank) {
+      // JWT path has no bankScope middleware — filter Manager by denormalized bank.
+      // API-key path may also have bankBranchIds from bankScope.
+      if (Array.isArray(req.bankBranchIds) && req.bankBranchIds.length >= 0 && req.bankName) {
+        managerFilter = {
+          ...managerFilter,
+          branch: { $in: req.bankBranchIds },
+        };
+      } else {
+        managerFilter = { ...managerFilter, bank };
+      }
     }
 
-    const [branches, managers, totalStaff] = await Promise.all([
+    const [branches, managers] = await Promise.all([
       Branch.find(branchFilter).sort({ createdAt: -1 }),
       Manager.find(managerFilter)
-        .select("name email branch")
+        .select("name email branch bank")
         .populate("branch", "name location"),
-      Staff.countDocuments(
-        req.bankName && Array.isArray(req.bankBranchIds)
-          ? { isActive: true, branch: { $in: req.bankBranchIds } }
-          : { isActive: true },
-      ),
     ]);
+
+    // Staff count: prefer bank branch ids (API key) or this bank's branches (JWT).
+    let staffBranchFilter = { isActive: true };
+    if (bank) {
+      if (Array.isArray(req.bankBranchIds) && req.bankName) {
+        staffBranchFilter = { isActive: true, branch: { $in: req.bankBranchIds } };
+      } else {
+        const bankBranchIds = branches.map((b) => b._id);
+        staffBranchFilter = { isActive: true, branch: { $in: bankBranchIds } };
+      }
+    }
+    const totalStaff = await Staff.countDocuments(staffBranchFilter);
 
     // Count staff per manager's branch (Staff collection = all staff)
     const managerBranchIds = managers.map((m) => m.branch?._id).filter(Boolean);

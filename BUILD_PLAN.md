@@ -50,6 +50,9 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 | Role-based dashboards (admin/manager overview)            | ✅ Done (Phase 8c) |
 | Superadmin platform console + key request flow            | ✅ Done (Phase 12) |
 | Four-model split (Staff/Admin/Manager/Superadmin) + kind JWT | ✅ Done (Phase 13 WP1–2) |
+| Four login endpoints + admin self-registration + invites    | ✅ Done (Phase 13 WP3) |
+| Provisioning controllers (manager/staff, temp password)     | ✅ Done (Phase 13 WP4) |
+| Staff-only serving + requireScope wiring on v1              | ✅ Done (Phase 13 WP5) |
 
 ---
 
@@ -88,13 +91,70 @@ The demo frontend becomes a proof-of-concept, not the primary product. Banks cal
 - [x] Frontend: StaffSubTab staff-only form; AdminOverview manager-create form deferred to WP4
 - [x] Tests: `modelForToken` (7), `tenantMatch` (5), `fourModelSplit` schemas (8) → **80 backend** green; **8 frontend** + `vite build` green
 
-### WP3 — Four login endpoints + admin public registration + invites ⏳
-### WP4 — Provisioning controllers (manager/staff create, temp password, invite links) ⏳
-### WP5 — Role/permission enforcement (manager cannot serve; requireScope wiring) ⏳
-### WP6 — Dashboard moves off v1 onto JWT `/api/*` surface ⏳
-### WP7 — Frontend: 4 login pages, kill demo switcher/API-key mode ⏳
-### WP8 — Platform console adjustments (Superadmin model everywhere) ⏳
+### WP3 — Four login endpoints + admin public registration + invites ✅
+- [x] `POST /api/auth/login/{staff,manager,admin}` — kind JWT `{ id, kind, role }`, generic 401 (no enumeration)
+- [x] `POST /api/auth/register/admin` — public, instant, `bankName` required, `registerLimiter` (5/15min)
+- [x] `invite.model.js` — SHA-256 at rest, kind manager|staff, bank/branch scope, 7d TTL, single-use `usedAt`
+- [x] `POST /api/auth/invites/manager` (admin, bank from JWT) / `invites/staff` (admin|manager, branch-in-bank check)
+- [x] `POST /api/auth/register/{manager,staff}` — redeem token, path/kind must match, invitee sets own password
+- [x] `GET /api/auth/me` + `POST /api/auth/change-password` (any kind; clears `mustChangePassword`)
+- [x] Validators: login×3, registerAdmin, registerWithInvite, invites, changePassword
+
+### WP4 — Provisioning controllers (manager/staff create, temp password, invite links) ✅
+- [x] `manager.controller.js`: create (bank denormalized from branch, branch-in-bank check), list (bank-scoped), reassign branch, deactivate
+- [x] `POST /api/managers` — admin JWT; dual path: body password OR server temp password (`Cue-XXXXXX-XXXXXX`, returned once, `mustChangePassword: true`)
+- [x] `createStaff`: same dual path; admin branch must be in admin.bank; welcome email **never includes** temp password
+- [x] `getAllStaff` / `deactivateStaff` / `assignStaffToBranch` / `assignQueuesToStaff`: manager → own branch; admin → all `Branch.bank === Admin.bank` (403 otherwise); new `getStaffById`
+- [x] JWT admin key-request routes: `POST/GET /api/admin/api-key-requests`, `GET /:id` one-time reveal — `bankName` always `req.user.bank`
+- [x] Mounted in `app.js`: `/api/managers`, `/api/admin/api-key-requests`; staff routes add `GET /:staffId`
+
+### WP5 — Role/permission enforcement (manager cannot serve; requireScope wiring) ✅
+- [x] `requireStaffServing` middleware: staff pass; manager/admin/superadmin → 403 with clear messages; prefers signed `kind` over `role`
+- [x] JWT ticket routes: call-next / call / complete / skip / my-stats / my-history → `requireStaffServing` only (no authorize)
+- [x] Oversight kept for manager/admin: branch tickets, recall, priority; close/open day stays manager
+- [x] Controller defense-in-depth: `denyNonStaffServe` in callNext/call/complete/skip/my-stats/my-history (works on both JWT and v1 paths)
+- [x] v1 requireScope wiring: tickets write/read, branches:read (branch/queue/counter/board), staff:read, analytics:read
+- [x] v1 role authorize removed where resolveStaffUser always sets role "staff" (would 403 every API-key request); controller accepts `req.apiKey` integration path for admin overview
+
+### WP6 — Dashboard moves off v1 onto JWT `/api/*` surface ✅
+### WP7 — Frontend: 4 login pages, kill demo switcher/API-key mode ✅
+### WP8 — Platform console adjustments (Superadmin model everywhere) ✅
 ### WP9 — Docs, env cleanup, full test pass ⏳
+
+**WP6 checklist:**
+- [x] Backend: `GET /api/admin/overview` (protect + authorize("admin")) — bank scope from `Admin.bank`
+- [x] `getAdminOverview` accepts JWT path: `bank = req.bankName || req.user?.bank`
+- [x] Branch create/list/update/delete JWT bank-scoping (`Admin.bank` when no API key)
+- [x] Analytics `canAccessBranch` uses `Admin.bank` for JWT admin
+- [x] Frontend API modules migrated off `v1Api` → `apiClient` + Bearer `token`:
+  - `manageApi.js`, `adminApi.js`, `apiKeyRequestApi.js`, `ticketsApi.js`
+  - `useCounterOperations`, `useMyCounter`, `useMyStats`, `useTicketHistory`
+  - `useMyTicket` (public lookup stays unauthenticated; cancel uses JWT)
+- [x] All StaffHome components pass `auth.token` (StaffSubTab, CounterSubTab, CounterConsole, ManagerOverview, AdminOverview, TicketHistory)
+- [x] Staff list pagination shape: `res.data` array (paginatedResponse spread)
+
+**WP7 checklist:**
+- [x] JWT-only `AuthContext` — `login(staff|manager|admin|superadmin)`, `getAuthMe` refresh, no demo auto-init, no `VITE_DEMO_API_KEY`, no `switchUser`
+- [x] Four login surfaces: `/login/staff`, `/login/manager`, `/login/admin` (+ existing `/platform/login`)
+- [x] `ProtectedRoute` requires `auth.token` (not apiKey); role allow-list still enforced
+- [x] Navbar: demo UserSwitcher removed; signed-out “Sign in” → `/login/staff`
+- [x] `authApi.changePassword` targets `POST /auth/change-password` with Bearer token (kind-aware, not Staff-only)
+- [x] `mustChangePassword` force prompt on `/staff` + `clearMustChangePassword` after rotation
+- [x] Counter open allows staff on their own assigned counter (symmetric with close)
+- [x] LoginPage validates `kind` ∈ {staff, manager, admin}
+- [x] Backend demo surface removed: `demo.controller.js`, `routes/v1/demo.routes.js`, `GET /api/v1/demo/users` mount
+- [x] Guest ticket pages off v1 → public `/api/tickets*` + new `GET /api/queues/public` (no auth)
+
+**WP8 checklist:**
+- [x] Platform login response identity key → `user` (matches bank logins); payload includes `role`/`kind`/`mustChangePassword`; JWT still `{ id, kind: "superadmin", role: "superadmin" }`
+- [x] Legacy `routes/v1/apiKeyRequest.routes.js` **removed** + unmounted from `v1/index.js` (`authorize("admin")` always 403’d under `resolveStaffUser` role `"staff"`; dashboard uses JWT `/api/admin/api-key-requests`)
+- [x] Stale comments updated: platform api-key routes, platform key controller, `apiKeyRequest.model.js` → JWT admin path (requestedBy → Admin)
+- [x] `ProtectedRoute`: unauthenticated `/platform*` → `/platform/login` (not marketing home)
+- [x] `AuthInterceptor`: superadmin 401 → `/platform/login` with `sessionExpired` state (PlatformLogin already renders the notice)
+- [x] PlatformDashboard / platformApi / PlatformLogin already Superadmin-model + JWT-only (verified, no change)
+- [x] `reviewedBy` → Superadmin on platform approve/reject (tested)
+- [x] Tests: `tests/platform/superadmin.platform.test.js` — login shape + JWT kind, reject bad password, getPlatformMe, approve/reject stamp `reviewedBy`, v1 router has no `api-key-requests`
+- [x] authorize("superadmin") isolation already covered by `superadmin.authorize.test.js` + `modelForToken.test.js`
 
 ---
 

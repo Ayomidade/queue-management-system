@@ -5,7 +5,7 @@ import { sendError } from "../utils/response.js";
  * Resolve Staff User Middleware
  *
  * After API key authentication, resolves the staff member making the
- * request. Used by bank integrations (and the demo frontend) that pass
+ * request. Used by bank integrations that pass
  * an explicit identity — the bank's system says WHO is acting.
  *
  * Identity sources (in order):

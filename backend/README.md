@@ -1,313 +1,258 @@
 # Cue — Backend API
 
-A REST + real-time backend for managing customer queues across bank branches. Customers join a queue remotely and track their position and estimated wait time; staff pull the next customer with one call; managers run their branch; admins run the network.
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Roles & Access](#roles--access)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [API Reference](#api-reference)
-- [Response Format](#response-format)
-- [Real-Time Events](#real-time-events-socketio)
+Cue's backend is a hosted, multi-tenant queue integration service. It provides public guest ticket APIs, a JWT-authenticated operations dashboard, and a scoped API-key integration API. Banks use their own customer-facing applications; Cue's frontend customer pages are a proof-of-concept.
 
 ## Features
 
-- **Role-based access** across four roles: customer, staff, manager, admin
-- **Multi-branch, multi-queue** support (services are scoped per branch)
-- **Priority-aware dispatch** — priority tickets (elderly, disabled, VIP) always served ahead
-- **Live position & ETA** — customers see how many people are ahead and estimated wait time
-- **Real-time updates** via Socket.io — branch boards and customer ticket status update instantly
-- **Automatic no-show handling** — called tickets auto-expire to "skipped"
-- **Branch analytics** — live dashboard, end-of-day reports, and per-staff performance tracking
-- **AI Assistant** — natural-language queue operations and analytics summaries via Groq API
-- **Kiosk & Appointment booking** — anonymous ticket creation and scheduled appointments
-- **Public boards** — live "Now Serving" boards per branch and network-wide hub
-- **Nearest branch finder** — geolocation-based branch discovery with live queue data
-- **Contact form** — validated customer inquiries with email notifications
-- **Webhook support** — subscribe to queue events via HTTP callbacks
-- **Slack/Discord notifications** — get alerts for ticket calls, queue thresholds, day open/close
-- **Browser push notifications** — VAPID-based Web Push for ticket status and queue alerts
-- **Email notifications** — ticket created, called, completed, and cancelled emails via Resend
-- **Audit log** — track who did what across the system
-- **Bulk staff import** — CSV upload for onboarding multiple staff at once
-- **Export analytics** — download reports as CSV or HTML
-- **Peak hours heatmap** — visualize busiest times per branch
-- **Staff leaderboard** — gamified daily/weekly/monthly performance rankings
-- **Service-level wait time targets** — set expected handling times per queue, track on-target status
-- **Compression** — gzip responses for faster transfers
-- **Rate-limited auth** to slow down brute-force attempts
-- **Automated tests** — 35 backend tests covering utils, middleware, and validators
+- Public guest ticket creation, lookup, and cancellation
+- Branch, queue, counter, ticket, and appointment management
+- Staff-only ticket serving operations
+- Manager branch oversight and analytics
+- Bank-admin team and branch provisioning
+- Superadmin platform console for API keys, usage, and key requests
+- Four identity collections: `Staff`, `Manager`, `Admin`, and `Superadmin`
+- JWT `kind` and `role` claims with model-aware authentication dispatch
+- Scoped, bcrypt-hashed API keys with rate limits, expiry, suspension, revocation, and rotation
+- Bank isolation through `bankScope` and `tenantMatch`
+- One-time encrypted bank-admin API-key reveal using AES-256-GCM
+- Socket.io live board and ticket events
+- Appointment and kiosk flows
+- OpenAPI route catalog and Swagger UI
 
-## Tech Stack
+## Tech stack
 
-| Layer         | Choice                |
-| ------------- | --------------------- |
-| Runtime       | Node.js (ESM)         |
-| Framework     | Express 5             |
-| Database      | MongoDB + Mongoose    |
-| Real-time     | Socket.io             |
-| Auth          | JWT, bcrypt           |
-| Validation    | express-validator     |
-| Email         | Resend SDK            |
-| AI            | Groq API (LLaMA 3.3) |
-| Rate limiting | express-rate-limit    |
-| Compression   | compression           |
-| File upload   | multer                |
-| Testing       | vitest                |
+| Layer          | Choice                  |
+| -------------- | ----------------------- |
+| Runtime        | Node.js ESM             |
+| Framework      | Express 5               |
+| Database       | MongoDB + Mongoose      |
+| Real-time      | Socket.io               |
+| Authentication | JWT, bcrypt             |
+| Validation     | express-validator       |
+| Documentation  | OpenAPI 3 + Swagger UI  |
+| Key encryption | Node crypto AES-256-GCM |
+| Testing        | Vitest                  |
 
-## Roles & Access
+## API documentation
 
-| Role         | Scope                   | Can do                                                                                                                                                                                                                                                         |
-| ------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **customer** | self only               | join a queue, view their own active ticket (with live position/ETA), cancel their own ticket, chat with AI assistant                                                                                                                                           |
-| **staff**    | one counter, one branch | pull/call the next ticket, complete or skip a ticket, close their own assigned counter, chat with AI assistant (with analytics tools)                                                                                                                          |
-| **manager**  | one branch              | everything staff can, plus: create/deactivate staff, full counter control, ticket overrides (recall, priority), branch analytics, daily reports, staff performance, wait time targets, bulk staff import, webhook management, export analytics, AI assistant    |
-| **admin**    | entire network          | branches, queues, staff of any role/branch, cross-branch access, webhook management, network-wide analytics, AI assistant with full admin tools                                                                                                                |
+The complete route catalog is [`src/docs/openapi.yaml`](./src/docs/openapi.yaml).
 
-Customers and admins live in the `User` collection; staff and managers live in a separate `Staff` collection with their own login.
+When the server is running:
 
-## Project Structure
+- Swagger UI: `GET /api/docs`
+- OpenAPI JSON: `GET /api/docs/openapi.json`
 
+The OpenAPI document covers system, authentication, dashboard, public v1, authenticated v1, platform, branch, staff, manager, ticket, analytics, kiosk, appointment, webhook, and integration routes. Authenticated v1 operations include their required API-key scope as an `x-required-scope` extension.
+
+## Authentication surfaces
+
+### Dashboard JWT
+
+```http
+Authorization: Bearer <jwt>
 ```
+
+JWTs contain `{ id, kind, role }`. `kind` selects the identity model: `staff`, `manager`, `admin`, or `superadmin`.
+
+| Identity   | Login endpoint                 | Dashboard access               |
+| ---------- | ------------------------------ | ------------------------------ |
+| Staff      | `POST /api/auth/login/staff`   | `/staff`                       |
+| Manager    | `POST /api/auth/login/manager` | `/staff` with branch oversight |
+| Bank admin | `POST /api/auth/login/admin`   | `/staff` and `/integration`    |
+| Superadmin | `POST /api/platform/login`     | `/platform`                    |
+
+Bank admins self-register at `POST /api/auth/register/admin`. Managers and staff are provisioned with invites or server-generated temporary passwords.
+
+### Public guest API
+
+No JWT or API key is required:
+
+```text
+GET   /api/v1/queues
+POST  /api/v1/tickets
+GET   /api/v1/tickets/public/:id
+PATCH /api/v1/tickets/:id/cancel
+```
+
+The public v1 router is mounted before the authenticated v1 router, so the guest flow is the effective handler for these paths.
+
+### Authenticated integration API
+
+```http
+X-API-Key: cue_<key>
+```
+
+Authenticated v1 requests pass through:
+
+```text
+authenticateApiKey
+  → resolveStaffUser
+  → tenantMatch
+  → apiKeyRateLimit
+  → bankScope
+  → resource router
+```
+
+Every request is restricted to the API key's bank. Scope checks use the key's `scopes` array; the `admin` scope bypasses individual scope checks.
+
+Available scopes:
+
+| Scope             | Access                                                              |
+| ----------------- | ------------------------------------------------------------------- |
+| `branches:read`   | Branches, queues, counters, boards, and branch mutations            |
+| `tickets:read`    | Ticket status, branch tickets, staff history, and ticket reads      |
+| `tickets:write`   | Ticket creation, cancellation, calling, completion, and day control |
+| `staff:read`      | Staff listing and provisioning                                      |
+| `analytics:read`  | Analytics and staff-performance reports                             |
+| `webhooks:manage` | Webhook operations                                                  |
+| `admin`           | Full access; reserved for superadmin-created keys                   |
+
+### API key test connection
+
+`GET /api/test-connection` validates an active key without requiring a scope or consuming the v1 rate limiter. It returns the key's bank, prefix, scopes, rate limit, active state, and creation time.
+
+## Route groups
+
+| Prefix                      | Authentication        | Purpose                                                                |
+| --------------------------- | --------------------- | ---------------------------------------------------------------------- |
+| `/health`                   | Public                | Service health                                                         |
+| `/api/auth/*`               | Public/JWT            | Four-role login, registration, invitations, identity, password changes |
+| `/api/users/*`              | JWT                   | Current profile and password                                           |
+| `/api/branches/*`           | Public/JWT            | Public branch details, nearest-branch search, branch administration    |
+| `/api/staff/*`              | Public/JWT            | Staff login, listing, provisioning, queue assignment, deactivation     |
+| `/api/managers/*`           | JWT admin             | Manager provisioning and branch assignment                             |
+| `/api/admin/*`              | JWT admin             | Bank overview and API-key requests                                     |
+| `/api/queues/*`             | Public/JWT            | Public queue lookup and queue administration                           |
+| `/api/counters/*`           | JWT                   | Counter creation, assignment, opening, and closing                     |
+| `/api/tickets/*`            | Public/JWT            | Guest tickets and staff serving operations                             |
+| `/api/analytics/*`          | JWT                   | Branch analytics and reports                                           |
+| `/api/advanced-analytics/*` | JWT                   | Peak hours, leaderboard, and wait targets                              |
+| `/api/board/*`              | Public                | Public board hub and branch boards                                     |
+| `/api/kiosk/*`              | Public                | Kiosk ticket flow                                                      |
+| `/api/appointments/*`       | Public                | Legacy guest appointment flow                                          |
+| `/api/webhooks/*`           | JWT                   | Webhook lifecycle                                                      |
+| `/api/platform/*`           | Public/JWT superadmin | Platform login, keys, usage, and key-request review                    |
+| `/api/v1/*`                 | Public/API key        | Customer guest flow and bank integration API                           |
+| `/api/test-connection`      | API key               | Key validation                                                         |
+| `/api/docs/*`               | Public                | OpenAPI JSON and Swagger UI                                            |
+
+See the OpenAPI document for the complete method/path list and operation summaries.
+
+## Project structure
+
+```text
 src/
-  config/         # database connection
-  controllers/    # request handlers
-  jobs/           # background jobs (no-show sweeper)
-  middlewares/    # auth, validation, error handling, rate limiting, audit logging
-  models/         # Mongoose schemas
-  routes/         # route definitions
-  scripts/        # one-off scripts (admin seeding)
-  services/       # email, Groq AI, webhooks, notifications
-  utils/          # shared response helpers, pagination
-  validators/     # express-validator rule sets
-  app.js          # Express app + route mounting
-  server.js       # HTTP server, DB connection, socket + job startup
-  socket.js       # Socket.io initialization and emit helpers
+  config/       database and environment configuration
+  controllers/  route handlers
+  docs/         OpenAPI YAML
+  middlewares/  JWT, API-key, tenant, validation, rate limiting, audit, errors
+  models/       Staff, Manager, Admin, Superadmin, branches, queues, tickets, keys
+  routes/       legacy, dashboard, platform, and v1 routers
+  scripts/      superadmin/admin/API-key seeds and migrations
+  services/     webhooks and supporting services
+  utils/        responses, pagination, key encryption, validation helpers
+  validators/   express-validator rule sets
+  app.js        Express app and route mounting
+  server.js     HTTP, database, Socket.io, and jobs startup
+  socket.js     Socket.io setup and event helpers
 ```
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
 - Node.js 18+
-- A MongoDB instance (local or Atlas)
-- Resend API key for outgoing email
-- Groq API key for AI assistant (optional)
+- MongoDB 6+ or MongoDB Atlas
+- OpenSSL-compatible Node runtime for AES-256-GCM
 
-### Installation
+### Install
 
 ```bash
-git clone <repo-url>
 cd backend
 npm install
+cp .env.example .env
 ```
 
-### Environment Variables
+Set at least `MONGO_URI` and `JWT_SECRET`. Set `KEY_WRAP_SECRET` independently in production for key-reveal encryption.
 
-Create a `.env` file in the backend root:
-
-| Variable                 | Required         | Default        | Description                                                       |
-| ------------------------ | ---------------- | -------------- | ----------------------------------------------------------------- |
-| `PORT`                   | No               | `3000`         | Port the server listens on                                        |
-| `MONGO_URI`              | Yes              | —              | MongoDB connection string                                         |
-| `JWT_SECRET`             | Yes              | —              | Secret used to sign auth tokens                                   |
-| `RESEND_API_KEY`         | Yes              | —              | Resend API key for email                                          |
-| `RESEND_FROM`            | No               | —              | "From" address for outgoing email                                 |
-| `GROQ_API_KEY`           | No               | —              | Groq API key for AI assistant                                     |
-| `GROQ_MODEL`             | No               | `llama-3.3-70b-versatile` | Groq model to use                                        |
-| `CORS_ORIGIN`            | No               | `*`            | Allowed origin for CORS                                           |
-| `TICKET_NO_SHOW_MINUTES` | No               | `5`            | Minutes a "called" ticket waits before auto-expiring to "skipped" |
-| `SEED_ADMIN_EMAIL`       | Only for seeding | —              | Email for the one-time admin bootstrap script                     |
-| `SEED_ADMIN_PASSWORD`    | Only for seeding | —              | Password for the bootstrap admin (min 8 characters)               |
-
-### Bootstrap your first admin
+### Seed the platform operator
 
 ```bash
-npm run seed:admin
+npm run seed:superadmin
 ```
 
-### Running the server
+The superadmin is the only account intended to be seeded in production. Bank admins self-register; managers and staff are provisioned at runtime.
+
+### Run
 
 ```bash
-npm run dev     # development, with nodemon
-npm start       # production
+npm run dev
+npm start
 ```
 
-### Running tests
+### Test
 
 ```bash
-npm test        # single run
-npm run test:watch  # watch mode
+npm test
+npm run test:watch
 ```
 
-## API Reference
+The backend currently has 137 passing tests across 17 test files.
 
-All routes are prefixed with `/api`. Protected routes require `Authorization: Bearer <token>`.
+## Environment variables
 
-### Auth — `/api/auth`
+See [`.env.example`](./.env.example) for the complete template.
 
-| Method | Endpoint              | Access | Description                           |
-| ------ | --------------------- | ------ | ------------------------------------- |
-| POST   | `/register`           | Public | Register a customer account           |
-| POST   | `/login`              | Public | Log in (customer or admin)            |
-| POST   | `/verify-email`       | Public | Verify email address                  |
-| POST   | `/resend-verification`| Public | Resend verification email             |
-| POST   | `/forgot-password`    | Public | Request password reset                |
-| POST   | `/reset-password`     | Public | Reset password with token             |
+| Variable                 |   Required | Description                                                            |
+| ------------------------ | ---------: | ---------------------------------------------------------------------- |
+| `MONGO_URI`              |        Yes | MongoDB connection string                                              |
+| `JWT_SECRET`             |        Yes | JWT signing secret                                                     |
+| `JWT_EXPIRES_IN`         |         No | JWT lifetime, default `1d`                                             |
+| `PORT`                   |         No | HTTP port, default `3000`                                              |
+| `CORS_ORIGIN`            |         No | Allowed frontend origin                                                |
+| `KEY_WRAP_SECRET`        | Production | AES-256-GCM secret for one-time key reveal; falls back to `JWT_SECRET` |
+| `TICKET_NO_SHOW_MINUTES` |         No | No-show timeout, default `5`                                           |
+| `RESEND_API_KEY`         |   Optional | Email delivery                                                         |
+| `RESEND_FROM`            |   Optional | Email sender                                                           |
+| `SEED_SUPERADMIN_*`      |    Seeding | Superadmin bootstrap values                                            |
+| `SEED_ADMIN_*`           |  Local dev | Optional legacy admin seed values                                      |
+| `SEED_API_KEY_*`         |  Local dev | Optional local API-key seed values                                     |
+| `BRAND_*`                |         No | Environment-only brand configuration                                   |
 
-### Staff Auth & Management — `/api/staff`
+## Response format
 
-| Method | Endpoint              | Access         | Description                                    |
-| ------ | --------------------- | -------------- | ---------------------------------------------- |
-| POST   | `/login`              | Public         | Staff/manager login                            |
-| POST   | `/`                   | Admin, Manager | Create a staff account                         |
-| GET    | `/`                   | Admin, Manager | List staff                                     |
-| PATCH  | `/:staffId/assign`    | Admin          | Move staff to a different branch               |
-| DELETE | `/:staffId`           | Admin, Manager | Deactivate a staff account                     |
-| POST   | `/import`             | Admin, Manager | Bulk import staff from CSV                     |
-
-### Branches — `/api/branches`
-
-| Method | Endpoint | Access         | Description                 |
-| ------ | -------- | -------------- | --------------------------- |
-| POST   | `/`      | Admin          | Create a branch             |
-| GET    | `/`      | Admin, Public  | List all active branches    |
-| GET    | `/:id`   | Admin, Public  | Get a single branch         |
-| PUT    | `/:id`   | Admin, Manager | Update branch details       |
-| DELETE | `/:id`   | Admin          | Soft delete (sets isActive) |
-
-### Tickets — `/api/tickets`
-
-| Method | Endpoint        | Access                | Description                                                              |
-| ------ | --------------- | --------------------- | ------------------------------------------------------------------------ |
-| POST   | `/`             | Customer              | Join a queue, get a ticket                                               |
-| GET    | `/my-ticket`    | Customer              | Get active ticket with live position/ETA                                 |
-| PATCH  | `/:id/cancel`   | Customer              | Cancel own ticket                                                        |
-| POST   | `/call-next`    | Staff, Manager, Admin | Pull next waiting ticket (priority-aware)                                |
-| PATCH  | `/:id/call`     | Staff, Manager, Admin | Manually call a specific ticket                                          |
-| PATCH  | `/:id/complete` | Staff, Manager, Admin | Mark ticket completed                                                    |
-| PATCH  | `/:id/skip`     | Staff, Manager, Admin | Mark ticket skipped                                                      |
-| PATCH  | `/:id/recall`   | Staff, Manager, Admin | Recall skipped ticket back into queue                                    |
-| PATCH  | `/:id/priority` | Manager, Admin        | Flag ticket as priority                                                  |
-| POST   | `/close-day`    | Manager               | Close the day, complete active tickets                                   |
-| POST   | `/open-day`     | Manager               | Open the day for new tickets                                             |
-
-### Kiosk — `/api/kiosk`
-
-| Method | Endpoint                  | Access | Description                   |
-| ------ | ------------------------- | ------ | ----------------------------- |
-| POST   | `/tickets`                | Public | Create anonymous kiosk ticket  |
-| GET    | `/tickets/:kioskId`       | Public | Track kiosk ticket status      |
-| PATCH  | `/tickets/:kioskId/cancel`| Public | Cancel kiosk ticket            |
-
-### Appointments — `/api/appointments`
-
-| Method | Endpoint      | Access | Description                          |
-| ------ | ------------- | ------ | ------------------------------------ |
-| GET    | `/slots`      | Public | Available time slots for a date      |
-| POST   | `/`           | Public | Book an appointment ticket           |
-| GET    | `/:kioskId`   | Public | Look up appointment details          |
-
-### Analytics — `/api/analytics`
-
-| Method | Endpoint                                    | Access         | Description                                  |
-| ------ | ------------------------------------------- | -------------- | -------------------------------------------- |
-| GET    | `/branch/:branchId`                         | Admin, Manager | Live dashboard                               |
-| GET    | `/branch/:branchId/daily-report?date=`      | Admin, Manager | End-of-day summary                           |
-| GET    | `/branch/:branchId/staff-performance?date=` | Admin, Manager | Staff performance rankings                   |
-
-### Advanced Analytics — `/api/advanced-analytics`
-
-| Method | Endpoint                                       | Access         | Description                             |
-| ------ | ---------------------------------------------- | -------------- | --------------------------------------- |
-| GET    | `/branch/:branchId/peak-hours?days=`           | Admin, Manager | Peak hours heatmap data                 |
-| GET    | `/branch/:branchId/leaderboard?period=`        | Admin, Manager | Staff leaderboard                       |
-| GET    | `/branch/:branchId/wait-targets`               | Admin, Manager | Service wait time targets               |
-| PUT    | `/branch/:branchId/wait-targets`               | Admin, Manager | Update wait time targets                |
-
-### Webhooks — `/api/webhooks`
-
-| Method | Endpoint       | Access         | Description             |
-| ------ | -------------- | -------------- | ----------------------- |
-| POST   | `/`            | Admin, Manager | Create a webhook        |
-| GET    | `/`            | Admin, Manager | List webhooks           |
-| DELETE | `/:id`         | Admin          | Delete a webhook        |
-| PATCH  | `/:id/toggle`  | Admin          | Enable/disable webhook  |
-
-### Export — `/api/export`
-
-| Method | Endpoint                          | Access         | Description              |
-| ------ | --------------------------------- | -------------- | ------------------------ |
-| GET    | `/branch/:branchId/csv?date=`     | Admin, Manager | Export analytics as CSV  |
-| GET    | `/branch/:branchId/pdf?date=`     | Admin, Manager | Export analytics as HTML |
-
-### Agent — `/api/agent`
-
-| Method | Endpoint | Access | Description                      |
-| ------ | -------- | ------ | -------------------------------- |
-| POST   | `/chat`  | Any    | Send messages to AI assistant    |
-
-### Contact — `/api/contact`
-
-| Method | Endpoint | Access | Description          |
-| ------ | -------- | ------ | -------------------- |
-| POST   | `/`      | Public | Submit contact form   |
-
-## Response Format
-
-Every endpoint returns the same envelope.
-
-**Success:**
+Success:
 
 ```json
 {
   "status": "success",
-  "message": "Ticket created successfully",
-  "data": { "...": "..." }
+  "message": "Request completed",
+  "data": {},
+  "meta": {}
 }
 ```
 
-**Error:**
+Error:
 
 ```json
 {
   "status": "error",
-  "message": "Validation failed",
-  "errors": ["Email is required"]
+  "message": "Request failed",
+  "errors": ["Optional validation details"]
 }
 ```
 
-## Real-Time Events (Socket.io)
+Authenticated v1 rate-limit responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` when the limit is exceeded.
 
-Clients connect and join rooms to receive live updates:
+## Real-time events
+
+Clients can connect to Socket.io and join rooms:
 
 ```js
-socket.emit("branch:join", branchId); // live branch board
-socket.emit("user:join", userId);     // customer's own ticket
+socket.emit("branch:join", branchId);
 ```
 
-| Event              | Room                                 | Fired when                          |
-| ------------------ | ------------------------------------ | ----------------------------------- |
-| `queue:updated`    | `branch:{branchId}`                  | A new ticket is created             |
-| `ticket:called`    | `branch:{branchId}`, `user:{userId}` | A ticket is called                  |
-| `ticket:completed` | same                                 | A ticket is completed               |
-| `ticket:skipped`   | same                                 | Staff/manager skips a ticket        |
-| `ticket:cancelled` | same                                 | A customer cancels their ticket     |
-| `ticket:recalled`  | same                                 | Manager recalls a skipped ticket    |
-| `day:opened`       | `branch:{branchId}`                  | Day is opened                       |
-| `day:closed`       | `branch:{branchId}`                  | Day is closed                       |
-
-## Testing
-
-```bash
-npm test        # run all tests
-npm run test:watch  # watch mode
-```
-
-Tests cover utility functions, middleware (auth, validation, error handling), and response formatting.
+Common events include `queue:updated`, `ticket:called`, `ticket:completed`, `ticket:skipped`, `ticket:cancelled`, `ticket:recalled`, `day:opened`, and `day:closed`.
 
 ## License
 

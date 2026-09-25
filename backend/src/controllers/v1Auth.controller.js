@@ -4,7 +4,7 @@ import { sendSuccess } from "../utils/response.js";
  * GET /api/v1/auth/me
  *
  * Returns the staff identity resolved from the API key.
- * Used by the demo frontend to populate auth state (id, branch, role).
+ * Used by bank integrations to populate auth state (id, branch, role).
  */
 export const getme = async (req, res, next) => {
   try {

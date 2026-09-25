@@ -1,14 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
-import { apiClient, ApiError, v1Api } from "../../lib/apiClient";
+import { apiClient, ApiError } from "../../lib/apiClient";
+import { useAuth } from "../auth/AuthContext";
 
-export const useTicketHistory = (apiKey) => {
+/**
+ * Ticket history — JWT `/api/tickets/my-history` (WP6).
+ * Recall is a manager/admin override, not a serve action — authorize()
+ * allows staff/manager/admin.
+ */
+export const useTicketHistory = () => {
+  const { auth } = useAuth();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const token = auth?.token;
 
   const load = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await v1Api.get("/tickets/my-history", { apiKey });
+      const res = await apiClient.get("/tickets/my-history", { token });
       setTickets(res.data);
       setError(null);
     } catch (err) {
@@ -16,7 +28,7 @@ export const useTicketHistory = (apiKey) => {
     } finally {
       setLoading(false);
     }
-  }, [apiKey]);
+  }, [token]);
 
   useEffect(() => {
     load();
@@ -25,7 +37,7 @@ export const useTicketHistory = (apiKey) => {
   const recall = useCallback(
     async (ticketId) => {
       try {
-        await v1Api.patch(`/tickets/${ticketId}/recall`, {}, { apiKey });
+        await apiClient.patch(`/tickets/${ticketId}/recall`, {}, { token });
         await load();
         return true;
       } catch (err) {
@@ -35,7 +47,7 @@ export const useTicketHistory = (apiKey) => {
         return false;
       }
     },
-    [apiKey, load],
+    [token, load],
   );
 
   return { tickets, loading, error, recall, refetch: load };

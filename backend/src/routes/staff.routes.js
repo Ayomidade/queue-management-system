@@ -3,6 +3,7 @@ import {
   createStaff,
   loginStaff,
   getAllStaff,
+  getStaffById,
   assignStaffToBranch,
   deactivateStaff,
   assignQueuesToStaff,
@@ -18,6 +19,7 @@ import validate from "../middlewares/validate.js";
 
 const router = express.Router();
 
+// Legacy staff login path — prefer POST /api/auth/login/staff (WP3).
 router.post("/login", authLimiter, loginValidator, validate, loginStaff);
 
 router.use(protect);
@@ -25,6 +27,7 @@ router.use(authorize("admin", "manager"));
 
 router.post("/", createStaffValidator, validate, createStaff);
 router.get("/", getAllStaff);
+router.get("/:staffId", getStaffById);
 router.patch(
   "/:staffId/assign",
   authorize("admin"),

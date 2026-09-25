@@ -1,9 +1,9 @@
-import dotenv from "dotenv";
+import { config } from "dotenv";
 import mongoose from "mongoose";
 import connectDB from "../config/db.js";
 import Admin from "../models/admin.model.js";
 
-dotenv.config();
+config();
 
 /**
  * Seeds a bank admin into the Admin collection.

@@ -1,1125 +1,1422 @@
 openapi: 3.0.3
 info:
-  title: Queue Management API
+  title: Cue Queue Integration API
+  version: 2.0.0
   description: |
-    REST API for the queue management system. Supports customer ticket
-    creation, staff counter operations, manager/admin dashboards, public
-    board displays, kiosk check-in, and appointment booking.
+    Cue is a hosted, multi-tenant queue integration service for banks.
 
-    **Authentication:** Most endpoints require a Bearer token in the
-    `Authorization` header. Public endpoints (board, branch info, kiosk,
-    appointments, nearest branch) require no auth.
+    There are three authentication surfaces:
 
-    **Rate limits:** Auth routes: 10 req / 15 min. Public writes (kiosk,
-    appointments): 20 req / 5 min. Public reads: 60 req / 1 min.
-  version: 1.0.0
-  contact:
-    name: Queue Management Team
+    * Public guest routes under `/api/v1` do not require authentication.
+    * Dashboard routes under `/api` use a JWT Bearer token.
+    * Authenticated v1 routes use an `X-API-Key` header, are rate-limited per key,
+      and are restricted to the key's bank and scopes.
 
+    The public v1 guest routes are mounted before the authenticated v1 pipeline.
 servers:
-  - url: http://localhost:3000/api
+  - url: http://localhost:3000
     description: Local development
-
+  - url: https://api.example.com
+    description: Production deployment
 tags:
+  - name: System
   - name: Auth
-    description: Registration, login, email verification, password reset
-  - name: Staff
-    description: Staff account management (admin/manager)
-  - name: Branches
-    description: Branch CRUD, public info, nearest-branch lookup
   - name: Users
-    description: Profile and password change for authenticated users
+  - name: Branches
+  - name: Staff
+  - name: Managers
   - name: Queues
-    description: Service queue management
   - name: Counters
-    description: Counter assignment and open/close
   - name: Tickets
-    description: Ticket lifecycle — create, call, complete, skip, recall
   - name: Analytics
-    description: Branch analytics, daily reports, staff performance
   - name: Board
-    description: Public live board data
   - name: Kiosk
-    description: Anonymous kiosk check-in
   - name: Appointments
-    description: Appointment booking and slot lookup
-
+  - name: Webhooks
+  - name: Integrations
+  - name: Admin
+  - name: Platform
+  - name: Public V1
+  - name: V1
 paths:
-  # ─── Health ───────────────────────────────────────────
+  /:
+    get:
+      tags: [System]
+      summary: Service welcome
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
   /health:
     get:
       tags: [System]
       summary: Health check
+      security: []
       responses:
-        "200":
-          description: Service is healthy
-
-  # ─── Auth ─────────────────────────────────────────────
-  /auth/register:
-    post:
-      tags: [Auth]
-      summary: Register a new customer account
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password]
-              properties:
-                name:
-                  type: string
-                  example: Ada Lovelace
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-      responses:
-        "201":
-          description: User created, verification email sent
-        "400":
-          description: Validation error or user already exists
-
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Login as a customer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-      responses:
-        "200":
-          description: Login successful, returns JWT + user
-        "400":
-          description: Invalid credentials
-
-  /auth/verify-email:
-    post:
-      tags: [Auth]
-      summary: Verify email address with token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [token]
-              properties:
-                token:
-                  type: string
-      responses:
-        "200":
-          description: Email verified
-        "400":
-          description: Invalid or expired token
-
-  /auth/resend-verification:
-    post:
-      tags: [Auth]
-      summary: Resend verification email
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-      responses:
-        "200":
-          description: Success (always, prevents enumeration)
-
-  /auth/forgot-password:
-    post:
-      tags: [Auth]
-      summary: Request a password reset link
-      description: Works for both User and Staff accounts.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-      responses:
-        "200":
-          description: Success (always, prevents enumeration)
-
-  /auth/reset-password:
-    post:
-      tags: [Auth]
-      summary: Reset password with token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [token, newPassword]
-              properties:
-                token:
-                  type: string
-                newPassword:
-                  type: string
-                  minLength: 8
-      responses:
-        "200":
-          description: Password reset successfully
-        "400":
-          description: Invalid/expired token or validation error
-
-  # ─── Staff ────────────────────────────────────────────
-  /staff/login:
-    post:
-      tags: [Staff]
-      summary: Login as staff/manager
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-      responses:
-        "200":
-          description: Login successful
-        "400":
-          description: Invalid credentials
-
-  /staff:
-    post:
-      tags: [Staff]
-      summary: Create a staff account
-      security:
-        - bearerAuth: []
-      description: Admin can set any role/branch. Manager can only create plain staff in their own branch.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password]
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-                role:
-                  type: string
-                  enum: [staff, manager]
-                  default: staff
-                branch:
-                  type: string
-                  description: Branch ObjectId (required for admin, auto-set for manager)
-      responses:
-        "201":
-          description: Staff created
-        "400":
-          description: Validation error or email exists
+        '200': { $ref: '#/components/responses/Success' }
+  /api/test-connection:
     get:
-      tags: [Staff]
-      summary: List staff members
+      tags: [Integrations]
+      summary: Validate an API key
+      description: Validates an active API key and returns its bank, prefix, scopes, rate limit, and creation time. No API-key scope or rate limit is required.
+      x-auth: apiKey
       security:
-        - bearerAuth: []
-      description: Admin sees all active staff. Manager sees only their branch.
-      parameters:
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/LimitParam"
+        - apiKeyAuth: []
       responses:
-        "200":
-          description: Paginated staff list
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/docs/openapi.json:
+    get:
+      tags: [System]
+      summary: Download the OpenAPI document
+      security: []
+      responses:
+        '200':
+          description: OpenAPI JSON document
           content:
             application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/PaginatedResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Staff"
+              schema: { type: object }
+  /api/docs:
+    get:
+      tags: [System]
+      summary: Swagger UI documentation
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
 
-  /staff/{staffId}/assign:
+  /api/auth/login/staff:
+    post:
+      tags: [Auth]
+      summary: Log in as staff
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/login/manager:
+    post:
+      tags: [Auth]
+      summary: Log in as manager
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/login/admin:
+    post:
+      tags: [Auth]
+      summary: Log in as bank admin
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/register/admin:
+    post:
+      tags: [Auth]
+      summary: Register a bank admin
+      description: Public self-registration. The bank name is required and the endpoint is rate-limited.
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/auth/register/manager:
+    post:
+      tags: [Auth]
+      summary: Register a manager with an invite
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/auth/register/staff:
+    post:
+      tags: [Auth]
+      summary: Register staff with an invite
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/auth/invites/manager:
+    post:
+      tags: [Auth]
+      summary: Create a manager invite
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/auth/invites/staff:
+    post:
+      tags: [Auth]
+      summary: Create a staff invite
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get the current JWT identity
+      x-auth: jwt
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change the current password
+      x-auth: jwt
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/users/profile:
+    get:
+      tags: [Users]
+      summary: Get the current user profile
+      x-auth: jwt
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/users/change-password:
     patch:
-      tags: [Staff]
-      summary: Reassign staff to a different branch
+      tags: [Users]
+      summary: Change the current user password
+      x-auth: jwt
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - $ref: "#/components/parameters/StaffIdParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [branchId]
-              properties:
-                branchId:
-                  type: string
       responses:
-        "200":
-          description: Staff reassigned
-        "403":
-          description: Not authorized
+        '200': { $ref: '#/components/responses/Success' }
 
-  /staff/{staffId}:
-    delete:
-      tags: [Staff]
-      summary: Deactivate a staff account
-      security:
-        - bearerAuth: []
-      description: Admin or manager (manager can only deactivate staff in their own branch).
-      parameters:
-        - $ref: "#/components/parameters/StaffIdParam"
-      responses:
-        "200":
-          description: Staff deactivated
-        "403":
-          description: Not authorized
-
-  # ─── Branches ─────────────────────────────────────────
-  /branches/public/{branchId}:
+  /api/branches/public/{branchId}:
     get:
       tags: [Branches]
-      summary: Get public branch info (queues, counters, wait counts)
-      description: No auth required. Used by the public branch info page, kiosk, and appointment UIs.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
+      summary: Get public branch details
+      security: []
       responses:
-        "200":
-          description: Branch info with queues and counter summary
-        "404":
-          description: Branch not found
-
-  /branches/nearest:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/branches/nearest:
     get:
       tags: [Branches]
-      summary: Find branches nearest to a location
-      description: No auth required. Returns branches sorted by haversine distance with live wait counts.
-      parameters:
-        - name: lat
-          in: query
-          required: true
-          schema:
-            type: number
-          example: 6.5244
-        - name: lng
-          in: query
-          required: true
-          schema:
-            type: number
-          example: 3.3792
+      summary: Find nearest branches
+      security: []
       responses:
-        "200":
-          description: Branches sorted by distance
-        "400":
-          description: Missing or invalid lat/lng
-
-  /branches:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/branches:
     post:
       tags: [Branches]
       summary: Create a branch
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, location]
-              properties:
-                name:
-                  type: string
-                location:
-                  type: string
-                address:
-                  type: string
-                phone:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                coordinates:
-                  type: object
-                  properties:
-                    lat:
-                      type: number
-                    lng:
-                      type: number
       responses:
-        "201":
-          description: Branch created
+        '201': { $ref: '#/components/responses/Created' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     get:
       tags: [Branches]
-      summary: List all active branches
+      summary: List active branches
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/LimitParam"
       responses:
-        "200":
-          description: Paginated branch list
-
-  /branches/{id}:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/branches/{id}:
     get:
       tags: [Branches]
-      summary: Get a single branch
+      summary: Get a branch
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Branch details
-        "404":
-          description: Branch not found
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Branches]
+      summary: Update a branch
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
     delete:
       tags: [Branches]
-      summary: Delete a branch
+      summary: Delete or deactivate a branch
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Branch deleted
-        "404":
-          description: Branch not found
+        '200': { $ref: '#/components/responses/Success' }
 
-  # ─── Users ────────────────────────────────────────────
-  /users/profile:
+  /api/staff/login:
+    post:
+      tags: [Staff]
+      summary: Legacy staff login
+      description: Legacy compatibility endpoint. Prefer `/api/auth/login/staff`.
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/staff:
+    post:
+      tags: [Staff]
+      summary: Create staff
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     get:
-      tags: [Users]
-      summary: Get current user's profile
+      tags: [Staff]
+      summary: List staff
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
       responses:
-        "200":
-          description: Profile data
-
-  /users/change-password:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/staff/{staffId}:
+    get:
+      tags: [Staff]
+      summary: Get staff
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Staff]
+      summary: Deactivate staff
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/staff/{staffId}/assign:
     patch:
-      tags: [Users]
-      summary: Change password (logged in)
+      tags: [Staff]
+      summary: Reassign staff branch
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [currentPassword, newPassword]
-              properties:
-                currentPassword:
-                  type: string
-                newPassword:
-                  type: string
-                  minLength: 8
       responses:
-        "200":
-          description: Password changed
-        "400":
-          description: Validation error
+        '200': { $ref: '#/components/responses/Success' }
+  /api/staff/{staffId}/queues:
+    patch:
+      tags: [Staff]
+      summary: Assign queues to staff
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/managers:
+    post:
+      tags: [Managers]
+      summary: Create a manager
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+    get:
+      tags: [Managers]
+      summary: List bank managers
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/managers/{managerId}/branch:
+    patch:
+      tags: [Managers]
+      summary: Reassign a manager branch
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/managers/{managerId}:
+    delete:
+      tags: [Managers]
+      summary: Deactivate a manager
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
 
-  # ─── Queues ───────────────────────────────────────────
-  /queues:
+  /api/admin/overview:
+    get:
+      tags: [Admin]
+      summary: Bank admin overview
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/admin/api-key-requests:
+    post:
+      tags: [Admin]
+      summary: Request a bank API key
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Admin]
+      summary: List this bank's API key requests
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/admin/api-key-requests/{id}:
+    get:
+      tags: [Admin]
+      summary: Get an API key request and reveal its raw key once
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/queues/public:
+    get:
+      tags: [Queues]
+      summary: List public queues
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/queues:
     post:
       tags: [Queues]
-      summary: Create a service queue
+      summary: Create a queue
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [serviceName, branch]
-              properties:
-                serviceName:
-                  type: string
-                branch:
-                  type: string
-                  description: Branch ObjectId
       responses:
-        "201":
-          description: Queue created
+        '201': { $ref: '#/components/responses/Created' }
     get:
       tags: [Queues]
-      summary: List queues
+      summary: List queues visible to the caller
+      x-auth: jwt
       security:
         - bearerAuth: []
-      description: Admin sees all. Manager/staff see only their branch.
-      parameters:
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/LimitParam"
-        - name: branchId
-          in: query
-          schema:
-            type: string
-          description: Filter by branch (admin only)
       responses:
-        "200":
-          description: Paginated queue list
-
-  /queues/{id}:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/queues/{id}:
     put:
       tags: [Queues]
       summary: Update a queue
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                serviceName:
-                  type: string
       responses:
-        "200":
-          description: Queue updated
+        '200': { $ref: '#/components/responses/Success' }
     delete:
       tags: [Queues]
       summary: Delete a queue
+      x-auth: jwt
+      x-required-role: admin
       security:
         - bearerAuth: []
-      description: Admin only.
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Queue deleted
-
-  # ─── Counters ─────────────────────────────────────────
-  /counters:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/counters:
     post:
       tags: [Counters]
       summary: Create a counter
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [label]
-              properties:
-                label:
-                  type: string
-                branch:
-                  type: string
-                  description: Required for admin; auto-set for manager
       responses:
-        "201":
-          description: Counter created
-
-  /counters/{branchId}:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/counters/{branchId}:
     get:
       tags: [Counters]
-      summary: List counters for a branch
+      summary: List branch counters
+      x-auth: jwt
+      x-required-role: admin, manager, or staff
       security:
         - bearerAuth: []
-      description: Admin, manager, or staff (own branch).
-      parameters:
-        - name: branchId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Counter list
-
-  /counters/{counterId}/assign-staff:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/counters/{counterId}/assign-staff:
     patch:
       tags: [Counters]
-      summary: Assign a staff member to a counter
+      summary: Assign staff to a counter
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - name: counterId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [staffId]
-              properties:
-                staffId:
-                  type: string
       responses:
-        "200":
-          description: Staff assigned
-
-  /counters/{counterId}/unassign-staff:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/counters/{counterId}/unassign-staff:
     patch:
       tags: [Counters]
       summary: Unassign staff from a counter
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - name: counterId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Staff unassigned
-
-  /counters/{counterId}/open:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/counters/{counterId}/open:
     patch:
       tags: [Counters]
       summary: Open a counter
+      x-auth: jwt
+      x-required-role: admin, manager, or staff
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - name: counterId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Counter opened
-
-  /counters/{counterId}/close:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/counters/{counterId}/close:
     patch:
       tags: [Counters]
       summary: Close a counter
+      x-auth: jwt
+      x-required-role: admin, manager, or staff
       security:
         - bearerAuth: []
-      description: Admin, manager, or staff (own counter only).
-      parameters:
-        - name: counterId
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
-        "200":
-          description: Counter closed
+        '200': { $ref: '#/components/responses/Success' }
 
-  # ─── Tickets ──────────────────────────────────────────
-  /tickets:
+  /api/tickets:
     post:
       tags: [Tickets]
-      summary: Create a ticket (join queue)
-      security:
-        - bearerAuth: []
-      description: Customer only. One active ticket per queue per customer.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [queueId, branchId]
-              properties:
-                queueId:
-                  type: string
-                branchId:
-                  type: string
+      summary: Create a guest ticket
+      security: []
       responses:
-        "201":
-          description: Ticket created
-        "400":
-          description: Validation error or already have active ticket in this queue
-
-  /tickets/my-ticket:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/tickets/public/{id}:
     get:
       tags: [Tickets]
-      summary: Get current active ticket
-      security:
-        - bearerAuth: []
-      description: Customer only. Returns position ahead and estimated wait.
+      summary: Look up a public ticket
+      security: []
       responses:
-        "200":
-          description: Active ticket with position info
-        "404":
-          description: No active ticket
-
-  /tickets/my-stats:
-    get:
-      tags: [Tickets]
-      summary: Get today's ticket count for current staff
-      security:
-        - bearerAuth: []
-      description: Staff, manager, or admin.
-      responses:
-        "200":
-          description: Stats object
-
-  /tickets/{id}/cancel:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/tickets/{id}/cancel:
     patch:
       tags: [Tickets]
-      summary: Cancel a waiting ticket
+      summary: Cancel a guest ticket
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/my-stats:
+    get:
+      tags: [Tickets]
+      summary: Get the current staff member's ticket stats
+      x-auth: jwt
+      x-required-role: staff
       security:
         - bearerAuth: []
-      description: Customer only. Must own the ticket and it must be waiting.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
       responses:
-        "200":
-          description: Ticket cancelled
-        "404":
-          description: Ticket not found
-
-  /tickets/call-next:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/call-next:
     post:
       tags: [Tickets]
-      summary: Call the next ticket in a queue
+      summary: Call the next ticket
+      x-auth: jwt
+      x-required-role: staff
       security:
         - bearerAuth: []
-      description: |
-        Staff, manager, or admin. Priority tickets are always served first.
-        Sends a "proceed to counter" email if the ticket has a user.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [queueId]
-              properties:
-                queueId:
-                  type: string
       responses:
-        "200":
-          description: Next ticket called
-        "404":
-          description: No waiting tickets
-
-  /tickets/{id}/call:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/{id}/call:
     patch:
       tags: [Tickets]
-      summary: Call a specific ticket out of order
+      summary: Call a specific ticket
+      x-auth: jwt
+      x-required-role: staff
       security:
         - bearerAuth: []
-      description: Staff, manager, or admin.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
       responses:
-        "200":
-          description: Ticket called
-        "404":
-          description: Ticket not found
-
-  /tickets/{id}/complete:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/{id}/complete:
     patch:
       tags: [Tickets]
-      summary: Mark a called ticket as completed
+      summary: Complete a ticket
+      x-auth: jwt
+      x-required-role: staff
       security:
         - bearerAuth: []
-      description: Staff, manager, or admin.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
       responses:
-        "200":
-          description: Ticket completed
-        "404":
-          description: Ticket not found
-
-  /tickets/{id}/skip:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/{id}/skip:
     patch:
       tags: [Tickets]
-      summary: Skip a called ticket (no-show)
+      summary: Skip a ticket
+      x-auth: jwt
+      x-required-role: staff
       security:
         - bearerAuth: []
-      description: Staff, manager, or admin.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
       responses:
-        "200":
-          description: Ticket skipped
-        "404":
-          description: Ticket not found
-
-  /tickets/{id}/recall:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/branch/{branchId}:
+    get:
+      tags: [Tickets]
+      summary: List branch tickets
+      x-auth: jwt
+      x-required-role: manager or admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/{id}/recall:
     patch:
       tags: [Tickets]
-      summary: Recall a skipped ticket back into the queue
+      summary: Recall a skipped ticket
+      x-auth: jwt
+      x-required-role: staff, manager, or admin
       security:
         - bearerAuth: []
-      description: Staff, manager, or admin. Only works on skipped tickets.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
       responses:
-        "200":
-          description: Ticket recalled
-        "400":
-          description: Ticket is not in skipped status
-
-  /tickets/{id}/priority:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/my-history:
+    get:
+      tags: [Tickets]
+      summary: Get the current staff member's ticket history
+      x-auth: jwt
+      x-required-role: staff
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/{id}/priority:
     patch:
       tags: [Tickets]
       summary: Set ticket priority
+      x-auth: jwt
+      x-required-role: manager or admin
       security:
         - bearerAuth: []
-      description: Manager or admin only.
-      parameters:
-        - $ref: "#/components/parameters/TicketIdParam"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [priority]
-              properties:
-                priority:
-                  type: string
-                  enum: [normal, priority]
       responses:
-        "200":
-          description: Priority updated
-
-  /tickets/branch/{branchId}:
-    get:
-      tags: [Tickets]
-      summary: List tickets for a branch
-      security:
-        - bearerAuth: []
-      description: Manager (own branch) or admin.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [waiting, called, skipped, cancelled, completed]
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/LimitParam"
-      responses:
-        "200":
-          description: Paginated ticket list
-
-  /tickets/my-history:
-    get:
-      tags: [Tickets]
-      summary: Get recent completed/skipped tickets for current staff
-      security:
-        - bearerAuth: []
-      description: Staff, manager, or admin.
-      parameters:
-        - $ref: "#/components/parameters/PageParam"
-        - $ref: "#/components/parameters/LimitParam"
-      responses:
-        "200":
-          description: Paginated ticket history
-
-  /tickets/close-day:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/close-day:
     post:
       tags: [Tickets]
-      summary: Close the day for a branch
+      summary: Close the branch day
+      x-auth: jwt
+      x-required-role: manager
       security:
         - bearerAuth: []
-      description: |
-        Manager only. Marks all waiting/called tickets as completed,
-        resets queue counters to zero, sets branch dayOpen to false.
       responses:
-        "200":
-          description: Day closed, returns ticketsCompleted count
-
-  /tickets/open-day:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/tickets/open-day:
     post:
       tags: [Tickets]
-      summary: Open the day for a branch
+      summary: Open the branch day
+      x-auth: jwt
+      x-required-role: manager
       security:
         - bearerAuth: []
-      description: Manager only. Sets branch dayOpen to true.
       responses:
-        "200":
-          description: Day opened
+        '200': { $ref: '#/components/responses/Success' }
 
-  # ─── Analytics ────────────────────────────────────────
-  /analytics/branch/{branchId}:
+  /api/analytics/branch/{branchId}:
     get:
       tags: [Analytics]
       summary: Get live branch analytics
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
       responses:
-        "200":
-          description: Queue lengths, today's counts, avg wait, counter status
-
-  /analytics/branch/{branchId}/daily-report:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/analytics/branch/{branchId}/daily-report:
     get:
       tags: [Analytics]
-      summary: Get end-of-day report
+      summary: Get the daily branch report
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
-        - name: date
-          in: query
-          schema:
-            type: string
-            format: date
-          description: Defaults to today (YYYY-MM-DD)
       responses:
-        "200":
-          description: Daily summary with staff performance
-
-  /analytics/branch/{branchId}/staff-performance:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/analytics/branch/{branchId}/staff-performance:
     get:
       tags: [Analytics]
-      summary: Get staff performance for a branch
+      summary: Get staff performance
+      x-auth: jwt
+      x-required-role: admin or manager
       security:
         - bearerAuth: []
-      description: Admin or manager.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
-        - name: date
-          in: query
-          schema:
-            type: string
-            format: date
       responses:
-        "200":
-          description: Staff performance ranked by tickets served
-
-  # ─── Board ────────────────────────────────────────────
-  /board:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/board:
     get:
       tags: [Board]
-      summary: Get all branch boards (public hub)
-      description: No auth required.
+      summary: Get the public board hub
+      security: []
       responses:
-        "200":
-          description: All active branches with queue lengths and counter status
-
-  /board/{branchId}:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/board/{branchId}:
     get:
       tags: [Board]
-      summary: Get a single branch's live board
-      description: No auth required.
-      parameters:
-        - $ref: "#/components/parameters/BranchIdParam"
+      summary: Get a public branch board
+      security: []
       responses:
-        "200":
-          description: Now serving, recently served, queue lengths, day status
-        "404":
-          description: Branch not found
-
-  # ─── Kiosk ────────────────────────────────────────────
-  /kiosk/tickets:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/kiosk/tickets:
     post:
       tags: [Kiosk]
-      summary: Create an anonymous kiosk ticket
-      description: No auth required. Returns a kioskId for tracking.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [queueId, branchId]
-              properties:
-                queueId:
-                  type: string
-                branchId:
-                  type: string
-                guestName:
-                  type: string
-                guestPhone:
-                  type: string
+      summary: Create a kiosk ticket
+      security: []
       responses:
-        "201":
-          description: Kiosk ticket created with kioskId
-        "400":
-          description: Validation error
-
-  /kiosk/tickets/{kioskId}:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/kiosk/tickets/{kioskId}:
     get:
       tags: [Kiosk]
       summary: Track a kiosk ticket
-      description: No auth required.
-      parameters:
-        - name: kioskId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[A-Z0-9]{9}$"
+      security: []
       responses:
-        "200":
-          description: Ticket status, position, and details
-        "404":
-          description: Ticket not found
-
-  /kiosk/tickets/{kioskId}/cancel:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/kiosk/tickets/{kioskId}/cancel:
     patch:
       tags: [Kiosk]
       summary: Cancel a kiosk ticket
-      description: No auth required. Only waiting tickets can be cancelled.
-      parameters:
-        - name: kioskId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[A-Z0-9]{9}$"
+      security: []
       responses:
-        "200":
-          description: Ticket cancelled
-        "400":
-          description: Ticket is not in waiting status
-
-  # ─── Appointments ─────────────────────────────────────
-  /appointments/slots:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/appointments/slots:
     get:
       tags: [Appointments]
-      summary: Get available time slots for a branch/service/date
-      description: No auth required. Respects branch operating hours and max-appointments-per-slot.
-      parameters:
-        - name: branchId
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: serviceId
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Queue ObjectId
-        - name: date
-          in: query
-          required: true
-          schema:
-            type: string
-            format: date
-          example: "2026-08-25"
+      summary: List available appointment slots
+      security: []
       responses:
-        "200":
-          description: Available slots with remaining capacity
-        "400":
-          description: Missing parameters
-
-  /appointments:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/appointments:
     post:
       tags: [Appointments]
       summary: Book an appointment
-      description: No auth required. Creates a ticket with scheduledFor.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [queueId, branchId, scheduledFor]
-              properties:
-                queueId:
-                  type: string
-                branchId:
-                  type: string
-                scheduledFor:
-                  type: string
-                  format: date-time
-                guestName:
-                  type: string
-                guestPhone:
-                  type: string
+      security: []
       responses:
-        "201":
-          description: Appointment booked with kioskId for tracking
-        "409":
-          description: Slot fully booked
-
-  /appointments/{kioskId}:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/appointments/{kioskId}:
     get:
       tags: [Appointments]
-      summary: Look up an appointment by booking ID
-      description: No auth required.
-      parameters:
-        - name: kioskId
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: "^[A-Z0-9]{9}$"
-          description: Booking ID (starts with A)
+      summary: Look up an appointment
+      security: []
       responses:
-        "200":
-          description: Appointment details
-        "404":
-          description: Appointment not found
+        '200': { $ref: '#/components/responses/Success' }
+
+  /api/contact:
+    post:
+      tags: [System]
+      summary: Submit a contact message
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/webhooks:
+    post:
+      tags: [Webhooks]
+      summary: Create a webhook
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+    get:
+      tags: [Webhooks]
+      summary: List webhooks
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/webhooks/{id}:
+    delete:
+      tags: [Webhooks]
+      summary: Delete a webhook
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/webhooks/{id}/toggle:
+    patch:
+      tags: [Webhooks]
+      summary: Toggle a webhook
+      x-auth: jwt
+      x-required-role: admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/staff-import/import:
+    post:
+      tags: [Staff]
+      summary: Import staff from an uploaded file
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/export/branch/{branchId}/csv:
+    get:
+      tags: [Analytics]
+      summary: Export branch analytics as CSV
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV export
+          content:
+            text/csv: { schema: { type: string } }
+  /api/export/branch/{branchId}/pdf:
+    get:
+      tags: [Analytics]
+      summary: Export branch analytics as HTML/PDF
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/advanced-analytics/branch/{branchId}/peak-hours:
+    get:
+      tags: [Analytics]
+      summary: Get peak-hour analytics
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/advanced-analytics/branch/{branchId}/leaderboard:
+    get:
+      tags: [Analytics]
+      summary: Get the staff leaderboard
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/advanced-analytics/branch/{branchId}/wait-targets:
+    get:
+      tags: [Analytics]
+      summary: Get wait-time targets
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    put:
+      tags: [Analytics]
+      summary: Update wait-time targets
+      x-auth: jwt
+      x-required-role: admin or manager
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/brand:
+    get:
+      tags: [System]
+      summary: Get environment-based brand configuration
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /api/platform/login:
+    post:
+      tags: [Platform]
+      summary: Log in as superadmin
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/platform/me:
+    get:
+      tags: [Platform]
+      summary: Get the superadmin identity
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/overview:
+    get:
+      tags: [Platform]
+      summary: Get platform statistics
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/api-keys:
+    post:
+      tags: [Platform]
+      summary: Create an API key
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+    get:
+      tags: [Platform]
+      summary: List platform API keys
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/api-keys/{id}:
+    delete:
+      tags: [Platform]
+      summary: Revoke an API key
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/api-keys/{id}/rotate:
+    post:
+      tags: [Platform]
+      summary: Rotate an API key
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/api-keys/{id}/toggle:
+    patch:
+      tags: [Platform]
+      summary: Suspend or enable an API key
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/usage:
+    get:
+      tags: [Platform]
+      summary: Get API usage statistics
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/key-requests:
+    get:
+      tags: [Platform]
+      summary: List bank API-key requests
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/platform/key-requests/{id}:
+    patch:
+      tags: [Platform]
+      summary: Approve or reject an API-key request
+      x-auth: jwt
+      x-required-role: superadmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /api/v1/queues:
+    get:
+      tags: [Public V1]
+      summary: List public queues for the guest flow
+      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      x-auth: public
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets:
+    post:
+      tags: [Public V1]
+      summary: Create a guest ticket
+      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      x-auth: public
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/tickets/public/{id}:
+    get:
+      tags: [Public V1]
+      summary: Look up a guest ticket
+      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      x-auth: public
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/tickets/{id}/cancel:
+    patch:
+      tags: [Public V1]
+      summary: Cancel a guest ticket
+      description: The public v1 router is mounted first, so this operation is handled without an API key even if one is supplied.
+      x-auth: public
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/auth/me:
+    get:
+      tags: [V1]
+      summary: Get the API-key staff identity
+      x-auth: apiKey + staff identity
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/board:
+    get:
+      tags: [V1]
+      summary: List the bank's public board data
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/board/{branchId}:
+    get:
+      tags: [V1]
+      summary: Get a bank-owned branch board
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/branches:
+    get:
+      tags: [V1]
+      summary: List the bank's branches
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [V1]
+      summary: Create a branch
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/v1/branches/public/{branchId}:
+    get:
+      tags: [V1]
+      summary: Get public branch details through v1
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/branches/{id}:
+    get:
+      tags: [V1]
+      summary: Get a bank branch
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    put:
+      tags: [V1]
+      summary: Update a bank branch
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [V1]
+      summary: Delete a bank branch
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/queues/{id}:
+    put:
+      tags: [V1]
+      summary: Update a bank queue
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [V1]
+      summary: Delete a bank queue
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/counters:
+    post:
+      tags: [V1]
+      summary: Create a bank counter
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/v1/counters/{branchId}:
+    get:
+      tags: [V1]
+      summary: List bank counters
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/counters/{counterId}/assign-staff:
+    patch:
+      tags: [V1]
+      summary: Assign staff to a bank counter
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/counters/{counterId}/unassign-staff:
+    patch:
+      tags: [V1]
+      summary: Unassign staff from a bank counter
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/counters/{counterId}/open:
+    patch:
+      tags: [V1]
+      summary: Open a bank counter
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/counters/{counterId}/close:
+    patch:
+      tags: [V1]
+      summary: Close a bank counter
+      x-auth: apiKey + staff identity
+      x-required-scope: branches:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/my-stats:
+    get:
+      tags: [V1]
+      summary: Get resolved staff ticket statistics
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/call-next:
+    post:
+      tags: [V1]
+      summary: Call the next ticket
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/{id}/call:
+    patch:
+      tags: [V1]
+      summary: Call a specific ticket
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/{id}/complete:
+    patch:
+      tags: [V1]
+      summary: Complete a ticket
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/{id}/skip:
+    patch:
+      tags: [V1]
+      summary: Skip a ticket
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/branch/{branchId}:
+    get:
+      tags: [V1]
+      summary: List bank branch tickets
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/{id}/recall:
+    patch:
+      tags: [V1]
+      summary: Recall a skipped ticket
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/my-history:
+    get:
+      tags: [V1]
+      summary: Get resolved staff ticket history
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/{id}/priority:
+    patch:
+      tags: [V1]
+      summary: Set ticket priority
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/close-day:
+    post:
+      tags: [V1]
+      summary: Close the bank branch day
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/tickets/open-day:
+    post:
+      tags: [V1]
+      summary: Open the bank branch day
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/kiosk/tickets:
+    post:
+      tags: [V1]
+      summary: Create a kiosk ticket with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/v1/kiosk/tickets/{kioskId}:
+    get:
+      tags: [V1]
+      summary: Track a kiosk ticket with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/kiosk/tickets/{kioskId}/cancel:
+    patch:
+      tags: [V1]
+      summary: Cancel a kiosk ticket with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/appointments/slots:
+    get:
+      tags: [V1]
+      summary: List appointment slots with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/appointments:
+    post:
+      tags: [V1]
+      summary: Book an appointment with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:write
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/v1/appointments/{kioskId}:
+    get:
+      tags: [V1]
+      summary: Look up an appointment with an API key
+      x-auth: apiKey + staff identity
+      x-required-scope: tickets:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/staff:
+    get:
+      tags: [V1]
+      summary: List bank staff
+      x-auth: apiKey + staff identity
+      x-required-scope: staff:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [V1]
+      summary: Create bank staff
+      x-auth: apiKey + staff identity
+      x-required-scope: staff:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+  /api/v1/staff/{staffId}/queues:
+    patch:
+      tags: [V1]
+      summary: Assign queues to bank staff
+      x-auth: apiKey + staff identity
+      x-required-scope: staff:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/staff/{staffId}:
+    delete:
+      tags: [V1]
+      summary: Deactivate bank staff
+      x-auth: apiKey + staff identity
+      x-required-scope: staff:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/admin:
+    get:
+      tags: [V1]
+      summary: Get the bank admin overview
+      x-auth: apiKey + staff identity
+      x-required-scope: analytics:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/analytics/branch/{branchId}:
+    get:
+      tags: [V1]
+      summary: Get live bank branch analytics
+      x-auth: apiKey + staff identity
+      x-required-scope: analytics:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /api/v1/analytics/branch/{branchId}/staff-performance:
+    get:
+      tags: [V1]
+      summary: Get bank staff performance analytics
+      x-auth: apiKey + staff identity
+      x-required-scope: analytics:read
+      security:
+        - apiKeyAuth: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
 
 components:
   securitySchemes:
@@ -1127,100 +1424,116 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
-  parameters:
-    PageParam:
-      name: page
-      in: query
-      schema:
-        type: integer
-        default: 1
-        minimum: 1
-      description: Page number
-    LimitParam:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        default: 25
-        minimum: 1
-        maximum: 100
-      description: Items per page
-    BranchIdParam:
-      name: branchId
-      in: path
-      required: true
-      schema:
-        type: string
-    TicketIdParam:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
-    StaffIdParam:
-      name: staffId
-      in: path
-      required: true
-      schema:
-        type: string
-
+      description: Dashboard JWT containing id, kind, and role claims.
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Scoped bank integration key. Authenticated v1 routes also resolve a Staff identity using X-Staff-Id or the key's defaultStaffId.
+  responses:
+    Success:
+      description: Request succeeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+    Created:
+      description: Resource created
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SuccessEnvelope' }
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Unauthorized:
+      description: Missing, invalid, expired, or revoked credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Forbidden:
+      description: Authenticated identity lacks the required role, bank, or scope
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Conflict:
+      description: Resource state conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
   schemas:
-    PaginatedResponse:
+    SuccessEnvelope:
       type: object
       properties:
-        status:
-          type: string
-          example: success
-        message:
-          type: string
-        data:
-          type: array
-        meta:
-          type: object
-          properties:
-            page:
-              type: integer
-            limit:
-              type: integer
-            total:
-              type: integer
-            totalPages:
-              type: integer
-
-    Staff:
+        status: { type: string, example: success }
+        message: { type: string }
+        data: { nullable: true }
+        meta: { type: object, nullable: true }
+    ErrorEnvelope:
       type: object
       properties:
-        _id:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-        role:
-          type: string
-          enum: [staff, manager]
-        branch:
-          type: object
-          properties:
-            _id:
-              type: string
-            name:
-              type: string
-            location:
-              type: string
-        isActive:
-          type: boolean
-
-    ErrorResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: error
-        message:
-          type: string
+        status: { type: string, example: error }
+        message: { type: string }
         errors:
+          type: array
+          nullable: true
+          items: { type: string }
+    ApiKey:
+      type: object
+      properties:
+        id: { type: string }
+        bankName: { type: string }
+        label: { type: string }
+        keyPrefix: { type: string }
+        scopes:
           type: array
           items:
             type: string
+            enum: [branches:read, tickets:read, tickets:write, staff:read, analytics:read, webhooks:manage, admin]
+        rateLimit: { type: integer, example: 100 }
+        isActive: { type: boolean }
+        expiresAt: { type: string, format: date-time, nullable: true }
+    ApiKeyRequest:
+      type: object
+      properties:
+        id: { type: string }
+        bankName: { type: string }
+        label: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        rateLimit: { type: integer }
+        status: { type: string, enum: [pending, approved, rejected] }
+        canRevealKey: { type: boolean }
+        keyStatus: { type: string, nullable: true, enum: [active, suspended, revoked, null] }
+        keyPrefix: { type: string, nullable: true }
+    Ticket:
+      type: object
+      properties:
+        ticketId: { type: string }
+        kioskId: { type: string }
+        ticketNumber: { type: integer }
+        status: { type: string, enum: [waiting, called, completed, skipped, cancelled] }
+        guestName: { type: string }
+        queue: { type: string }
+        branch: { type: string }
+        position: { type: integer, nullable: true }
+        estimatedWaitMinutes: { type: integer, nullable: true }
+    Error:
+      type: object
+      properties:
+        status: { type: string, example: error }
+        message: { type: string }
+        errors:
+          type: array
+          items: { type: string }

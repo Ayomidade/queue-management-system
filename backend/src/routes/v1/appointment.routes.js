@@ -10,18 +10,37 @@ import {
   appointmentIdParamValidator,
 } from "../../validators/appointment.validator.js";
 import validate from "../../middlewares/validate.js";
+import { requireScope } from "../../middlewares/apiKey.middleware.js";
 
 /**
- * V1 Appointment Routes
- *
- * Uses the original appointment controller with optional bank-scoping.
- * The controller validates branch ownership when req.bankName is set.
+ * V1 Appointment Routes — API-key only.
+ * Scope wiring (WP5): slot listing / ticket lookup need tickets:read;
+ * booking needs tickets:write.
+ * (Unauthenticated appointment flow lives on /api/appointments.)
  */
 
 const appointmentRouter = Router();
 
-appointmentRouter.get("/slots", getSlotsValidator, validate, getAvailableSlots);
-appointmentRouter.post("/", createAppointmentValidator, validate, createAppointment);
-appointmentRouter.get("/:kioskId", appointmentIdParamValidator, validate, getAppointmentTicket);
+appointmentRouter.get(
+  "/slots",
+  requireScope("tickets:read"),
+  getSlotsValidator,
+  validate,
+  getAvailableSlots,
+);
+appointmentRouter.post(
+  "/",
+  requireScope("tickets:write"),
+  createAppointmentValidator,
+  validate,
+  createAppointment,
+);
+appointmentRouter.get(
+  "/:kioskId",
+  requireScope("tickets:read"),
+  appointmentIdParamValidator,
+  validate,
+  getAppointmentTicket,
+);
 
 export default appointmentRouter;

@@ -6,6 +6,11 @@ import { fetchQueues } from "../../features/tickets/ticketsApi";
 import FlapUnit from "../../components/Hero/FlapUnit";
 import styles from "./StaffHome.module.css";
 
+/**
+ * CounterConsole — serve UI for staff only (WP5/WP6).
+ * JWT Bearer for queues + call-next/complete/skip (requireStaffServing).
+ * Managers see a guard message — they cannot serve.
+ */
 const CounterConsole = ({ counterState, onServed }) => {
   const { auth } = useAuth();
   const {
@@ -28,8 +33,8 @@ const CounterConsole = ({ counterState, onServed }) => {
   const [queueId, setQueueId] = useState("");
 
   useEffect(() => {
-    if (!auth.branch) return;
-    fetchQueues(auth.apiKey)
+    if (!auth.branch || !auth.token) return;
+    fetchQueues(auth.token)
       .then((res) => {
         const branchQueues = res.data.filter(
           (q) => q.branch?._id === auth.branch || q.branch === auth.branch,
@@ -44,7 +49,16 @@ const CounterConsole = ({ counterState, onServed }) => {
         }
       })
       .catch(() => {});
-  }, [auth.apiKey, auth.branch, auth.queues]);
+  }, [auth.token, auth.branch, auth.queues]);
+
+  if (auth.role === "manager") {
+    return (
+      <p className={styles.status}>
+        Managers cannot serve tickets. Switch to a staff account on this
+        branch, or assign a counter to one of your staff.
+      </p>
+    );
+  }
 
   if (!auth.branch) {
     return (

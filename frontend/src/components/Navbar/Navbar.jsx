@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -7,24 +7,26 @@ import { useBrand } from "../../features/brand/BrandContext";
 import logoUrl from "../../assets/logo.svg";
 import styles from "./Navbar.module.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
-const ROLE_BADGE = {
-  superadmin: { label: "Superadmin", className: styles.badgeSuperadmin },
-  admin: { label: "Admin", className: styles.badgeAdmin },
-  manager: { label: "Manager", className: styles.badgeManager },
-  staff: { label: "Staff", className: styles.badgeStaff },
-};
-
 const NAV_LINKS = ["Product", "How it works", "For branches", "Pricing"];
 
+/**
+ * Navbar — marketing + session shell.
+ *
+ * WP7: demo UserSwitcher is gone. Signed-out visitors get a "Sign in"
+ * link to /login/staff (role picker lives on that page).
+ */
 const Navbar = () => {
   const { brand } = useBrand();
   const [open, setOpen] = useState(false);
-  const { auth, switchUser, logout } = useAuth();
+  const { auth, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const firstName = auth?.name?.split(" ")[0];
+
+  const handleSignOut = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <header className={styles.header}>
@@ -57,15 +59,8 @@ const Navbar = () => {
         </button>
 
         <div className={styles.authGroup}>
-          {auth ? (
+          {auth?.token ? (
             <>
-              {auth.apiKey && auth.role !== "superadmin" && (
-                <UserSwitcher
-                  switchUser={switchUser}
-                  navigate={navigate}
-                  apiKey={auth.apiKey}
-                />
-              )}
               {auth.role === "superadmin" ? (
                 <Link to="/platform" className={styles.accountLink}>
                   Platform
@@ -75,14 +70,14 @@ const Navbar = () => {
                   {firstName}
                 </Link>
               )}
-              <button className={styles.cta} onClick={logout}>
+              <button className={styles.cta} onClick={handleSignOut}>
                 Sign out
               </button>
             </>
           ) : (
             <>
-              <Link to="/boards" className={styles.loginLink}>
-                Live Boards
+              <Link to="/login/staff" className={styles.loginLink}>
+                Sign in
               </Link>
               <Link to="/platform/login" className={styles.loginLink}>
                 Platform
@@ -129,7 +124,7 @@ const Navbar = () => {
             <Link to="/boards" onClick={() => setOpen(false)}>
               Live Boards
             </Link>
-            {auth ? (
+            {auth?.token ? (
               <>
                 <Link to="/staff" onClick={() => setOpen(false)}>
                   {firstName}
@@ -137,7 +132,7 @@ const Navbar = () => {
                 <button
                   className={styles.cta}
                   onClick={() => {
-                    logout();
+                    handleSignOut();
                     setOpen(false);
                   }}
                 >
@@ -146,8 +141,8 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/boards" onClick={() => setOpen(false)}>
-                  Live Boards
+                <Link to="/login/staff" onClick={() => setOpen(false)}>
+                  Sign in
                 </Link>
                 <Link
                   to="/contact"
@@ -162,80 +157,6 @@ const Navbar = () => {
         )}
       </AnimatePresence>
     </header>
-  );
-};
-
-/**
- * User Switcher Dropdown
- *
- * Fetches all demo staff users and shows a dropdown to switch between personas.
- */
-const UserSwitcher = ({ switchUser, navigate }) => {
-  const [users, setUsers] = useState([]);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    fetch(`${API_URL}/v1/demo/users`)
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.status === "success") setUsers(res.data);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const handleSwitch = (user) => {
-    const path = switchUser(user);
-    setDropdownOpen(false);
-    navigate(path);
-  };
-
-  return (
-    <div className={styles.switcherWrap} ref={dropdownRef}>
-      <button
-        className={styles.switcherBtn}
-        onClick={() => setDropdownOpen((o) => !o)}
-        aria-label="Switch user"
-      >
-        Switch user ▾
-      </button>
-      <AnimatePresence>
-        {dropdownOpen && (
-          <motion.div
-            className={styles.switcherDropdown}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-          >
-            {users.map((user) => {
-              const badge = ROLE_BADGE[user.role] || ROLE_BADGE.staff;
-              return (
-                <button
-                  key={user.id}
-                  className={styles.switcherItem}
-                  onClick={() => handleSwitch(user)}
-                >
-                  <span className={styles.switcherName}>{user.name}</span>
-                  <span className={badge.className}>{badge.label}</span>
-                </button>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 };
 

@@ -4,8 +4,8 @@ import mongoose from "mongoose";
  * ApiKeyRequest — bank admin's request for an API key for their bank.
  *
  * Flow:
- * 1. Bank admin (admin role, via API-key auth) POSTs a request with
- *    label, scopes, rateLimit. bankName is forced from their API key.
+ * 1. Bank admin (Admin JWT) POSTs a request with label, scopes, rateLimit.
+ *    bankName is forced from Admin.bank (JWT /api/admin/api-key-requests).
  * 2. Superadmin reviews it on /platform and approves or rejects.
  * 3. On approve: an ApiKey is created, the raw key is returned once to
  *    the superadmin, AND the raw key is AES-256-GCM-encrypted onto this

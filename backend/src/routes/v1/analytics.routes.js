@@ -3,28 +3,28 @@ import {
   getBranchAnalytics,
   getBranchStaffPerformance,
 } from "../../controllers/analytics.controller.js";
-import { authorize } from "../../middlewares/auth.middleware.js";
+import { requireScope } from "../../middlewares/apiKey.middleware.js";
 import { validateBranchOwnership } from "../../middlewares/bankScope.middleware.js";
 
 /**
- * V1 Analytics Routes
- *
- * Reuses the existing analytics controller but with API key auth.
- * The bankScope middleware ensures branch ownership validation.
- * Admin and manager roles can access branch analytics.
+ * V1 Analytics Routes — API-key only.
+ * Scope wiring (WP5): analytics:read for all report endpoints.
+ * Role authorize() removed — resolveStaffUser always sets role "staff",
+ * which would block every API-key request. Dashboard keeps JWT
+ * authorize("admin","manager") on /api/analytics.
  */
 
 const analyticsRouter = Router();
 
-analyticsRouter.use(authorize("admin", "manager"));
-
 analyticsRouter.get(
   "/branch/:branchId",
+  requireScope("analytics:read"),
   validateBranchOwnership,
   getBranchAnalytics,
 );
 analyticsRouter.get(
   "/branch/:branchId/staff-performance",
+  requireScope("analytics:read"),
   validateBranchOwnership,
   getBranchStaffPerformance,
 );

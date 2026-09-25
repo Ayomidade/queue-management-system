@@ -5,6 +5,7 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { useBrand } from "../../features/brand/BrandContext";
 import { useMyCounter } from "../../features/staff/useMyCounter";
 import { useMyStats } from "../../features/staff/useMyStats";
+import ChangePassword from "../../components/ChangePassword/ChangePassword";
 import CounterConsole from "./CounterConsole";
 import TicketHistory from "./TicketHistory";
 import ManagePanel from "./ManagePanel";
@@ -50,7 +51,37 @@ const StaffHome = () => {
           { id: "history", label: "History" },
         ];
 
+  // Hooks always run — early return only affects render output.
   const [activeTab, setActiveTab] = useState(topTabs[0].id);
+
+  // Temp-password / invite-created accounts must rotate on first login.
+  if (auth.mustChangePassword) {
+    return (
+      <section className={styles.page}>
+        <MotionBackground />
+        <div className={styles.container}>
+          <div className={styles.logoHeader}>
+            <img src={logoUrl} alt="" />
+            <span>{brand.name}</span>
+          </div>
+          <motion.p className={styles.eyebrow} custom={0} variants={fadeUp}>
+            № 010 — first sign-in
+          </motion.p>
+          <motion.h1 className={styles.heading} custom={1} variants={fadeUp}>
+            Set a new password, {auth.name?.split(" ")[0]}.
+          </motion.h1>
+          <p style={{ color: "var(--text-muted, #6b7280)", marginBottom: "1.25rem" }}>
+            Your temporary password must be changed before you can use the
+            console.
+          </p>
+          <ChangePassword />
+          <button className={styles.logoutBtn} onClick={logout} style={{ marginTop: "1rem" }}>
+            Sign out
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={styles.page}>

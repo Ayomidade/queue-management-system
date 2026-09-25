@@ -22,12 +22,12 @@ const ManagerOverview = () => {
   const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
-    if (!auth.branch) return;
+    if (!auth.branch || !auth.token) return;
     try {
       const [analyticsRes, perfRes, countersRes] = await Promise.all([
-        fetchBranchAnalytics(auth.branch, auth.apiKey),
-        fetchBranchStaffPerformance(auth.branch, auth.apiKey),
-        fetchBranchCounters(auth.branch, auth.apiKey),
+        fetchBranchAnalytics(auth.branch, auth.token),
+        fetchBranchStaffPerformance(auth.branch, auth.token),
+        fetchBranchCounters(auth.branch, auth.token),
       ]);
       setAnalytics(analyticsRes.data);
       setPerformance(perfRes.data.staffPerformance || []);
@@ -38,7 +38,7 @@ const ManagerOverview = () => {
     } finally {
       setLoading(false);
     }
-  }, [auth.apiKey, auth.branch]);
+  }, [auth.token, auth.branch]);
 
   useEffect(() => {
     load();

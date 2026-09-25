@@ -12,6 +12,25 @@ const generateKioskId = () => {
   return "K" + crypto.randomBytes(4).toString("hex").toUpperCase();
 };
 
+/**
+ * Defense-in-depth serve guard (WP5): route-level requireStaffServing
+ * already blocks managers/admins — this catches any path that reaches
+ * a serve controller without that middleware.
+ * Only Staff may set servedBy (Ticket.servedBy stays ref:"Staff").
+ */
+const denyNonStaffServe = (req, res) => {
+  const kind = req.kind || req.role;
+  if (kind === "staff") return false;
+  sendError(res, {
+    statusCode: 403,
+    message:
+      kind === "manager"
+        ? "Managers cannot serve tickets"
+        : "Only staff can serve tickets",
+  });
+  return true;
+};
+
 export const createTicket = async (req, res, next) => {
   try {
     const { queueId, branchId, guestName, guestPhone, guestEmail, purpose } =
@@ -208,6 +227,8 @@ const notifyTicketChange = (ticket, event) => {
 // Priority tickets are always served ahead of the regular line.
 export const callNextTicket = async (req, res, next) => {
   try {
+    if (denyNonStaffServe(req, res)) return;
+
     const { queueId } = req.body;
 
     const queue = await Queue.findById(queueId);
@@ -275,6 +296,8 @@ export const callNextTicket = async (req, res, next) => {
 // Manual override: call one specific ticket by ID, out of the normal order
 export const callTicket = async (req, res, next) => {
   try {
+    if (denyNonStaffServe(req, res)) return;
+
     const { ticket, forbidden } = await findTicketInBranchScope(
       req.params.id,
       req,
@@ -311,6 +334,8 @@ export const callTicket = async (req, res, next) => {
 
 export const completeTicket = async (req, res, next) => {
   try {
+    if (denyNonStaffServe(req, res)) return;
+
     const { ticket, forbidden } = await findTicketInBranchScope(
       req.params.id,
       req,
@@ -347,6 +372,8 @@ export const completeTicket = async (req, res, next) => {
 
 export const skipTicket = async (req, res, next) => {
   try {
+    if (denyNonStaffServe(req, res)) return;
+
     const { ticket, forbidden } = await findTicketInBranchScope(
       req.params.id,
       req,
@@ -418,6 +445,7 @@ export const cancelTicket = async (req, res, next) => {
 };
 
 // MANAGER OVERRIDE: recall a skipped ticket back into the queue
+// (oversight, not serving — manager/admin may call this)
 export const recallTicket = async (req, res, next) => {
   try {
     const { ticket, forbidden } = await findTicketInBranchScope(
@@ -461,6 +489,7 @@ export const recallTicket = async (req, res, next) => {
 };
 
 // MANAGER OVERRIDE: flag a ticket as priority (elderly, disabled, VIP)
+// (oversight, not serving — manager/admin may call this)
 export const setTicketPriority = async (req, res, next) => {
   try {
     const { priority } = req.body;
@@ -504,6 +533,7 @@ export const setTicketPriority = async (req, res, next) => {
 };
 
 // MANAGER: close the day — mark all active tickets as completed, reset queue counters
+// (oversight, not serving — manager only on the JWT route)
 export const closeDay = async (req, res, next) => {
   try {
     const branchId = req.user.branch;
@@ -571,6 +601,9 @@ export const openDay = async (req, res, next) => {
 
 export const getMyStats = async (req, res, next) => {
   try {
+    // Personal serve stats only make sense for staff (WP5).
+    if (denyNonStaffServe(req, res)) return;
+
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date();
@@ -594,6 +627,9 @@ export const getMyStats = async (req, res, next) => {
 
 export const getMyRecentTickets = async (req, res, next) => {
   try {
+    // Personal serve history only makes sense for staff (WP5).
+    if (denyNonStaffServe(req, res)) return;
+
     const { page, limit, skip } = parsePagination(req.query, {
       defaultLimit: 20,
     });

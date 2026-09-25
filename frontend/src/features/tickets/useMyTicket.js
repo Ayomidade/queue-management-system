@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { v1Api } from "../../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 import { useAuth } from "../auth/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -16,6 +16,12 @@ const TICKET_EVENTS = [
   "queue:updated",
 ];
 
+/**
+ * Public ticket lookup — guest kiosk flow.
+ *
+ * Lookup and cancellation use the public v1 guest routes without auth.
+ * Socket auth uses the JWT when present, otherwise nothing.
+ */
 export const useMyTicket = (ticketId) => {
   const { auth } = useAuth();
   const [ticket, setTicket] = useState(null);
@@ -24,6 +30,7 @@ export const useMyTicket = (ticketId) => {
   const socketRef = useRef(null);
   const joinedBranchRef = useRef(null);
   const refetchTimer = useRef(null);
+  const token = auth?.token || null;
 
   const fetchTicket = useCallback(async () => {
     if (!ticketId) {
@@ -32,7 +39,8 @@ export const useMyTicket = (ticketId) => {
       return;
     }
     try {
-      const response = await v1Api.get(`/tickets/public/${ticketId}`);
+      // Public v1 route — no Bearer needed for read.
+      const response = await apiClient.get(`/v1/tickets/public/${ticketId}`);
       setTicket(response.data);
       setError(null);
     } catch (err) {
@@ -55,11 +63,14 @@ export const useMyTicket = (ticketId) => {
   useEffect(() => {
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      auth: { token: auth.apiKey },
+      // JWT when signed in; guests join with no auth (public board events).
+      auth: token ? { token } : {},
     });
     socketRef.current = socket;
 
-    socket.on("connect", () => socket.emit("user:join", auth.id));
+    if (auth?.id) {
+      socket.on("connect", () => socket.emit("user:join", auth.id));
+    }
     TICKET_EVENTS.forEach((event) => socket.on(event, scheduleRefetch));
 
     fetchTicket();
@@ -68,7 +79,7 @@ export const useMyTicket = (ticketId) => {
       clearTimeout(refetchTimer.current);
       socket.disconnect();
     };
-  }, [auth.id, fetchTicket, scheduleRefetch]);
+  }, [auth?.id, token, fetchTicket, scheduleRefetch]);
 
   useEffect(() => {
     const socket = socketRef.current;
@@ -83,13 +94,9 @@ export const useMyTicket = (ticketId) => {
 
   const cancelTicket = useCallback(async () => {
     if (!ticket) return;
-    await v1Api.patch(
-      `/tickets/${ticket._id}/cancel`,
-      {},
-      { apiKey: auth.apiKey },
-    );
+    await apiClient.patch(`/v1/tickets/${ticket._id}/cancel`);
     await fetchTicket();
-  }, [ticket, auth.apiKey, fetchTicket]);
+  }, [ticket, fetchTicket]);
 
   return { ticket, loading, error, cancelTicket, refetch: fetchTicket };
 };

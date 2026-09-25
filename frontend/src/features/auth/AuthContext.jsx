@@ -7,28 +7,44 @@ import {
 } from "react";
 import { registerUnauthorizedHandler } from "../../lib/apiClient";
 import { useNavigate } from "react-router-dom";
+import {
+  loginStaff,
+  loginManager,
+  loginAdmin,
+  loginPlatform,
+  getAuthMe,
+} from "./authApi";
 
 /**
- * AuthContext — dual-mode authentication for the demo frontend.
+ * AuthContext — JWT-only authentication (Phase 13 WP6/WP7).
  *
- * Mode 1 — API key (bank personas: admin/manager/staff):
- *   Auto-initializes from VITE_DEMO_API_KEY. Identity resolved via
- *   GET /v1/auth/me (X-API-Key + optional X-Staff-Id).
- *   User switcher swaps X-Staff-Id; the same demo key is reused.
+ * Demo API-key mode and the user switcher are gone. Every role signs in
+ * with email/password:
+ *   staff    → POST /auth/login/staff    → /staff (console)
+ *   manager  → POST /auth/login/manager  → /staff (overview)
+ *   admin    → POST /auth/login/admin    → /staff (overview)
+ *   superadmin → POST /platform/login    → /platform
  *
- * Mode 2 — JWT (superadmin /platform console):
- *   loginPlatform({ email, password }) → POST /platform/login → stores
- *   { token, role: "superadmin", ... }. Identity refreshed via
- *   GET /platform/me with Authorization: Bearer.
- *
- * Superadmin never appears in the demo user switcher (backend filters them).
+ * Stored shape: { token, id, role, name, email, branch?, bank?, mustChangePassword? }
+ * Identity is refreshed via GET /auth/me with the Bearer token.
  */
 
 const AuthContext = createContext(null);
 const STORAGE_KEY = "cue_auth";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-const DEMO_API_KEY = import.meta.env.VITE_DEMO_API_KEY || "";
+const LOGIN_BY_KIND = {
+  staff: loginStaff,
+  manager: loginManager,
+  admin: loginAdmin,
+  superadmin: loginPlatform,
+};
+
+const DEFAULT_AFTER_LOGIN = {
+  staff: "/staff",
+  manager: "/staff",
+  admin: "/staff",
+  superadmin: "/platform",
+};
 
 const readStoredAuth = () => {
   try {
@@ -39,130 +55,107 @@ const readStoredAuth = () => {
   }
 };
 
+/** Normalize a login/me payload into the stored auth shape. */
+const toAuth = (token, data) => {
+  const role = data.role || data.kind || "staff";
+  return {
+    token,
+    id: data.id,
+    role,
+    name: data.name,
+    email: data.email,
+    branch: data.branch?._id || data.branch || null,
+    bank: data.bank || null,
+    counter: data.counter?._id || data.counter || null,
+    queues: data.queues || [],
+    mustChangePassword: !!data.mustChangePassword,
+    // apiKey is never set — v1 remains for external bank systems only.
+    apiKey: null,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(readStoredAuth);
 
   useEffect(() => {
-    if (auth) localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
+    if (auth?.token) localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
     else localStorage.removeItem(STORAGE_KEY);
   }, [auth]);
 
-  const isTokenMode = !!auth?.token && !auth?.apiKey;
-  const isApiKeyMode = !!auth?.apiKey;
+  const hasToken = !!auth?.token;
 
   /**
-   * Initialize demo API-key auth on mount if nothing stored.
-   * Superadmin token sessions are never auto-created — they must log in.
+   * Refresh identity while a JWT session exists.
+   * Invalid/expired token → drop the session.
    */
   useEffect(() => {
-    if (!auth && DEMO_API_KEY) {
-      setAuth({
-        apiKey: DEMO_API_KEY,
-        role: "admin",
-        name: "Demo Staff",
-        branch: null,
+    if (!hasToken) return;
+    let cancelled = false;
+
+    getAuthMe(auth.token)
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.status === "success" && res.data) {
+          setAuth((prev) => (prev ? toAuth(prev.token, res.data) : prev));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAuth(null);
       });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasToken, auth?.token, auth?.id]);
+
+  /**
+   * Email/password login for any kind. Returns the auth object and the
+   * default post-login path for that role.
+   */
+  const login = useCallback(async (kind, credentials) => {
+    const fn = LOGIN_BY_KIND[kind];
+    if (!fn) throw new Error(`Unknown login kind: ${kind}`);
+
+    const payload = await fn(credentials);
+    const { token } = payload.data || {};
+    // All logins wrap identity under `user` (platform included since WP8).
+    const identity = payload.data?.user || payload.data?.staff;
+    if (!token || !identity) {
+      throw new Error("Login response missing token or user");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const next = toAuth(token, identity);
+    setAuth(next);
+    return { auth: next, path: DEFAULT_AFTER_LOGIN[kind] || "/staff" };
   }, []);
 
-  /**
-   * API-key mode: resolve staff identity via /v1/auth/me.
-   * Re-runs when apiKey or switched staff id changes.
-   */
-  useEffect(() => {
-    if (!isApiKeyMode) return;
-    fetch(`${API_URL}/v1/auth/me`, {
-      headers: { "X-Staff-Id": auth.id || "", "X-API-Key": auth.apiKey },
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.status === "success") {
-          setAuth((prev) => ({ ...prev, ...res.data }));
-        }
-      })
-      .catch(() => {});
-  }, [isApiKeyMode, auth?.apiKey, auth?.id]);
-
-  /**
-   * Token mode (superadmin): refresh profile via /platform/me.
-   * Re-runs when token or profile id changes.
-   */
-  useEffect(() => {
-    if (!isTokenMode) return;
-    fetch(`${API_URL}/platform/me`, {
-      headers: { Authorization: `Bearer ${auth.token}` },
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.status === "success") {
-          setAuth((prev) => ({ ...prev, ...res.data }));
-        } else if (res.status === "error") {
-          // Token invalid/expired — drop the session.
-          setAuth(null);
-        }
-      })
-      .catch(() => {});
-  }, [isTokenMode, auth?.token]);
-
-  /**
-   * Switch to a different demo user (API-key mode only).
-   * Updates the staff id so /v1/auth/me re-resolves role/branch.
-   */
-  const switchUser = useCallback(
-    (user) => {
-      const nextAuth = {
-        ...auth,
-        apiKey: auth?.apiKey || DEMO_API_KEY,
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        branch: user.branch || null,
-      };
-      setAuth(nextAuth);
-      return "/staff";
-    },
-    [auth],
+  /** Superadmin convenience wrapper (kept for PlatformLogin). */
+  const loginPlatformCreds = useCallback(
+    (credentials) => login("superadmin", credentials),
+    [login],
   );
-
-  /**
-   * Superadmin JWT login for the /platform console.
-   * On success stores { token, role: "superadmin", name, email }.
-   */
-  const loginPlatform = useCallback(async ({ email, password }) => {
-    const res = await fetch(`${API_URL}/platform/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const payload = await res.json().catch(() => null);
-
-    if (!res.ok || payload?.status !== "success") {
-      const err = new Error(payload?.message || "Login failed");
-      err.status = res.status;
-      err.errors = payload?.errors || null;
-      throw err;
-    }
-
-    const { staff, token } = payload.data;
-    setAuth({
-      token,
-      role: staff.role,
-      name: staff.name,
-      email: staff.email,
-      id: staff.id,
-      branch: null,
-      apiKey: null,
-    });
-    return staff;
-  }, []);
 
   const logout = useCallback(() => setAuth(null), []);
 
+  /**
+   * Clear mustChangePassword after a successful rotation
+   * (ChangePassword component calls this so the force prompt dismisses).
+   */
+  const clearMustChangePassword = useCallback(() => {
+    setAuth((prev) =>
+      prev ? { ...prev, mustChangePassword: false } : prev,
+    );
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ auth, switchUser, loginPlatform, logout }}
+      value={{
+        auth,
+        login,
+        loginPlatform: loginPlatformCreds,
+        logout,
+        clearMustChangePassword,
+      }}
     >
       {children}
       <AuthInterceptor setAuth={setAuth} />
@@ -175,8 +168,25 @@ const AuthInterceptor = ({ setAuth }) => {
 
   useEffect(() => {
     registerUnauthorizedHandler(() => {
+      // Superadmin session-expiry returns to /platform/login with the
+      // expired notice; bank roles land on the marketing home (WP8).
+      // Read role BEFORE clearing — setAuth(null) wipes storage.
+      let wasSuperadmin = false;
+      try {
+        const raw = localStorage.getItem("cue_auth");
+        wasSuperadmin = !!raw && JSON.parse(raw)?.role === "superadmin";
+      } catch {
+        wasSuperadmin = false;
+      }
       setAuth(null);
-      navigate("/", { replace: true });
+      if (wasSuperadmin) {
+        navigate("/platform/login", {
+          replace: true,
+          state: { sessionExpired: true },
+        });
+      } else {
+        navigate("/", { replace: true });
+      }
     });
 
     return () => registerUnauthorizedHandler(null);

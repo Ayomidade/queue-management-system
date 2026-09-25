@@ -5,7 +5,7 @@
  * No database lookups, no caching — simple and predictable.
  *
  * Banks configure their branding via .env files when deploying.
- * The demo frontend reads these values via GET /api/brand.
+ * The frontend reads these values via GET /api/brand.
  */
 
 const brandConfig = {

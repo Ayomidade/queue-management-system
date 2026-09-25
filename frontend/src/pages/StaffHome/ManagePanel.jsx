@@ -1,21 +1,26 @@
 import { useState } from "react";
 import { useAuth } from "../../features/auth/AuthContext";
 import StaffSubTab from "./StaffSubTab";
+import ManagerSubTab from "./ManagerSubTab";
 import CounterSubTab from "./CounterSubTab";
 import styles from "./StaffHome.module.css";
 
 /**
  * ManagePanel — management interface for manager/admin roles.
  *
- * Admin sees: Staff sub-tab only (branch management is in AdminOverview)
- * Manager sees: Staff + Counters sub-tabs
+ * Admin sees: Managers + Staff sub-tabs (managers live in their own
+ * collection; POST /managers with optional temp password).
+ * Manager sees: Staff + Counters sub-tabs (cannot create managers).
  */
 const ManagePanel = () => {
   const { auth } = useAuth();
   const isAdmin = auth.role === "admin";
 
   const subTabs = isAdmin
-    ? [{ id: "staff", label: "Staff" }]
+    ? [
+        { id: "managers", label: "Managers" },
+        { id: "staff", label: "Staff" },
+      ]
     : [
         { id: "staff", label: "Staff" },
         { id: "counters", label: "Counters" },
@@ -48,6 +53,7 @@ const ManagePanel = () => {
       )}
 
       <div className={styles.mgmtTabContent}>
+        {activeTab === "managers" && isAdmin && <ManagerSubTab />}
         {activeTab === "staff" && <StaffSubTab />}
         {activeTab === "counters" && <CounterSubTab />}
       </div>

@@ -17,6 +17,7 @@ const TicketForm = ({ onCreated }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Public queue list (no auth) for the guest pull-ticket form.
     fetch(`${API_URL}/v1/queues`)
       .then((r) => r.json())
       .then((res) => {
@@ -49,6 +50,7 @@ const TicketForm = ({ onCreated }) => {
     setError(null);
     setSubmitting(true);
     try {
+      // Public v1 create — guests never hold an API key.
       const res = await fetch(`${API_URL}/v1/tickets`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

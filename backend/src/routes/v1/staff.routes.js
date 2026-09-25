@@ -5,26 +5,41 @@ import {
   deactivateStaff,
   assignQueuesToStaff,
 } from "../../controllers/staff.controller.js";
-import { authorize } from "../../middlewares/auth.middleware.js";
+import { requireScope } from "../../middlewares/apiKey.middleware.js";
 import { createStaffValidator } from "../../validators/staff.validator.js";
 import validate from "../../middlewares/validate.js";
 
 /**
- * V1 Staff Routes
+ * V1 Staff Routes — API-key only (external bank systems).
  *
- * Manages staff members. Manager/admin only.
- * The bankScope middleware (applied at v1Router level) ensures
- * managers can only see/manage staff in their own branch.
+ * Scope wiring (WP5): the only bank-requestable staff scope is
+ * `staff:read` — it covers list + provision/retire operations the same
+ * way `branches:read` covers branch CRUD (no staff:write exists).
+ *
+ * Role-based authorize() is intentionally NOT used here: resolveStaffUser
+ * always loads Staff (role "staff"), so manager/admin authorize() would
+ * 403 every API-key request. Dashboard role checks live on the JWT
+ * /api/staff surface instead.
+ *
+ * bankScope still isolates by key.bankName; managers are scoped to their
+ * branch inside the controller when a JWT identity is present.
  */
 
 const staffRouter = Router();
 
-// All staff routes require admin or manager role
-staffRouter.use(authorize("admin", "manager"));
-
-staffRouter.get("/", getAllStaff);
-staffRouter.post("/", createStaffValidator, validate, createStaff);
-staffRouter.patch("/:staffId/queues", assignQueuesToStaff);
-staffRouter.delete("/:staffId", deactivateStaff);
+staffRouter.get("/", requireScope("staff:read"), getAllStaff);
+staffRouter.post(
+  "/",
+  requireScope("staff:read"),
+  createStaffValidator,
+  validate,
+  createStaff,
+);
+staffRouter.patch(
+  "/:staffId/queues",
+  requireScope("staff:read"),
+  assignQueuesToStaff,
+);
+staffRouter.delete("/:staffId", requireScope("staff:read"), deactivateStaff);
 
 export default staffRouter;

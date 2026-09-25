@@ -18,7 +18,8 @@ import {
  * Replaces the old /api/v1/api-keys routes (authorize("admin")) which
  * exposed ALL banks' keys to any bank admin — a multi-tenancy hole.
  *
- * Bank admins submit ApiKeyRequests instead (see routes/v1/apiKeyRequest.routes.js).
+ * Bank admins submit ApiKeyRequests on JWT /api/admin/api-key-requests
+ * (routes/adminApiKeyRequest.routes.js) instead.
  */
 const router = Router();
 

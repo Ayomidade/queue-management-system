@@ -1,23 +1,26 @@
-import { v1Api } from "../../lib/apiClient";
+import { apiClient } from "../../lib/apiClient";
 
 /**
- * Admin & Analytics API
- *
- * Functions for admin overview and branch analytics.
- * All functions use API key auth (v1 routes).
+ * Admin & analytics API — JWT `/api/*` surface (Phase 13 WP6).
+ * Bank scope comes from Admin.bank / Manager.branch server-side.
  */
 
-/** Admin overview — cross-branch dashboard with managers and staff counts */
-export const fetchAdminOverview = (apiKey) => v1Api.get("/admin", { apiKey });
+/** Admin overview — cross-branch dashboard for this admin's bank */
+export const fetchAdminOverview = (token) =>
+  apiClient.get("/admin/overview", { token });
 
 /** Branch analytics — live dashboard for a single branch */
-export const fetchBranchAnalytics = (branchId, apiKey) =>
-  v1Api.get(`/analytics/branch/${branchId}`, { apiKey });
+export const fetchBranchAnalytics = (branchId, token) =>
+  apiClient.get(`/analytics/branch/${branchId}`, { token });
 
 /** Branch staff performance — tickets served per staff member today */
-export const fetchBranchStaffPerformance = (branchId, apiKey) =>
-  v1Api.get(`/analytics/branch/${branchId}/staff-performance`, { apiKey });
+export const fetchBranchStaffPerformance = (branchId, token) =>
+  apiClient.get(`/analytics/branch/${branchId}/staff-performance`, { token });
 
-/** Create a new branch */
-export const createBranch = (data, apiKey) =>
-  v1Api.post("/branches", data, { apiKey });
+/** Create a new branch (admin) */
+export const createBranch = (data, token) =>
+  apiClient.post("/branches", data, { token });
+
+/** List branches (admin) */
+export const fetchBranches = (token) =>
+  apiClient.get("/branches", { token });

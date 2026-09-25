@@ -1,5 +1,12 @@
 import { body } from "express-validator";
 
+/**
+ * createStaffValidator — password is OPTIONAL.
+ * When omitted, the server generates a temp password (Cue-XXXXXX-XXXXXX)
+ * and returns it once as `tempPassword` with mustChangePassword: true.
+ * `role` is not accepted — Staff collection holds only staff after the split.
+ * Managers are created via POST /api/managers; admins self-register.
+ */
 export const createStaffValidator = [
   body("name")
     .trim()
@@ -17,13 +24,11 @@ export const createStaffValidator = [
     .normalizeEmail(),
 
   body("password")
-    .notEmpty()
-    .withMessage("Password is required")
+    .optional({ values: "falsy" })
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters"),
 
-  // role is not accepted — Staff collection holds only staff after the
-  // four-model split; managers are created via the Manager model (WP4).
+  // Required for admins; managers always use their own branch (ignored in body).
   body("branch").optional().isMongoId().withMessage("Invalid branch ID"),
 ];
 

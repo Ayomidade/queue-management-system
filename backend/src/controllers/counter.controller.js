@@ -185,7 +185,10 @@ export const closeCounter = async (req, res, next) => {
   }
 };
 
-// Manager/admin only — reopen a counter without needing to reassign staff
+/**
+ * Open a counter — admin/manager any counter in scope; staff may open
+ * ONLY their own assigned counter (symmetric with closeCounter).
+ */
 export const openCounter = async (req, res, next) => {
   try {
     const counter = await Counter.findById(req.params.counterId);
@@ -194,10 +197,14 @@ export const openCounter = async (req, res, next) => {
       error.statusCode = 404;
       return next(error);
     }
-    if (!canManageBranchCounter(req, counter)) {
+
+    const isOwnCounter =
+      req.role === "staff" &&
+      String(req.user.counter) === String(req.params.counterId);
+    if (!isOwnCounter && !canManageBranchCounter(req, counter)) {
       return sendError(res, {
         statusCode: 403,
-        message: "You can only manage counters in your own branch",
+        message: "You can only open your own assigned counter",
       });
     }
 

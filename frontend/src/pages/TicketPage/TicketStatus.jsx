@@ -27,6 +27,7 @@ const TicketStatus = ({ ticket: initialTicket, onCancel, onNewTicket }) => {
     const interval = setInterval(async () => {
       try {
         const id = ticket.ticketId || ticket._id;
+        // Public v1 route — poll status without auth.
         const res = await fetch(`${API_URL}/v1/tickets/public/${id}`);
         const data = await res.json();
         if (data.status === "success") {

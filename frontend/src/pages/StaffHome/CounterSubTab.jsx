@@ -14,9 +14,14 @@ import styles from "./StaffHome.module.css";
 /**
  * CounterSubTab — counter list, create form, staff assignment.
  * Used inside ManagePanel for manager/admin.
+ *
+ * JWT Bearer (WP6) — staff list is bank/branch-scoped server-side.
+ * Staff role field is gone; Server still returns collection as role-ish
+ * data or Staff docs are always kind staff — filter by branch only.
  */
 const CounterSubTab = () => {
   const { auth } = useAuth();
+  const token = auth.token;
   const [counters, setCounters] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,15 +33,15 @@ const CounterSubTab = () => {
   const load = useCallback(async () => {
     try {
       const [countersRes, staffRes] = await Promise.all([
-        fetchBranchCounters(auth.branch, auth.apiKey),
-        fetchStaffList(auth.apiKey),
+        fetchBranchCounters(auth.branch, token),
+        fetchStaffList(token),
       ]);
       setCounters(countersRes.data);
+      // Staff collection is Staff-only after the split — no role check needed.
       setStaffList(
         staffRes.data.filter(
           (s) =>
-            s.role === "staff" &&
-            (s.branch?._id === auth.branch || s.branch === auth.branch),
+            s.branch?._id === auth.branch || s.branch === auth.branch,
         ),
       );
       setError(null);
@@ -45,7 +50,7 @@ const CounterSubTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [auth.apiKey, auth.branch]);
+  }, [token, auth.branch]);
 
   useEffect(() => {
     load();
@@ -56,7 +61,7 @@ const CounterSubTab = () => {
     setCreateError(null);
     setCreating(true);
     try {
-      await createCounter({ label, branch: auth.branch }, auth.apiKey);
+      await createCounter({ label, branch: auth.branch }, token);
       setLabel("");
       await load();
     } catch (err) {
@@ -71,7 +76,7 @@ const CounterSubTab = () => {
   const handleAssign = async (counterId, staffId) => {
     if (!staffId) return;
     try {
-      await assignStaffToCounter(counterId, staffId, auth.apiKey);
+      await assignStaffToCounter(counterId, staffId, token);
       await load();
     } catch (err) {
       setError(
@@ -81,7 +86,7 @@ const CounterSubTab = () => {
   };
 
   const handleUnassign = async (counterId) => {
-    await unassignStaffFromCounter(counterId, auth.apiKey);
+    await unassignStaffFromCounter(counterId, token);
     await load();
   };
 
